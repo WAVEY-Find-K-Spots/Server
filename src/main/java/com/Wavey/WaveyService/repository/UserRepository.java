@@ -1,0 +1,10 @@
+package com.Wavey.WaveyService.repository;
+
+import com.Wavey.WaveyService.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+    // 이미 가입된 유저인지 sub(고유번호)로 확인
+    Optional<User> findBySub(String sub);
+}
