@@ -1,9 +1,9 @@
-package com.Wavey.WaveyService.route.service;
+package com.Wavey.WaveyService.domain.route.service;
 
-import com.Wavey.WaveyService.route.dto.RouteRequest;
-import com.Wavey.WaveyService.route.dto.RouteResponse;
-import com.Wavey.WaveyService.route.entity.Route;
-import com.Wavey.WaveyService.route.repository.RouteRepository;
+import com.Wavey.WaveyService.domain.route.dto.RouteRequest;
+import com.Wavey.WaveyService.domain.route.dto.RouteResponse;
+import com.Wavey.WaveyService.domain.route.entity.Route;
+import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

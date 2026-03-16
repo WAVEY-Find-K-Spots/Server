@@ -1,8 +1,8 @@
-package com.Wavey.WaveyService.route.controller;
+package com.Wavey.WaveyService.domain.route.controller;
 
-import com.Wavey.WaveyService.route.dto.RouteRequest;
-import com.Wavey.WaveyService.route.dto.RouteResponse;
-import com.Wavey.WaveyService.route.service.RouteService;
+import com.Wavey.WaveyService.domain.route.dto.RouteRequest;
+import com.Wavey.WaveyService.domain.route.dto.RouteResponse;
+import com.Wavey.WaveyService.domain.route.service.RouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
