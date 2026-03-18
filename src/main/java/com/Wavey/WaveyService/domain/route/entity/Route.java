@@ -1,10 +1,8 @@
 package com.Wavey.WaveyService.domain.route.entity;
 
+import com.Wavey.WaveyService.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "routes")
@@ -13,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Route {
+public class Route extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,13 +25,6 @@ public class Route {
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime created_at;
-
-    @UpdateTimestamp
-    private LocalDateTime updated_at;
 
     @Column(name = "Progress")
     private Float progress;
