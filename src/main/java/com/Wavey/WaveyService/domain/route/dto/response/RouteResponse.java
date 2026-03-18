@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.domain.route.dto;
+package com.Wavey.WaveyService.domain.route.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

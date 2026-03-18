@@ -1,7 +1,7 @@
 package com.Wavey.WaveyService.domain.route.controller;
 
-import com.Wavey.WaveyService.domain.route.dto.RouteRequest;
-import com.Wavey.WaveyService.domain.route.dto.RouteResponse;
+import com.Wavey.WaveyService.domain.route.dto.request.RouteRequest;
+import com.Wavey.WaveyService.domain.route.dto.response.RouteResponse;
 import com.Wavey.WaveyService.domain.route.service.RouteService;
 import com.Wavey.WaveyService.global.response.CommonResponse;
 import lombok.RequiredArgsConstructor;

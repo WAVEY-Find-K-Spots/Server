@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.domain.route.dto;
+package com.Wavey.WaveyService.domain.route.dto.request;
 
 import lombok.*;
 
