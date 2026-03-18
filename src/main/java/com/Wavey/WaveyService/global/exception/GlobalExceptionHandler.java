@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(new CommonResponse<>(errorCode.getHttpStatus().value(), null, null, errorDetail));
+                .body(CommonResponse.error(errorCode.getHttpStatus().value(), errorDetail));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -43,6 +44,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus())
-                .body(new CommonResponse<>(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus().value(), null, null, errorDetail));
+                .body(CommonResponse.error(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus().value(), errorDetail));
     }
 }

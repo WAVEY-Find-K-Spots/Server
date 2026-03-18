@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.route.dto.RouteRequest;
 import com.Wavey.WaveyService.domain.route.dto.RouteResponse;
 import com.Wavey.WaveyService.domain.route.entity.Route;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,14 +41,14 @@ public class RouteService {
     @Transactional(readOnly = true)
     public RouteResponse getRouteById(Long id) {
         Route route = routeRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 루트가 없습니다. id=" + id));
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
         return convertToResponse(route);
     }
 
     @Transactional
     public RouteResponse updateRoute(Long id, RouteRequest request) {
         Route route = routeRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 루트가 없습니다. id=" + id));
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
 
         route.update(request.getTitle(), request.getDescription(), request.getProgress());
         return convertToResponse(route);
@@ -54,7 +56,9 @@ public class RouteService {
 
     @Transactional
     public void deleteRoute(Long id) {
-        routeRepository.deleteById(id);
+        Route route = routeRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
+        routeRepository.delete(route);
     }
 
     private RouteResponse convertToResponse(Route route) {
