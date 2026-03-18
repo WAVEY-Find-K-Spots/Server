@@ -18,11 +18,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/swagger-ui/**",      // Swagger 관련 정적 리소스
-                                "/swagger-ui.html",    // Swagger HTML 페이지
-                                "/v3/api-docs/**",     // Swagger가 API 정보를 읽어오는 JSON 경로 (필수!)
-                                "/api-docs/**",        // 추가 문서 경로
-                                "/h2-console/**"       // DB 콘솔
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/h2-console/**",
+                                "/api/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
