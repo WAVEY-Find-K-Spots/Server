@@ -9,5 +9,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ErrorDetail {
     private String code;
+    private String message;
     private List<FieldErrorDetail> errors;
 }
