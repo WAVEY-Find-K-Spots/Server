@@ -1,7 +1,7 @@
-package com.Wavey.WaveyService.controller;
+package com.Wavey.WaveyService.domain.user.controller;
 
-import com.Wavey.WaveyService.entity.User;
-import com.Wavey.WaveyService.service.CustomOAuth2UserService;
+import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

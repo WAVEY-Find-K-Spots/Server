@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.dto;
+package com.Wavey.WaveyService.domain.user.dto;
 
 import java.util.Map;
 
