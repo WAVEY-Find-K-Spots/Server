@@ -31,7 +31,9 @@ public class User {
         if (name != null && !name.isEmpty()) {
             this.name = name;
         }
-        this.email = email;
+        if (email != null && !email.isEmpty()) {
+            this.email = email;
+        }
         return this;
     }
 }

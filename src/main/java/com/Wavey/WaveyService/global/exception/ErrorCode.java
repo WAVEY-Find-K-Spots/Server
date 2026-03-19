@@ -14,7 +14,11 @@ public enum ErrorCode {
 
     // ROUTE
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_404", "해당 루트를 찾을 수 없습니다."),
-    ROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "ROUTE_403", "해당 루트에 대한 권한이 없습니다.");
+    ROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "ROUTE_403", "해당 루트에 대한 권한이 없습니다."),
+
+    // USER
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "해당 유저를 찾을 수 없습니다."),
+    USER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "USER_403", "해당 유저 관련 권한이 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

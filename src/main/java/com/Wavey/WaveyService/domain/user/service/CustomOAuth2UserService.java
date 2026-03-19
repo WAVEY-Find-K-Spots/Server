@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,7 +29,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
 
-    // 환경 변수 주입
     @Value("${auth.server-url}")
     private String serverUrl;
 
@@ -64,8 +65,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     @Transactional
-    public User saveOrUpdate(OAuth2UserInfo userInfo) {
-        return userRepository.findByProviderId(userInfo.getProviderId())
+    public void saveOrUpdate(OAuth2UserInfo userInfo) {
+        userRepository.findByProviderId(userInfo.getProviderId())
                 .map(entity -> entity.update(userInfo.getName(), userInfo.getEmail()))
                 .orElseGet(() -> userRepository.save(User.builder()
                         .providerId(userInfo.getProviderId())
@@ -75,14 +76,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         .build()));
     }
 
-    public List<User> findAllUsers() { return userRepository.findAll(); }
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
 
     public User findById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("회원 없음"));
+        return userRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional
     public void withdraw(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
         userRepository.deleteById(id);
     }
 }

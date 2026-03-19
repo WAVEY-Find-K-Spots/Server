@@ -40,7 +40,6 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
                                 "/h2-console/**",
-                                "/api/auth/**",      // 인증 관련 API
                                 "/api/**"            // 일반 API (필요 시 권한 조정 가능)
                         ).permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
