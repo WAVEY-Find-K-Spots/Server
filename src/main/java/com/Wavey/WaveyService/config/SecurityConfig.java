@@ -9,6 +9,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -20,29 +25,49 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // 1. CORS 설정 적용 (중요!)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 2. CSRF 비활성화 (Stateless한 API 서버 기준)
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",                   // 메인 페이지 허용
-                                "/swagger-ui/**",      // Swagger 관련 정적 리소스
-                                "/swagger-ui.html",    // Swagger HTML 페이지
-                                "/v3/api-docs/**",     // Swagger JSON 경로
-                                "/api-docs/**",        // 추가 문서 경로
-                                "/h2-console/**"       // DB 콘솔
+                                "/",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/h2-console/**",
+                                "/api/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                // H2 콘솔 사용을 위한 FrameOptions 설정
+
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
 
-                // OAuth2 로그인 설정 추가
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // 커스텀 서비스 연결
+                                .userService(customOAuth2UserService)
                         )
-                        .defaultSuccessUrl("/swagger-ui/index.html") // 로그인 성공 후 리다이렉트
+                        .defaultSuccessUrl("/swagger-ui/index.html")
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Swagger UI가 동작하는 출처 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:8080", "http://127.0.0.1:8080"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
