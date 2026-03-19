@@ -66,9 +66,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Transactional
     public void saveOrUpdate(OAuth2UserInfo userInfo) {
-        userRepository.findByProviderId(userInfo.getProviderId())
-                .map(entity -> entity.update(userInfo.getName(), userInfo.getEmail()))
-                .orElseGet(() -> userRepository.save(User.builder()
+        userRepository.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId())
+                .map(entity -> entity.update(userInfo.getName(), userInfo.getEmail())) // 있으면 정보 업데이트
+                .orElseGet(() -> userRepository.save(User.builder() // 없으면 새로 생성
                         .providerId(userInfo.getProviderId())
                         .email(userInfo.getEmail())
                         .name(userInfo.getName())
