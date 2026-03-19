@@ -1,9 +1,9 @@
-package com.Wavey.WaveyService.service;
+package com.Wavey.WaveyService.domain.user.service;
 
-import com.Wavey.WaveyService.dto.OAuth2UserInfo;
-import com.Wavey.WaveyService.dto.OAuth2UserInfoFactory;
-import com.Wavey.WaveyService.entity.User;
-import com.Wavey.WaveyService.repository.UserRepository;
+import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
+import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
+import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

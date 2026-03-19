@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.dto;
+package com.Wavey.WaveyService.domain.user.dto;
 
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import java.util.Map;

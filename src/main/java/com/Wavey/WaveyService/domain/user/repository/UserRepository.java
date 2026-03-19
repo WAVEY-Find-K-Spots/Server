@@ -1,6 +1,6 @@
-package com.Wavey.WaveyService.repository;
+package com.Wavey.WaveyService.domain.user.repository;
 
-import com.Wavey.WaveyService.entity.User;
+import com.Wavey.WaveyService.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

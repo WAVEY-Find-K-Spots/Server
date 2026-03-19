@@ -1,6 +1,6 @@
-package com.Wavey.WaveyService.config;
+package com.Wavey.WaveyService.global.config;
 
-import com.Wavey.WaveyService.service.CustomOAuth2UserService;
+import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

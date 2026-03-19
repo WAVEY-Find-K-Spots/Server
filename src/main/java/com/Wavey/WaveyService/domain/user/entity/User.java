@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.entity;
+package com.Wavey.WaveyService.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
