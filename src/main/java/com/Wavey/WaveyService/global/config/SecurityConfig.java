@@ -1,4 +1,4 @@
-package com.Wavey.WaveyService.global.config;
+package com.Wavey.WaveyService.config;
 
 import com.Wavey.WaveyService.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,32 +20,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. CSRF 비활성화 (개발 환경 및 API 서버)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 2. 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/",                   // 메인 페이지
-                                "/swagger-ui/**",      // Swagger UI 리소스
-                                "/swagger-ui.html",    // Swagger HTML
-                                "/v3/api-docs/**",     // OpenAPI 명세
-                                "/api-docs/**",
-                                "/h2-console/**",      // H2 데이터베이스 콘솔
-                                "/api/**"              // API 경로 (필요에 따라 permitAll 또는 authenticated 설정)
+                                "/",                   // 메인 페이지 허용
+                                "/swagger-ui/**",      // Swagger 관련 정적 리소스
+                                "/swagger-ui.html",    // Swagger HTML 페이지
+                                "/v3/api-docs/**",     // Swagger JSON 경로
+                                "/api-docs/**",        // 추가 문서 경로
+                                "/h2-console/**"       // DB 콘솔
                         ).permitAll()
-                        .anyRequest().authenticated()  // 그 외 요청은 인증 필요
+                        .anyRequest().authenticated()
                 )
-
-                // 3. H2 콘솔 사용을 위한 FrameOptions 설정 (SameOrigin 허용)
+                // H2 콘솔 사용을 위한 FrameOptions 설정
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
 
-                // 4. OAuth2 로그인 설정
+                // OAuth2 로그인 설정 추가
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService) // 커스텀 서비스 연결
                         )
-                        .defaultSuccessUrl("/swagger-ui/index.html") // 로그인 성공 후 이동할 페이지
+                        .defaultSuccessUrl("/swagger-ui/index.html") // 로그인 성공 후 리다이렉트
                 );
 
         return http.build();
