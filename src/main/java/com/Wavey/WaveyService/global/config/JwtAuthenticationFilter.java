@@ -3,6 +3,9 @@ package com.Wavey.WaveyService.global.config;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
+import com.Wavey.WaveyService.global.response.CommonResponse;
+import com.Wavey.WaveyService.global.response.ErrorDetail;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,13 +25,13 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환용 추가
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
         if (token != null) {
-            // validateToken에 request를 전달하여 에러 발생 시 속성에 저장하게 함
             if (tokenProvider.validateToken(token, request)) {
                 Claims claims = tokenProvider.getClaims(token);
                 String providerId = claims.getSubject();
@@ -40,11 +43,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 });
             } else {
-                // 토큰 검증 실패 시 에러 응답 직접 전송
                 ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
                 if (errorCode != null) {
                     setErrorResponse(response, errorCode);
-                    return; // 다음 필터로 진행하지 않고 종료
+                    return;
                 }
             }
         }
@@ -55,10 +57,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(errorCode.getHttpStatus().value());
 
-        String json = String.format(
-                "{\"success\":false, \"message\":\"%s\", \"code\":\"%s\"}",
-                errorCode.getMessage(), errorCode.getCode()
+        // ErrorDetail 생성
+        ErrorDetail errorDetail = ErrorDetail.builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .build();
+
+        // CommonResponse.error 구조 생성 (GlobalExceptionHandler와 동일한 방식)
+        CommonResponse<Void> commonResponse = CommonResponse.error(
+                errorCode.getHttpStatus().value(),
+                errorDetail
         );
+
+        String json = objectMapper.writeValueAsString(commonResponse);
         response.getWriter().write(json);
     }
 

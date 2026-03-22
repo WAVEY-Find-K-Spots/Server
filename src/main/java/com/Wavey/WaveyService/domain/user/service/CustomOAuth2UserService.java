@@ -84,7 +84,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return response;
     }
 
-    // ... (이하 saveOrUpdate, loadUser 등 기존 코드와 동일)
 
     @Override
     @Transactional
