@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.user.service;
 
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
+import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
@@ -9,6 +10,8 @@ import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,6 +23,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 
 @Service
@@ -28,7 +33,7 @@ import java.util.*;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
-    private final JwtTokenProvider tokenProvider; // 추가
+    private final JwtTokenProvider tokenProvider;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -51,27 +56,42 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     /**
      * 토큰 재발급 비즈니스 로직 (Refresh Token Rotation)
+     * 피드백 반영: 만료된 리프레시 토큰 시 TOKEN_402(EXPIRED_TOKEN) 반환
      */
     @Transactional
     public Map<String, String> refreshToken(String refreshToken) {
-        // 1. 유효성 검증
-        if (refreshToken == null || !tokenProvider.validateToken(refreshToken)) {
+        // 1. 기본 유효성 검증
+        if (refreshToken == null) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        // 2. 유저 조회
+        try {
+            // 토큰 만료 여부 및 구조 검증
+            tokenProvider.validateToken(refreshToken);
+        } catch (ExpiredJwtException e) {
+            // 리프레시 토큰이 만료된 경우 -> 프론트엔드에서 재로그인 유도 가능
+            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+        } catch (JwtException | IllegalArgumentException e) {
+            // 그 외 유효하지 않은 토큰 처리
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
+        // 2. 유저 정보 추출
         Claims claims = tokenProvider.getClaims(refreshToken);
         String provider = (String) claims.get("provider");
         String providerId = claims.getSubject();
 
         User user = findByProviderAndProviderId(provider, providerId);
 
-        // 3. DB 토큰 일치 확인
-        if (!refreshToken.equals(user.getRefreshToken())) {
+        // 3. DB 토큰 일치 확인 (Timing Attack 방지를 위한 MessageDigest 사용)
+        String storedToken = user.getRefreshToken();
+        if (storedToken == null || !MessageDigest.isEqual(
+                refreshToken.getBytes(StandardCharsets.UTF_8),
+                storedToken.getBytes(StandardCharsets.UTF_8))) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        // 4. 새로운 토큰 생성 및 로테이션
+        // 4. 새로운 토큰 생성 및 로테이션 (RTR)
         String newAccessToken = tokenProvider.createAccessToken(provider, providerId);
         String newRefreshToken = tokenProvider.createRefreshToken(provider, providerId);
 
@@ -83,7 +103,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         return response;
     }
-
 
     @Override
     @Transactional
@@ -124,7 +143,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 });
     }
 
-    public User findById(Long id) {
+    public UserResponse findById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return UserResponse.from(user);
+    }
+
+    public User findEntityById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
@@ -136,7 +161,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Transactional
     public void updateUserRole(Long id, Role role) {
-        User user = findById(id);
+        User user = findEntityById(id);
         user.updateRole(role);
     }
 
@@ -154,7 +179,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Transactional
     public void logout(Long id) {
-        User user = findById(id);
+        User user = findEntityById(id);
         user.updateRefreshToken(null);
     }
 }

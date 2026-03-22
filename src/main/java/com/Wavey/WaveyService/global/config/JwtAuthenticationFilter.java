@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.global.config;
 
+import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
@@ -20,12 +21,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환용 추가
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -37,17 +39,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String providerId = claims.getSubject();
                 String provider = (String) claims.get("provider");
 
-                userRepository.findByProviderAndProviderId(provider, providerId).ifPresent(user -> {
+                Optional<User> userOptional = userRepository.findByProviderAndProviderId(provider, providerId);
+
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             user, null, Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getKey())));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                });
-            } else {
-                ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
-                if (errorCode != null) {
-                    setErrorResponse(response, errorCode);
+                } else {
+                    setErrorResponse(response, ErrorCode.USER_NOT_FOUND);
                     return;
                 }
+            } else {
+                // [피드백 반영] 예기치 못한 검증 실패에 대한 Fallback 로직 추가
+                ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
+
+                // 만약 에러 코드가 설정되어 있지 않다면 기본적으로 INVALID_TOKEN 응답
+                if (errorCode == null) {
+                    errorCode = ErrorCode.INVALID_TOKEN;
+                }
+
+                setErrorResponse(response, errorCode);
+                return;
             }
         }
         filterChain.doFilter(request, response);
@@ -57,13 +70,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(errorCode.getHttpStatus().value());
 
-        // ErrorDetail 생성
         ErrorDetail errorDetail = ErrorDetail.builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .build();
 
-        // CommonResponse.error 구조 생성 (GlobalExceptionHandler와 동일한 방식)
         CommonResponse<Void> commonResponse = CommonResponse.error(
                 errorCode.getHttpStatus().value(),
                 errorDetail

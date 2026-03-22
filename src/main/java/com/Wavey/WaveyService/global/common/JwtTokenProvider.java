@@ -58,7 +58,7 @@ public class JwtTokenProvider {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
-        } catch (SecurityException | MalformedJwtException | SignatureException e) {
+        } catch (MalformedJwtException | SignatureException e) {
             if (request != null) request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
             if (request != null) request.setAttribute("exception", ErrorCode.EXPIRED_TOKEN);

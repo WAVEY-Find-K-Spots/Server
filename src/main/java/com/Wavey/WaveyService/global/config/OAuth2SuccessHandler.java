@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 
@@ -30,6 +31,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String providerId = oAuth2User.getAttribute("sub");
         String provider = oAuth2User.getAttribute("provider");
 
+        if (providerId == null || provider == null) {
+            throw new IllegalStateException("Missing required OAuth2 attributes: sub or provider");
+        }
         // 1. 액세스 및 리프레시 토큰 생성
         String accessToken = tokenProvider.createAccessToken(provider, providerId);
         String refreshToken = tokenProvider.createRefreshToken(provider, providerId);
@@ -78,7 +82,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         "function copyText(id) { var copyText = document.getElementById(id); copyText.select(); document.execCommand('copy'); alert('복사되었습니다!'); }" +
                         "</script>" +
                         "</body></html>",
-                user.getName(), user.getRole().name(), accessToken, refreshToken
+                HtmlUtils.htmlEscape(user.getName()),
+                user.getRole().name(),
+                HtmlUtils.htmlEscape(accessToken),
+                HtmlUtils.htmlEscape(refreshToken)
         ));
     }
 

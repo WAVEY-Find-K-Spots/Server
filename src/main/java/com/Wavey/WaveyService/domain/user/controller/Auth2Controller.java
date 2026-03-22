@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.user.controller;
 
+import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
@@ -47,14 +48,14 @@ public class Auth2Controller {
     @Operation(summary = "현재 로그인 유저 정보 조회")
     @GetMapping("/user")
     @PreAuthorize("isAuthenticated()")
-    public CommonResponse<User> getLoginUserInfo(@AuthenticationPrincipal User user) {
-        return CommonResponse.success("로그인 유저 정보 조회 성공", user);
+    public CommonResponse<UserResponse> getLoginUserInfo(@AuthenticationPrincipal User user) {
+        return CommonResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user));
     }
 
     @Operation(summary = "특정 회원 조회 (ID 기준)")
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public CommonResponse<User> getUserById(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
+    public CommonResponse<UserResponse> getUserById(@PathVariable Long id) {
         return CommonResponse.success("회원 정보 조회 성공", userService.findById(id));
     }
 
@@ -86,7 +87,7 @@ public class Auth2Controller {
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
     public CommonResponse<Void> logout(@PathVariable Long id) {
         userService.logout(id);
         return CommonResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null);
