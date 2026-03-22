@@ -27,6 +27,13 @@ public class User {
     @Column(nullable = false)
     private String provider; // "google", "apple"
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @Column(length = 500)
+    private String refreshToken;
+
     public User update(String name, String email) {
         if (name != null && !name.isEmpty()) {
             this.name = name;
@@ -35,5 +42,13 @@ public class User {
             this.email = email;
         }
         return this;
+    }
+
+    public void updateRole(Role role) {
+        this.role = role;
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }
