@@ -13,8 +13,14 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버 내부 에러가 발생했습니다."),
 
     // ROUTE
-    ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_404", "해당 루트를 찾을 수 없습니다."),
-    ROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "ROUTE_403", "해당 루트에 대한 권한이 없습니다.");
+    ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", "해당 루트를 찾을 수 없습니다."),
+    ROUTE_FORBIDDEN(HttpStatus.FORBIDDEN, "ROUTE_FORBIDDEN", "해당 루트에 접근 권한이 없습니다."),
+    ROUTE_SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_SPOT_NOT_FOUND", "루트에 해당 스팟이 없습니다."),
+    ROUTE_SPOT_ALREADY_EXISTS(HttpStatus.CONFLICT, "ROUTE_SPOT_ALREADY_EXISTS", "이미 루트에 추가된 스팟입니다."),
+    ROUTE_SPOT_ORDER_MISMATCH(HttpStatus.BAD_REQUEST, "ROUTE_SPOT_ORDER_MISMATCH", "재정렬 요청에 루트 스팟 ID가 누락되었습니다."),
+
+    // SPOT
+    SPOT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPOT_NOT_FOUND", "해당 스팟을 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
