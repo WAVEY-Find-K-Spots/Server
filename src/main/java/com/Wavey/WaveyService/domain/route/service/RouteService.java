@@ -1,75 +1,102 @@
 package com.Wavey.WaveyService.domain.route.service;
 
-import com.Wavey.WaveyService.domain.route.dto.RouteRequest;
-import com.Wavey.WaveyService.domain.route.dto.RouteResponse;
+import com.Wavey.WaveyService.domain.route.dto.request.RouteCreateRequest;
+import com.Wavey.WaveyService.domain.route.dto.request.RouteUpdateRequest;
+import com.Wavey.WaveyService.domain.route.dto.response.RouteResponse;
+import com.Wavey.WaveyService.domain.route.dto.response.RouteSummaryResponse;
 import com.Wavey.WaveyService.domain.route.entity.Route;
+import com.Wavey.WaveyService.domain.route.entity.RouteSpot;
+import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RouteService {
 
     private final RouteRepository routeRepository;
 
+    public List<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility) {
+        List<Route> routes = visibility != null
+                ? routeRepository.findByUserIdAndVisibility(userId, visibility)
+                : routeRepository.findByUserId(userId);
+
+        return routes.stream()
+                .map(RouteSummaryResponse::from)
+                .toList();
+    }
+
+    public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable) {
+        return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+                .map(RouteSummaryResponse::from);
+    }
+
+    public RouteResponse getRoute(Long routeId, Long userId) {
+        Route route = findRouteById(routeId);
+        validateAccess(route, userId);
+        return RouteResponse.from(route);
+    }
+
     @Transactional
-    public RouteResponse createRoute(RouteRequest request) {
+    public RouteResponse createRoute(RouteCreateRequest request, Long userId) {
         Route route = Route.builder()
-                .user_id(request.getUser_id())
-                .title(request.getTitle())
+                .userId(userId)
+                .name(request.getName())
                 .description(request.getDescription())
-                .progress(request.getProgress())
+                .visibility(request.getVisibility())
                 .build();
 
-        return convertToResponse(routeRepository.save(route));
-    }
+        if (request.getSpots() != null) {
+            request.getSpots().forEach(spotRequest -> {
+                RouteSpot routeSpot = RouteSpot.builder()
+                        .route(route)
+                        .spotId(spotRequest.getSpotId())
+                        .sequenceOrder(spotRequest.getSequenceOrder())
+                        .build();
+                route.getRouteSpots().add(routeSpot);
+            });
+        }
 
-    @Transactional(readOnly = true)
-    public List<RouteResponse> getAllRoutes() {
-        return routeRepository.findAll().stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public RouteResponse getRouteById(Long id) {
-        Route route = routeRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
-        return convertToResponse(route);
+        return RouteResponse.from(routeRepository.save(route));
     }
 
     @Transactional
-    public RouteResponse updateRoute(Long id, RouteRequest request) {
-        Route route = routeRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
-
-        route.update(request.getTitle(), request.getDescription(), request.getProgress());
-        return convertToResponse(route);
+    public RouteResponse updateRoute(Long routeId, RouteUpdateRequest request, Long userId) {
+        Route route = findRouteById(routeId);
+        validateOwner(route, userId);
+        route.update(request.getName(), request.getDescription(), request.getVisibility());
+        return RouteResponse.from(route);
     }
 
     @Transactional
-    public void deleteRoute(Long id) {
-        Route route = routeRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
+    public void deleteRoute(Long routeId, Long userId) {
+        Route route = findRouteById(routeId);
+        validateOwner(route, userId);
         routeRepository.delete(route);
     }
 
-    private RouteResponse convertToResponse(Route route) {
-        return RouteResponse.builder()
-                .route_id(route.getRoute_id())
-                .user_id(route.getUser_id())
-                .title(route.getTitle())
-                .description(route.getDescription())
-                .progress(route.getProgress())
-                .created_at(route.getCreated_at())
-                .updated_at(route.getUpdated_at())
-                .build();
+    public Route findRouteById(Long routeId) {
+        return routeRepository.findById(routeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
+    }
+
+    public void validateOwner(Route route, Long userId) {
+        if (!route.getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.ROUTE_FORBIDDEN);
+        }
+    }
+
+    private void validateAccess(Route route, Long userId) {
+        if (route.getVisibility() == Visibility.PRIVATE && !route.getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.ROUTE_FORBIDDEN);
+        }
     }
 }
