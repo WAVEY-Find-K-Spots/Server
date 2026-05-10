@@ -24,6 +24,11 @@ public enum ErrorCode {
     INVALID_YOUTUBE_URL(HttpStatus.BAD_REQUEST, "CONTENT_400_YOUTUBE_URL", "유효한 유튜브 URL이 아닙니다."),
     INVALID_SPOTIFY_URL(HttpStatus.BAD_REQUEST, "CONTENT_400_SPOTIFY_URL", "유효한 스포티파이 URL이 아닙니다."),
 
+    // STAMP
+    STAMP_NOT_FOUND(HttpStatus.NOT_FOUND, "STAMP_404", "해당 스탬프를 찾을 수 없습니다."),
+    STAMP_ALREADY_EXISTS(HttpStatus.CONFLICT, "STAMP_409", "이미 생성된 스탬프입니다."),
+    STAMP_INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "STAMP_400_CATEGORY", "스탬프 카테고리는 방문 또는 리뷰만 가능합니다."),
+
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "해당 유저를 찾을 수 없습니다."),
     USER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "USER_403", "해당 유저 관련 권한이 없습니다."),
