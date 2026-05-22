@@ -27,53 +27,42 @@ repositories {
 dependencies {
 	// 앱(클라이언트)과 통신하기 위한 REST API 구축 및 내장 서버(Tomcat) 실행을 담당합니다.
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-
 	// 데이터베이스(PostgreSQL, H2)와 자바 객체를 연결하여 데이터를 관리하는 ORM 도구입니다.
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
 	// 사용자 인증(로그인) 및 권한 부여, 앱 보안(JWT 등) 처리를 위한 핵심 보안 라이브러리입니다.
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-
 	// 이메일 형식이나 필수 입력값 등 데이터의 유효성을 검증하는 기능을 제공합니다.
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-
 	// Getter, Setter 등 반복되는 코드를 어노테이션으로 자동 생성해주는 라이브러리입니다.
 	compileOnly 'org.projectlombok:lombok'
-
 	// 코드 수정 시 서버를 자동으로 재시작해주는 개발 편의 기능입니다.
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
 	// 개발 및 테스트 단계에서 사용하는 가벼운 인메모리 데이터베이스입니다.
 	runtimeOnly 'com.h2database:h2'
-
 	// 실제 운영 환경에서 여행 데이터를 안정적으로 저장할 실무용 데이터베이스 드라이버입니다.
 	runtimeOnly 'org.postgresql:postgresql'
-
 	// 설정 파일(@ConfigurationProperties) 작성 시 자동 완성 기능을 지원합니다.
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
 	// 컴파일 시점에 Lombok 어노테이션을 실제 코드로 변환해줍니다.
 	annotationProcessor 'org.projectlombok:lombok'
-
 	// 단위 테스트 및 통합 테스트를 위한 스프링 부트 전용 테스트 도구 모음입니다.
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
 	// 보안이 적용된 API의 접근 제어나 로그인 기능을 테스트할 때 사용합니다.
 	testImplementation 'org.springframework.security:spring-security-test'
-
 	// JUnit 5 기반의 테스트를 실행하기 위한 런처입니다.
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
 	// Swagger (OpenAPI 3.0) - API 문서 자동화 도구
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
-
 	// 구글 소셜 로그인을 위한 OAuth2 클라이언트 라이브러리 추가
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// Google Cloud 공통 라이브러리 및 Vision API 추가
+	implementation 'com.google.cloud:spring-cloud-gcp-starter:6.0.0'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-vision:6.0.0'
 }
 
 tasks.named('test') {
