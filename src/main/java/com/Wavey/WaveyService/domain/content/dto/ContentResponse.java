@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class ContentResponse {
 
     @Schema(description = "콘텐츠 ID", example = "1")
-    private Long contentId;
+    private Long id;
 
     @Schema(description = "플랫폼", example = "YOUTUBE")
     private ContentPlatform platform;
