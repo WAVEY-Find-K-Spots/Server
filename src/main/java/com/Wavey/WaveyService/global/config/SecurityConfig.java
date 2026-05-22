@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/api/auth/login-urls",
                                 "/api/auth/refresh"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
