@@ -32,6 +32,10 @@ public class VisionService {
             AnnotateImageResponse response = this.cloudVisionTemplate.analyzeImage(
                     imageResource, Feature.Type.TEXT_DETECTION);
 
+            if (response.hasError()) {
+                throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
+            }
+
             String text = response.getFullTextAnnotation().getText();
 
             if (text.isEmpty()) {
@@ -41,8 +45,8 @@ public class VisionService {
             //todo : 한글 번역 기능 추가
             return text;
         } catch (Exception e) {
-            log.error("Vision AI OCR Error: {}", e.getMessage());
-            throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
+            log.error("Vision AI Web Detection Error", e);
+            throw mapVisionException(e);
         }
     }
 
@@ -93,7 +97,7 @@ public class VisionService {
 
             // 5. API 호출 (ImageAnnotatorClient 직접 사용)
             BatchAnnotateImagesResponse response = imageAnnotatorClient.batchAnnotateImages(List.of(requestBuilder.build()));
-            AnnotateImageResponse res = response.getResponsesList().get(0);
+            AnnotateImageResponse res = response.getResponsesList().getFirst();
 
             if (res.hasError()) {
                 log.error("Vision API Error: {}", res.getError().getMessage());
@@ -116,6 +120,10 @@ public class VisionService {
             AnnotateImageResponse response = this.cloudVisionTemplate.analyzeImage(
                     imageResource, Feature.Type.WEB_DETECTION);
 
+            if (response.hasError()) {
+                throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
+            }
+
             WebDetection webDetection = response.getWebDetection();
 
             // 1. 최적 예상 라벨 (Best Guess) 추출
@@ -126,7 +134,7 @@ public class VisionService {
             // 2. 웹 엔티티 (Entities) 추출 (최대 5개)
             List<String> webEntities = webDetection.getWebEntitiesList().stream()
                     .map(WebDetection.WebEntity::getDescription)
-                    .filter(description -> description != null && !description.isEmpty())
+                    .filter(description -> !description.isEmpty())
                     .limit(5)
                     .collect(Collectors.toList());
 
@@ -144,5 +152,15 @@ public class VisionService {
             log.error("Vision AI Web Detection Error: {}", e.getMessage());
             throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
         }
+    }
+
+    private CustomException mapVisionException(Exception e) {
+        if (e instanceof com.google.api.gax.rpc.ApiException apiException) {
+
+            if (apiException.getStatusCode().getCode() == com.google.api.gax.rpc.StatusCode.Code.RESOURCE_EXHAUSTED) {
+                return new CustomException(ErrorCode.VISION_TOKEN_EXHAUSTED);
+            }
+        }
+        return new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
     }
 }

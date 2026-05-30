@@ -82,7 +82,17 @@ public class VisionController {
     // 파일 유효성 검증 공통 메서드
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new CustomException(ErrorCode.VISION_FILE_EMPTY);
+            throw new CustomException(ErrorCode.COMMON_FILE_EMPTY);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_FILE_TYPE);
+        }
+
+        long maxBytes = 5 * 1024 * 1024; // 5MB
+        if (file.getSize() > maxBytes) {
+            throw new CustomException(ErrorCode.COMMON_FILE_SIZE_EXCEEDED);
         }
     }
 }

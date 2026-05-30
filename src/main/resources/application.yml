@@ -8,7 +8,7 @@ spring:
     gcp:
       project-id: ${GCP_PROJECT_ID}
       credentials:
-        encoded-key: ${GCP_JSON_CREDENTIALS}
+        encoded-key: ${GCP_JSON_CREDENTIALS_BASE64}
 
   # [Social Login Configuration]
   security:
