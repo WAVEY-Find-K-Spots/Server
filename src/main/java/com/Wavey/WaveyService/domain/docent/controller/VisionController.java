@@ -32,8 +32,9 @@ public class VisionController {
     @Operation(summary = "번역용 텍스트 추출", description = "이미지 내의 한국어/외국어 텍스트를 추출하여 반환합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "텍스트 추출 성공"),
-            @ApiResponse(responseCode = "400", description = "파일이 없거나 비어있음"),
-            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰입니다.")
+            @ApiResponse(responseCode = "400", description = "파일이 없거나 비어있음, 혹은 파일 형식/용량 제한 위반"),
+            @ApiResponse(responseCode = "401", description = "토큰이 제공되었으나 유효하지 않거나 만료된 경우"),
+            @ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없음")
     })
     @PreAuthorize("permitAll()")
     @PostMapping(value = "/extract-text", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -49,7 +50,9 @@ public class VisionController {
     @Operation(summary = "문화재 명칭 인식", description = "이미지 속 문화재나 랜드마크의 이름을 인식합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "문화재 정보 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰입니다.")
+            @ApiResponse(responseCode = "400", description = "파일이 없거나 비어있음, 혹은 파일 형식/용량 제한 위반"),
+            @ApiResponse(responseCode = "401", description = "토큰이 제공되었으나 유효하지 않거나 만료된 경우"),
+            @ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없음")
     })
     @PreAuthorize("permitAll()")
     @PostMapping(value = "/heritage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -67,7 +70,9 @@ public class VisionController {
     @Operation(summary = "물건/장소 웹 검색 정보", description = "이미지 분석을 통해 관련 웹 검색 키워드 및 사물 정보를 반환합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "웹 검색 정보 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰입니다.")
+            @ApiResponse(responseCode = "400", description = "파일이 없거나 비어있음, 혹은 파일 형식/용량 제한 위반"),
+            @ApiResponse(responseCode = "401", description = "토큰이 제공되었으나 유효하지 않거나 만료된 경우"),
+            @ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없음")
     })
     @PreAuthorize("permitAll()")
     @PostMapping(value = "/web-search", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -79,7 +84,6 @@ public class VisionController {
         return ResponseEntity.ok(CommonResponse.success("웹 검색 정보 조회 성공", visionService.searchWebInfo(file.getResource())));
     }
 
-    // 파일 유효성 검증 공통 메서드
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new CustomException(ErrorCode.COMMON_FILE_EMPTY);
