@@ -139,7 +139,7 @@ public class ContentService {
 
     private void validateDuplicateOnUpdate(Long contentId, ContentPlatform platform, String externalId) {
         contentRepository.findByPlatformAndExternalId(platform, externalId)
-                .filter(existing -> !existing.getContentId().equals(contentId))
+                .filter(existing -> !existing.getId().equals(contentId))
                 .ifPresent(existing -> {
                     throw new CustomException(ErrorCode.CONTENT_ALREADY_EXISTS);
                 });
@@ -266,11 +266,11 @@ public class ContentService {
     }
 
     private ContentResponse toResponse(Content content) {
-        LocalDateTime createdAt = content.getCreated_at();
-        LocalDateTime updatedAt = content.getUpdated_at();
+        LocalDateTime createdAt = content.getCreatedAt();
+        LocalDateTime updatedAt = content.getUpdatedAt();
 
         return ContentResponse.builder()
-                .contentId(content.getContentId())
+                .id(content.getId())
                 .platform(content.getPlatform())
                 .title(content.getTitle())
                 .description(content.getDescription())

@@ -10,6 +10,9 @@ public enum ErrorCode {
 
     // COMMON
     COMMON_INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "COMMON_INVALID_PARAMETER", "요청 파라미터가 올바르지 않습니다."),
+    COMMON_INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "COMMON_FILE_TYPE", "지원하지 않는 파일 형식입니다."),
+    COMMON_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMON_FILE_SIZE", "파일 용량이 제한을 초과했습니다."),
+    COMMON_FILE_EMPTY(HttpStatus.BAD_REQUEST, "COMMON_FILE", "파일이 비어있거나 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
 
     // ROUTE
@@ -37,7 +40,11 @@ public enum ErrorCode {
     // JWT
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_401", "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_402", "만료된 토큰입니다."),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_403", "접근 권한이 부족합니다.");
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_403", "접근 권한이 부족합니다."),
+
+    // VISION
+    VISION_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "VISION_500_FAILED", "AI 이미지 분석 중 오류가 발생했습니다."),
+    VISION_TOKEN_EXHAUSTED(HttpStatus.TOO_MANY_REQUESTS, "VISION_429_QUOTA", "이미지 분석 쿼터가 초과되었습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

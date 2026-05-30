@@ -3,6 +3,13 @@ spring:
   application:
     name: ${APP_NAME:WaveyService}
 
+  # [Google Cloud Vision API Configuration]
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      credentials:
+        encoded-key: ${GCP_JSON_CREDENTIALS_BASE64}
+
   # [Social Login Configuration]
   security:
     oauth2:

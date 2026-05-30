@@ -17,14 +17,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "contents")
 @Getter
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class Content extends BaseTimeEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long contentId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -42,6 +36,16 @@ public class Content extends BaseTimeEntity {
     @Column(nullable = false, length = 500)
     private String thumbnailUrl;
 
+    @Builder
+    public Content(ContentPlatform platform, String title, String description,
+                   String externalId, String thumbnailUrl) {
+        this.platform = platform;
+        this.title = title;
+        this.description = description;
+        this.externalId = externalId;
+        this.thumbnailUrl = thumbnailUrl;
+
+    }
     public void update(String title, String description, String externalId, String thumbnailUrl) {
         this.title = title;
         this.description = description;
