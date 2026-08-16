@@ -309,14 +309,11 @@
 ```json
 {
   "statusCode": 200,
-  "data": {
-    "reordered": true,
-    "spots": [
-      { "routeSpotId": 10, "spotName": "남산서울타워", "sequenceOrder": 1 },
-      { "routeSpotId": 15, "spotName": "경복궁",       "sequenceOrder": 2 },
-      { "routeSpotId": 12, "spotName": "한강공원",     "sequenceOrder": 3 }
-    ]
-  },
+  "data": [
+    { "routeSpotId": 10, "spotId": 101, "sequenceOrder": 1 },
+    { "routeSpotId": 15, "spotId": 105, "sequenceOrder": 2 },
+    { "routeSpotId": 12, "spotId": 103, "sequenceOrder": 3 }
+  ],
   "error": null
 }
 ```
