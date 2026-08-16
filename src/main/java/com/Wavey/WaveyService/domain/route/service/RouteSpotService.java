@@ -42,7 +42,7 @@ public class RouteSpotService {
     }
 
     @Transactional
-    public void reorderSpots(Long routeId, RouteSpotReorderRequest request, Long userId) {
+    public List<RouteSpotResponse> reorderSpots(Long routeId, RouteSpotReorderRequest request, Long userId) {
         Route route = routeService.findRouteById(routeId);
         routeService.validateOwner(route, userId);
 
@@ -62,6 +62,10 @@ public class RouteSpotService {
             }
             routeSpot.updateSequence(item.getSequenceOrder());
         });
+
+        return routeSpotRepository.findByRouteIdOrderBySequenceOrderAsc(routeId).stream()
+                .map(RouteSpotResponse::from)
+                .toList();
     }
 
     @Transactional
