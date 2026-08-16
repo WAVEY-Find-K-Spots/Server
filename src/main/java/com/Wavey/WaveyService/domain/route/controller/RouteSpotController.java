@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -58,14 +59,14 @@ public class RouteSpotController {
             @ApiResponse(responseCode = "404", description = "루트를 찾을 수 없음")
     })
     @PatchMapping("/reorder")
-    public ResponseEntity<CommonResponse<Void>> reorderSpots(
+    public ResponseEntity<CommonResponse<List<RouteSpotResponse>>> reorderSpots(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteSpotReorderRequest request
     ) {
         Long userId = extractUserId(userDetails);
-        routeSpotService.reorderSpots(routeId, request, userId);
-        return ResponseEntity.ok(CommonResponse.success("스팟 순서 변경 성공", null));
+        List<RouteSpotResponse> response = routeSpotService.reorderSpots(routeId, request, userId);
+        return ResponseEntity.ok(CommonResponse.success("스팟 순서 변경 성공", response));
     }
 
     @Operation(summary = "루트에서 스팟 제거", description = "루트에서 특정 스팟을 제거합니다. 스팟 자체는 삭제되지 않습니다.")
