@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.route.entity;
 
-import com.Wavey.WaveyService.global.common.BaseTimeEntity;
+import com.Wavey.WaveyService.global.common.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Route extends BaseTimeEntity {
+public class Route extends BaseEntity {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -34,9 +34,10 @@ public class Route extends BaseTimeEntity {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('PRIVATE', 'PUBLIC')")
+    @Column(name = "visibility", length = 20, nullable = false)
     private Visibility visibility;
 
+    @Builder.Default
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
     private List<RouteSpot> routeSpots = new ArrayList<>();
