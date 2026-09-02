@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.route.entity;
 
-import com.Wavey.WaveyService.global.common.BaseTimeEntity;
+import com.Wavey.WaveyService.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RouteSpot extends BaseTimeEntity {
+public class RouteSpot extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id")

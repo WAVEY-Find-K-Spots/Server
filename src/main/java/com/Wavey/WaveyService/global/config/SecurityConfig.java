@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import com.Wavey.WaveyService.global.response.CommonResponse;
+import com.Wavey.WaveyService.global.response.ApiResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,8 +51,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**",
                                 "/swagger-ui.html", "/swagger-resources/**", "/webjars/**",
                                 "/h2-console/**", "/",
-                                "/api/auth/login-urls",
-                                "/api/auth/refresh"
+                                "/api/v1/auth/login-urls",
+                                "/api/v1/auth/refresh"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -88,12 +88,12 @@ public class SecurityConfig {
                 .message(errorCode.getMessage())
                 .build();
 
-        CommonResponse<Void> commonResponse = CommonResponse.error(
+        ApiResponse<Void> apiResponse = ApiResponse.error(
                 errorCode.getHttpStatus().value(),
                 errorDetail
         );
 
-        String json = objectMapper.writeValueAsString(commonResponse);
+        String json = objectMapper.writeValueAsString(apiResponse);
         response.getWriter().write(json);
     }
 

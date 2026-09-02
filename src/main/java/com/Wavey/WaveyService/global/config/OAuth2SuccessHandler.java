@@ -7,6 +7,7 @@ import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -15,11 +16,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
 
@@ -34,24 +34,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         if (providerId == null || provider == null) {
             throw new IllegalStateException("Missing required OAuth2 attributes: sub or provider");
         }
-        // 1. 액세스 및 리프레시 토큰 생성
+
         String accessToken = tokenProvider.createAccessToken(provider, providerId);
         String refreshToken = tokenProvider.createRefreshToken(provider, providerId);
 
-        // 2. DB의 유저 엔티티에 리프레시 토큰 업데이트 (검증용)
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         user.updateRefreshToken(refreshToken);
-/*
-        // 3. 프론트엔드로 두 토큰을 모두 전달하며 리다이렉트
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/swagger-ui/index.html")
-                .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
-                .build().toUriString();
 
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
-    */
-// 3. 테스트 최적화용 HTML 응답
         response.setContentType("text/html;charset=UTF-8");
         response.getWriter().write(String.format(
                 "<html><head><style>" +
@@ -66,27 +56,26 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         "</style></head><body>" +
                         "<div class='card'>" +
                         "<h2>WAVEY API 인증 테스트 도구</h2>" +
-                        "<p><strong>사용자:</strong> %s (권한: %s)</p>" +
+                        "<p><strong>사용자</strong> %s (권한: %s)</p>" +
                         "<hr>" +
-                        "<h3>1️⃣ Access Token (Swagger Authorize용)</h3>" +
+                        "<h3>1. Access Token (Swagger Authorize 입력)</h3>" +
                         "<textarea id='access'>%s</textarea>" +
                         "<button class='btn btn-copy' onclick=\"copyText('access')\">Access Token 복사</button>" +
-                        "<h3>2️⃣ Refresh Token (재발급 API 테스트용 Body)</h3>" +
-                        "<p>아래 내용을 그대로 <code>POST /api/auth/refresh</code>의 <b>Request Body</b>에 붙여넣으세요.</p>" +
+                        "<h3>2. Refresh Token (재발급 API 테스트용 Body)</h3>" +
+                        "<p>아래 내용을 그대로 <code>POST /api/v1/auth/refresh</code>의 <b>Request Body</b>에 붙여넣으세요.</p>" +
                         "<textarea id='refresh-json'>{\n  \"refreshToken\": \"%s\"\n}</textarea>" +
                         "<button class='btn btn-copy' onclick=\"copyText('refresh-json')\">JSON Body 복사</button>" +
                         "<br><br>" +
                         "<a href='/swagger-ui/index.html' class='btn'>Swagger로 돌아가기</a>" +
                         "</div>" +
                         "<script>" +
-                        "function copyText(id) { var copyText = document.getElementById(id); copyText.select(); document.execCommand('copy'); alert('복사되었습니다!'); }" +
+                        "function copyText(id) { var copyText = document.getElementById(id); copyText.select(); document.execCommand('copy'); alert('복사되었습니다.'); }" +
                         "</script>" +
                         "</body></html>",
                 HtmlUtils.htmlEscape(user.getName()),
-                user.getRole().name(),
+                HtmlUtils.htmlEscape(user.getRole().name()),
                 HtmlUtils.htmlEscape(accessToken),
                 HtmlUtils.htmlEscape(refreshToken)
         ));
     }
-
 }

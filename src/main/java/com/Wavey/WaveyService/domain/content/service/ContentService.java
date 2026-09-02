@@ -266,8 +266,8 @@ public class ContentService {
     }
 
     private ContentResponse toResponse(Content content) {
-        LocalDateTime createdAt = content.getCreated_at();
-        LocalDateTime updatedAt = content.getUpdated_at();
+        LocalDateTime createdAt = content.getCreatedAt();
+        LocalDateTime updatedAt = content.getUpdatedAt();
 
         return ContentResponse.builder()
                 .contentId(content.getContentId())

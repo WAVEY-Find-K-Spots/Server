@@ -1,0 +1,42 @@
+key: dGVzdC1qd3Qtc2VjcmV0LXRlc3Qtand0LXNlY3JldC10ZXN0LWp3dC1zZWNyZXQ=
+a_exp: 3600000
+r_exp: 1209600000
+GOOGLE_CLIENT_ID: test-google-client-id
+GOOGLE_CLIENT_SECRET: test-google-client-secret
+ADMIN_EMAILS: test@example.com
+
+jwt:
+  secret: dGVzdC1qd3Qtc2VjcmV0LXRlc3Qtand0LXNlY3JldC10ZXN0LWp3dC1zZWNyZXQ=
+  access-token-expiration: 3600000
+  refresh-token-expiration: 1209600000
+
+auth:
+  server-url: http://localhost:8080
+  base-url: /oauth2/authorization/
+  google-path: google
+  apple-path: apple
+  admin-white-list: test@example.com
+
+external-api:
+  service-key: test-public-data-service-key
+  tour:
+    base-url: https://apis.data.go.kr/B551011/KorService2
+  media-location:
+    base-url: https://api.odcloud.kr/api/15111405/v1/uddi:d8741b9c-f484-4ea8-8f54-bd21ab62de14
+
+spot:
+  sync:
+    scheduler:
+      enabled: false
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            scope:
+              - profile
+              - email

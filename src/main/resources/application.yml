@@ -3,6 +3,9 @@ spring:
   application:
     name: ${APP_NAME:WaveyService}
 
+  config:
+    import: optional:file:.env[.properties]
+
   # [Social Login Configuration]
   security:
     oauth2:
@@ -19,17 +22,16 @@ spring:
 
   # [Database Configuration]
   datasource:
-    # --- 방법 A: H2 Database (임시 신기능 테스트용) ---
-    url: ${H2_URL:jdbc:h2:mem:testdb}
-    username: ${H2_USERNAME:sa}
-    password: ${H2_PASSWORD:}
-    driver-class-name: org.h2.Driver
+    url: ${PG_URL:jdbc:postgresql://localhost:5432/wavey_db}
+    username: ${PG_USERNAME:postgres}
+    password: ${PG_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
 
-    # --- 방법 B: PostgreSQL (로컬 관리용 - 사용 시 위 H2 설정을 주석 처리하세요) ---
-    # url: ${PG_URL:jdbc:postgresql://localhost:5432/wavey_db}
-    # username: ${PG_USERNAME:postgres}
-    # password: ${PG_PASSWORD:password}
-    # driver-class-name: org.postgresql.Driver
+#    # H2 Database (임시 신기능 테스트용) ---
+#    url: ${H2_URL:jdbc:h2:mem:testdb}
+#    username: ${H2_USERNAME:sa}
+#    password: ${H2_PASSWORD:}
+#    driver-class-name: org.h2.Driver
 
   # [H2 Console Settings]
   h2:
@@ -67,6 +69,22 @@ jwt:
   secret: ${key}
   access-token-expiration: ${a_exp}
   refresh-token-expiration: ${r_exp}
+
+external-api:
+  service-key: ${PUBLIC_DATA_SERVICE_KEY}
+  tour:
+    base-url: https://apis.data.go.kr/B551011/KorService2
+  media-location:
+    base-url: https://api.odcloud.kr/api/15111405/v1/uddi:d8741b9c-f484-4ea8-8f54-bd21ab62de14
+
+spot:
+  sync:
+    scheduler:
+      enabled: ${SPOT_SYNC_SCHEDULER_ENABLED:false}
+      media-location-cron: ${SPOT_SYNC_MEDIA_LOCATION_CRON:0 0 3 * * *}
+      thumbnail-cron: ${SPOT_SYNC_THUMBNAIL_CRON:0 0 4 * * *}
+      media-location-per-page: ${SPOT_SYNC_MEDIA_LOCATION_PER_PAGE:300}
+      thumbnail-limit: ${SPOT_SYNC_THUMBNAIL_LIMIT:50}
 
 # [Logging Configuration]
 logging:
