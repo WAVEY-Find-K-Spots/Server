@@ -74,6 +74,10 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// Google Cloud 공통 라이브러리 및 Vision API
+	implementation 'com.google.cloud:spring-cloud-gcp-starter:6.0.0'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-vision:6.0.0'
 }
 
 tasks.named('test') {

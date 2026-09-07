@@ -6,6 +6,13 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
+  # [Google Cloud API Configuration]
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID:}
+      credentials:
+        encoded-key: ${GCP_JSON_CREDENTIALS_BASE64:}
+
   # [Social Login Configuration]
   security:
     oauth2:
@@ -86,6 +93,20 @@ spot:
       media-location-per-page: ${SPOT_SYNC_MEDIA_LOCATION_PER_PAGE:300}
       thumbnail-limit: ${SPOT_SYNC_THUMBNAIL_LIMIT:50}
 
+# [OCR Translation Configuration]
+translation:
+  dictionary:
+    dataset-path: ${TRANSLATION_DICTIONARY_DATASET_PATH:classpath:datasets/translation-terms.json}
+  google:
+    base-url: ${GOOGLE_TRANSLATION_BASE_URL:https://translation.googleapis.com}
+    location: ${GOOGLE_TRANSLATION_LOCATION:us-central1}
+    glossary-id: ${GOOGLE_TRANSLATION_GLOSSARY_ID:}
+
+heritage:
+  dataset-path: ${HERITAGE_DATASET_PATH:classpath:datasets/heritage-list.json}
+  google-geocoding:
+    base-url: ${GOOGLE_GEOCODING_BASE_URL:https://maps.googleapis.com}
+    api-key: ${GOOGLE_GEOCODING_API_KEY:}
 # [Logging Configuration]
 logging:
   level:
