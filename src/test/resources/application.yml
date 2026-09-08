@@ -23,6 +23,14 @@ external-api:
     base-url: https://apis.data.go.kr/B551011/KorService2
   media-location:
     base-url: https://api.odcloud.kr/api/15111405/v1/uddi:d8741b9c-f484-4ea8-8f54-bd21ab62de14
+  youtube:
+    api-key: test-youtube-api-key
+    base-url: https://www.googleapis.com/youtube/v3
+  spotify:
+    client-id: test-spotify-client-id
+    client-secret: test-spotify-client-secret
+    token-url: https://accounts.spotify.com/api/token
+    base-url: https://api.spotify.com/v1
 
 tmap:
   base-url: https://apis.openapi.sk.com

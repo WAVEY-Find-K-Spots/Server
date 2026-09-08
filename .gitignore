@@ -42,6 +42,8 @@ out/
 # 루트 디렉토리의 환경 변수 파일 차단
 .env
 .env.*
+sql/
+docker-compose.yml
 
 # 리소스 폴더 하위의 모든 설정 파일 차단 (yml, properties 등)
 src/main/resources/**/*

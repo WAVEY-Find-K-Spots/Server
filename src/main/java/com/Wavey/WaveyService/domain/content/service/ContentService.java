@@ -4,16 +4,17 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.ContentPlatform;
+import com.Wavey.WaveyService.domain.content.external.client.SpotifyApiClient;
+import com.Wavey.WaveyService.domain.content.external.client.YoutubeDataClient;
+import com.Wavey.WaveyService.domain.content.external.dto.SpotifyTrackDetails;
+import com.Wavey.WaveyService.domain.content.external.dto.YoutubeVideoDetails;
 import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,19 +35,21 @@ public class ContentService {
     private static final String YOUTUBE_THUMBNAIL_TEMPLATE = "https://i.ytimg.com/vi/%s/hqdefault.jpg";
 
     private final ContentRepository contentRepository;
-    private final RestClient restClient = RestClient.builder().build();
+    private final YoutubeDataClient youtubeDataClient;
+    private final SpotifyApiClient spotifyApiClient;
 
     @Transactional
     public ContentResponse createYoutube(ContentRequest request) {
         String videoId = extractYoutubeVideoId(request.getUrl());
         validateDuplicate(ContentPlatform.YOUTUBE, videoId);
+        YoutubeVideoDetails details = youtubeDataClient.fetchVideo(videoId);
 
         Content content = Content.builder()
                 .platform(ContentPlatform.YOUTUBE)
-                .title(request.getTitle().trim())
-                .description(normalizeDescription(request.getDescription()))
+                .title(resolveYoutubeTitle(request.getTitle(), details))
+                .description(resolveYoutubeDescription(request.getDescription(), details))
                 .externalId(videoId)
-                .thumbnailUrl(resolveYoutubeThumbnailUrl(videoId))
+                .thumbnailUrl(resolveYoutubeThumbnailUrl(videoId, details))
                 .build();
 
         return toResponse(contentRepository.save(content));
@@ -65,11 +68,12 @@ public class ContentService {
         Content content = getContent(contentId, ContentPlatform.YOUTUBE);
         String videoId = extractYoutubeVideoId(request.getUrl());
         validateDuplicateOnUpdate(contentId, ContentPlatform.YOUTUBE, videoId);
+        YoutubeVideoDetails details = youtubeDataClient.fetchVideo(videoId);
         content.update(
-                request.getTitle().trim(),
-                normalizeDescription(request.getDescription()),
+                resolveYoutubeTitle(request.getTitle(), details),
+                resolveYoutubeDescription(request.getDescription(), details),
                 videoId,
-                resolveYoutubeThumbnailUrl(videoId)
+                resolveYoutubeThumbnailUrl(videoId, details)
         );
         return toResponse(content);
     }
@@ -83,13 +87,14 @@ public class ContentService {
     public ContentResponse createSpotify(ContentRequest request) {
         String songId = extractSpotifySongId(request.getUrl());
         validateDuplicate(ContentPlatform.SPOTIFY, songId);
+        SpotifyTrackDetails details = spotifyApiClient.fetchTrack(songId);
 
         Content content = Content.builder()
                 .platform(ContentPlatform.SPOTIFY)
-                .title(request.getTitle().trim())
-                .description(normalizeDescription(request.getDescription()))
+                .title(resolveSpotifyTitle(request.getTitle(), details))
+                .description(resolveSpotifyDescription(request.getDescription(), details))
                 .externalId(songId)
-                .thumbnailUrl(resolveSpotifyThumbnailUrl(request.getUrl()))
+                .thumbnailUrl(resolveSpotifyThumbnailUrl(details))
                 .build();
 
         return toResponse(contentRepository.save(content));
@@ -108,11 +113,12 @@ public class ContentService {
         Content content = getContent(contentId, ContentPlatform.SPOTIFY);
         String songId = extractSpotifySongId(request.getUrl());
         validateDuplicateOnUpdate(contentId, ContentPlatform.SPOTIFY, songId);
+        SpotifyTrackDetails details = spotifyApiClient.fetchTrack(songId);
         content.update(
-                request.getTitle().trim(),
-                normalizeDescription(request.getDescription()),
+                resolveSpotifyTitle(request.getTitle(), details),
+                resolveSpotifyDescription(request.getDescription(), details),
                 songId,
-                resolveSpotifyThumbnailUrl(request.getUrl())
+                resolveSpotifyThumbnailUrl(details)
         );
         return toResponse(content);
     }
@@ -149,36 +155,63 @@ public class ContentService {
         return keyword == null ? "" : keyword.trim();
     }
 
-    private String normalizeDescription(String description) {
-        if (!StringUtils.hasText(description)) {
-            return null;
+    private String resolveYoutubeTitle(String requestedTitle, YoutubeVideoDetails details) {
+        if (StringUtils.hasText(requestedTitle)) {
+            return requestedTitle.trim();
         }
-        return description.trim();
+        if (details != null && StringUtils.hasText(details.title())) {
+            return details.title().trim();
+        }
+        throw new CustomException(ErrorCode.YOUTUBE_VIDEO_NOT_FOUND);
     }
 
-    private String resolveYoutubeThumbnailUrl(String videoId) {
+    private String resolveYoutubeDescription(String requestedDescription, YoutubeVideoDetails details) {
+        if (StringUtils.hasText(requestedDescription)) {
+            return requestedDescription.trim();
+        }
+        if (details != null && StringUtils.hasText(details.description())) {
+            return details.description().trim();
+        }
+        return null;
+    }
+
+    private String resolveYoutubeThumbnailUrl(String videoId, YoutubeVideoDetails details) {
+        if (details != null && StringUtils.hasText(details.thumbnailUrl())) {
+            return details.thumbnailUrl().trim();
+        }
         return YOUTUBE_THUMBNAIL_TEMPLATE.formatted(videoId);
     }
 
-    private String resolveSpotifyThumbnailUrl(String url) {
-        try {
-            SpotifyOEmbedResponse response = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .scheme("https")
-                            .host("open.spotify.com")
-                            .path("/oembed")
-                            .queryParam("url", url)
-                            .build())
-                    .retrieve()
-                    .body(SpotifyOEmbedResponse.class);
-
-            if (response != null && StringUtils.hasText(response.thumbnailUrl())) {
-                return response.thumbnailUrl().trim();
-            }
-        } catch (RestClientException e) {
-            throw new CustomException(ErrorCode.CONTENT_THUMBNAIL_RESOLVE_FAILED);
+    private String resolveSpotifyTitle(String requestedTitle, SpotifyTrackDetails details) {
+        if (StringUtils.hasText(requestedTitle)) {
+            return requestedTitle.trim();
         }
+        if (details != null && StringUtils.hasText(details.title())) {
+            return details.title().trim();
+        }
+        throw new CustomException(ErrorCode.SPOTIFY_TRACK_NOT_FOUND);
+    }
 
+    private String resolveSpotifyDescription(String requestedDescription, SpotifyTrackDetails details) {
+        if (StringUtils.hasText(requestedDescription)) {
+            return requestedDescription.trim();
+        }
+        if (details == null) {
+            return null;
+        }
+        if (StringUtils.hasText(details.artistName()) && StringUtils.hasText(details.albumName())) {
+            return details.artistName().trim() + " · " + details.albumName().trim();
+        }
+        if (StringUtils.hasText(details.artistName())) {
+            return details.artistName().trim();
+        }
+        return null;
+    }
+
+    private String resolveSpotifyThumbnailUrl(SpotifyTrackDetails details) {
+        if (details != null && StringUtils.hasText(details.thumbnailUrl())) {
+            return details.thumbnailUrl().trim();
+        }
         throw new CustomException(ErrorCode.CONTENT_THUMBNAIL_RESOLVE_FAILED);
     }
 
@@ -279,8 +312,5 @@ public class ContentService {
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();
-    }
-
-    private record SpotifyOEmbedResponse(@JsonProperty("thumbnail_url") String thumbnailUrl) {
     }
 }

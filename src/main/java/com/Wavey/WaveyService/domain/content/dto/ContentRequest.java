@@ -15,12 +15,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ContentRequest {
 
-    @NotBlank(message = "제목은 필수입니다.")
-    @Schema(description = "콘텐츠 제목", example = "BTS - Dynamite")
+    @Schema(description = "콘텐츠 제목. 비우면 유튜브/스포티파이 API 제목을 사용합니다.", example = "BTS - Dynamite")
     private String title;
 
     @NotBlank(message = "URL은 필수입니다.")
-    @Schema(description = "유튜브 또는 스포티파이 URL", example = "https://www.youtube.com/watch?v=gdZLi9oWNZg")
+    @Schema(description = "유튜브 또는 스포티파이 URL", example = "https://www.youtube.com/watch?v=GIAnKeKXzGU")
     private String url;
 
     @Schema(description = "콘텐츠 설명", example = "플레이리스트에 저장하고 싶은 콘텐츠")

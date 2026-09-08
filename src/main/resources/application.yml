@@ -88,6 +88,24 @@ external-api:
     base-url: https://apis.data.go.kr/B551011/KorService2
   media-location:
     base-url: https://api.odcloud.kr/api/15111405/v1/uddi:d8741b9c-f484-4ea8-8f54-bd21ab62de14
+  youtube:
+    api-key: ${YOUTUBE_API_KEY:}
+    base-url: https://www.googleapis.com/youtube/v3
+  spotify:
+    client-id: ${SPOTIFY_CLIENT_ID:}
+    client-secret: ${SPOTIFY_CLIENT_SECRET:}
+    token-url: https://accounts.spotify.com/api/token
+    base-url: https://api.spotify.com/v1
+
+# 작품 자동 수집 컷오프. 검색 클라이언트가 아니라 정책이 이 값을 읽는다.
+media-collect:
+  youtube:
+    max-duration-sec: 1200
+    max-keep: 8
+  spotify:
+    max-keep: 15
+    max-kpop-keep: 3
+    max-duration-ms: 2400000
 
 tmap:
   base-url: ${TMAP_BASE_URL:https://apis.openapi.sk.com}

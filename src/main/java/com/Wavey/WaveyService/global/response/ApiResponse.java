@@ -23,7 +23,7 @@ public class ApiResponse<T> {
     @Schema(description = "응답 데이터")
     private T data;
 
-    @Schema(description = "에러 정보")
+    @Schema(description = "에러 정보", nullable = true)
     private ErrorDetail error;
 
     public static <T> ApiResponse<T> success(String message, T data) {
