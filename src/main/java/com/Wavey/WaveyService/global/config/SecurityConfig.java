@@ -7,11 +7,13 @@ import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.Wavey.WaveyService.global.response.ApiResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletResponse;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -41,60 +43,78 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**",
-                                "/swagger-ui.html", "/swagger-resources/**", "/webjars/**",
-                                "/h2-console/**", "/",
-                                "/api/v1/auth/login-urls",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/spots/sync/**"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/routes/public").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
-                            if (errorCode == null) {
-                                errorCode = ErrorCode.INVALID_TOKEN;
-                            }
-                            setErrorResponse(response, errorCode);
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            setErrorResponse(response, ErrorCode.ACCESS_DENIED);
-                        })
-                )
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler)
-                )
-                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository),
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/v3/api-docs/**",
+                                                "/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/swagger-resources/**",
+                                                "/webjars/**",
+                                                "/h2-console/**",
+                                                "/",
+                                                "/api/v1/auth/login-urls",
+                                                "/api/v1/auth/refresh")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .exceptionHandling(
+                        exception ->
+                                exception
+                                        .authenticationEntryPoint(
+                                                (request, response, authException) -> {
+                                                    ErrorCode errorCode =
+                                                            (ErrorCode)
+                                                                    request.getAttribute(
+                                                                            "exception");
+                                                    if (errorCode == null) {
+                                                        errorCode = ErrorCode.INVALID_TOKEN;
+                                                    }
+                                                    setErrorResponse(response, errorCode);
+                                                })
+                                        .accessDeniedHandler(
+                                                (request, response, accessDeniedException) -> {
+                                                    setErrorResponse(
+                                                            response, ErrorCode.ACCESS_DENIED);
+                                                }))
+                .headers(
+                        headers ->
+                                headers.frameOptions(
+                                        HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                .oauth2Login(
+                        oauth ->
+                                oauth.userInfoEndpoint(
+                                                userInfo ->
+                                                        userInfo.userService(
+                                                                customOAuth2UserService))
+                                        .successHandler(oAuth2SuccessHandler))
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(tokenProvider, userRepository),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    private void setErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+    private void setErrorResponse(HttpServletResponse response, ErrorCode errorCode)
+            throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(errorCode.getHttpStatus().value());
 
-        ErrorDetail errorDetail = ErrorDetail.builder()
-                .code(errorCode.getCode())
-                .message(errorCode.getMessage())
-                .build();
+        ErrorDetail errorDetail =
+                ErrorDetail.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build();
 
-        ApiResponse<Void> apiResponse = ApiResponse.error(
-                errorCode.getHttpStatus().value(),
-                errorDetail
-        );
+        ApiResponse<Void> apiResponse =
+                ApiResponse.error(errorCode.getHttpStatus().value(), errorDetail);
 
         String json = objectMapper.writeValueAsString(apiResponse);
         response.getWriter().write(json);
@@ -104,9 +124,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("X-Total-Count", "X-Total-Pages"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
