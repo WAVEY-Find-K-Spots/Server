@@ -2,10 +2,15 @@ package com.Wavey.WaveyService.domain.route.dto.response;
 
 import com.Wavey.WaveyService.domain.route.entity.Route;
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
+import com.Wavey.WaveyService.domain.route.service.RoutePlanningService;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Schema(description = "루트 목록 응답")
 @Getter
@@ -14,6 +19,9 @@ public class RouteSummaryResponse {
 
     @Schema(description = "루트 ID", example = "1")
     private Long routeId;
+
+    @Setter
+    private RoutePlanningService.Plan plan;
 
     @Schema(description = "루트 이름", example = "서울 야경 루트")
     private String name;

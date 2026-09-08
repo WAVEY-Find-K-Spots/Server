@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.route.entity;
 
 import com.Wavey.WaveyService.global.common.BaseEntity;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,12 +10,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "routes")
@@ -41,6 +44,15 @@ public class Route extends BaseEntity {
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
     private List<RouteSpot> routeSpots = new ArrayList<>();
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RouteLeg.TravelMode travelMode = RouteLeg.TravelMode.TRANSIT;
+
+    public void changeTravelMode(RouteLeg.TravelMode mode) {
+        this.travelMode = mode;
+    }
 
     public void update(String name, String description, Visibility visibility) {
         this.name = name;

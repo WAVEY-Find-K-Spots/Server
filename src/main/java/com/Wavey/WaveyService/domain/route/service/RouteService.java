@@ -8,19 +8,20 @@ import com.Wavey.WaveyService.domain.route.entity.Route;
 import com.Wavey.WaveyService.domain.route.entity.RouteSpot;
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
-import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,50 +29,78 @@ import org.springframework.stereotype.Service;
 public class RouteService {
 
     private final RouteRepository routeRepository;
-    private final SpotRepository spotRepository;
+    private final RoutePlanningService planning;
+    private final SpotRepository spots;
 
     public List<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility) {
-        List<Route> routes = visibility != null
-                ? routeRepository.findByUserIdAndVisibility(userId, visibility)
-                : routeRepository.findByUserId(userId);
+        List<Route> routes =
+                visibility != null
+                        ? routeRepository.findByUserIdAndVisibility(userId, visibility)
+                        : routeRepository.findByUserId(userId);
 
         return routes.stream()
-                .map(RouteSummaryResponse::from)
+                .sorted(
+                        Comparator.comparing(Route::getCreatedAt)
+                                .reversed()
+                                .thenComparing(Route::getId))
+                .map(
+                        r -> {
+                            var response = RouteSummaryResponse.from(r);
+                            response.setPlan(planning.plan(r, userId, r.getTravelMode(), null));
+                            return response;
+                        })
                 .toList();
     }
 
     public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable) {
-        return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+        return routeRepository
+                .findByVisibility(Visibility.PUBLIC, pageable)
                 .map(RouteSummaryResponse::from);
     }
 
     public RouteResponse getRoute(Long routeId, Long userId) {
         Route route = findRouteById(routeId);
         validateAccess(route, userId);
-        return buildRouteResponse(route);
+        var response = RouteResponse.from(route);
+        response.setPlan(planning.plan(route, userId, route.getTravelMode(), null));
+        return response;
     }
 
     @Transactional
     public RouteResponse createRoute(RouteCreateRequest request, Long userId) {
-        Route route = Route.builder()
-                .userId(userId)
-                .name(request.getName())
-                .description(request.getDescription())
-                .visibility(request.getVisibility())
-                .build();
+        Route route =
+                Route.builder()
+                        .userId(userId)
+                        .name(request.getName())
+                        .description(request.getDescription())
+                        .visibility(request.getVisibility())
+                        .build();
 
         if (request.getSpots() != null) {
-            request.getSpots().forEach(spotRequest -> {
-                RouteSpot routeSpot = RouteSpot.builder()
-                        .route(route)
-                        .spotId(spotRequest.getSpotId())
-                        .sequenceOrder(spotRequest.getSequenceOrder())
-                        .build();
-                route.getRouteSpots().add(routeSpot);
-            });
+            var ids = new HashSet<Long>();
+            var orders = new HashSet<Integer>();
+            for (var item : request.getSpots()) {
+                if (!spots.existsById(item.getSpotId()))
+                    throw new CustomException(ErrorCode.SPOT_NOT_FOUND);
+                if (!ids.add(item.getSpotId()))
+                    throw new CustomException(ErrorCode.ROUTE_SPOT_ALREADY_EXISTS);
+                if (!orders.add(item.getSequenceOrder()))
+                    throw new CustomException(ErrorCode.ROUTE_SPOT_ORDER_MISMATCH);
+            }
+            request.getSpots()
+                    .forEach(
+                            spotRequest -> {
+                                RouteSpot routeSpot =
+                                        RouteSpot.builder()
+                                                .route(route)
+                                                .spotId(spotRequest.getSpotId())
+                                                .sequenceOrder(spotRequest.getSequenceOrder())
+                                                .build();
+                                route.getRouteSpots().add(routeSpot);
+                            });
         }
 
-        return buildRouteResponse(routeRepository.save(route));
+        return RouteResponse.from(routeRepository.save(route));
     }
 
     @Transactional
@@ -79,7 +108,7 @@ public class RouteService {
         Route route = findRouteById(routeId);
         validateOwner(route, userId);
         route.update(request.getName(), request.getDescription(), request.getVisibility());
-        return buildRouteResponse(route);
+        return RouteResponse.from(route);
     }
 
     @Transactional
@@ -89,21 +118,9 @@ public class RouteService {
         routeRepository.delete(route);
     }
 
-    private RouteResponse buildRouteResponse(Route route) {
-        List<Long> spotIds = route.getRouteSpots().stream()
-                .map(RouteSpot::getSpotId)
-                .toList();
-
-        Map<Long, Spot> spotMap = spotIds.isEmpty()
-                ? Map.of()
-                : spotRepository.findAllById(spotIds).stream()
-                        .collect(Collectors.toMap(Spot::getId, Function.identity()));
-
-        return RouteResponse.of(route, spotMap);
-    }
-
     public Route findRouteById(Long routeId) {
-        return routeRepository.findById(routeId)
+        return routeRepository
+                .findById(routeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROUTE_NOT_FOUND));
     }
 

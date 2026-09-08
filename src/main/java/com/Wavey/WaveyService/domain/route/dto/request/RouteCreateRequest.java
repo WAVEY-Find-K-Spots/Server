@@ -1,15 +1,20 @@
 package com.Wavey.WaveyService.domain.route.dto.request;
 
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.ArrayList;
-import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Schema(description = "루트 생성 요청")
 @Getter
@@ -17,7 +22,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RouteCreateRequest {
 
-    @Schema(description = "루트 이름", example = "서울 야경 루트", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+            description = "루트 이름",
+            example = "서울 야경 루트",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank
     @Size(max = 50)
     private String name;
@@ -31,5 +39,6 @@ public class RouteCreateRequest {
     private Visibility visibility;
 
     @Schema(description = "초기 스팟 목록 (생략 시 빈 루트 생성)")
+    @Valid
     private List<RouteSpotRequest> spots = new ArrayList<>();
 }
