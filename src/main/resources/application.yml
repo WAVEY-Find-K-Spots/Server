@@ -80,6 +80,11 @@ external-api:
     api-key: ${YOUTUBE_API_KEY:}
     base-url: https://www.googleapis.com/youtube/v3
 
+tmap:
+  base-url: ${TMAP_BASE_URL:https://apis.openapi.sk.com}
+  app-key: ${TMAP_APP_KEY:}
+  directions-cache-ttl-seconds: ${TMAP_DIRECTIONS_CACHE_TTL_SECONDS:300}
+
 spot:
   sync:
     scheduler:

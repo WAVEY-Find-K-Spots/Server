@@ -27,6 +27,11 @@ external-api:
     api-key: test-youtube-api-key
     base-url: https://www.googleapis.com/youtube/v3
 
+tmap:
+  base-url: https://apis.openapi.sk.com
+  app-key: test-tmap-app-key
+  directions-cache-ttl-seconds: 300
+
 spot:
   sync:
     scheduler:
