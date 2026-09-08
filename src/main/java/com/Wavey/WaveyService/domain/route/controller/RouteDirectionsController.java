@@ -41,16 +41,8 @@ public class RouteDirectionsController {
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteDirectionsRequest request
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.ok(
                 ApiResponse.success("경로 계산 성공", routeDirectionsService.getDirections(routeId, request, userId)));
-    }
-
-    // TODO: 로컬 개발용 — 인증 복구 시 null 분기를 지우고 user.getId()만 사용
-    private Long extractUserId(User user) {
-        if (user == null) {
-            return 1L;
-        }
-        return user.getId();
     }
 }

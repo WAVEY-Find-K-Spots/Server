@@ -51,7 +51,7 @@ public class RouteController {
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "공개 여부 필터 (PUBLIC / PRIVATE)") @RequestParam(required = false) Visibility visibility
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("내 루트 목록 조회 성공", routeService.getMyRoutes(userId, visibility)));
     }
 
@@ -77,7 +77,7 @@ public class RouteController {
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("루트 상세 조회 성공", routeService.getRoute(routeId, userId)));
     }
 
@@ -92,7 +92,7 @@ public class RouteController {
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @RequestBody @Valid RouteCreateRequest request
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(success(HttpStatus.CREATED.value(), "루트 생성 성공", routeService.createRoute(request, userId)));
     }
@@ -109,7 +109,7 @@ public class RouteController {
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteUpdateRequest request
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("루트 수정 성공", routeService.updateRoute(routeId, request, userId)));
     }
 
@@ -124,16 +124,8 @@ public class RouteController {
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         routeService.deleteRoute(routeId, userId);
         return ResponseEntity.ok(success("루트 삭제 성공", null));
-    }
-
-    // TODO: 로컬 개발용 — 인증 복구 시 null 분기를 지우고 user.getId()만 사용
-    private Long extractUserId(User user) {
-        if (user == null) {
-            return 1L;
-        }
-        return user.getId();
     }
 }

@@ -5,6 +5,7 @@ public record YoutubeVideoDetails(
         String title,
         String description,
         String thumbnailUrl,
-        String channelTitle
+        String channelTitle,
+        Integer durationSec
 ) {
 }

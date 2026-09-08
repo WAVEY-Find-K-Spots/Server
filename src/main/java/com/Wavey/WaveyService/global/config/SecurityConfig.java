@@ -11,16 +11,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-// TODO: 로컬 개발용 — 인증 복구 시 아래 import 주석 해제
-// import org.springframework.http.HttpMethod;
-// import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-// import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,8 +29,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-// TODO: 로컬 개발용 — 인증 복구 시 @EnableMethodSecurity 주석 해제
-// @EnableMethodSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -50,9 +48,6 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // TODO: 로컬 개발용 — 인증 없이 Swagger/API 호출. 복구 시 아래 permitAll을 지우고 원래 matcher로 되돌릴 것
-                        .anyRequest().permitAll()
-                        /*
                         .requestMatchers(
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**",
                                 "/swagger-ui.html", "/swagger-resources/**", "/webjars/**",
@@ -63,7 +58,6 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/routes/public").permitAll()
                         .anyRequest().authenticated()
-                        */
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -77,16 +71,13 @@ public class SecurityConfig {
                             setErrorResponse(response, ErrorCode.ACCESS_DENIED);
                         })
                 )
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
-                // TODO: 로컬 개발용 — 인증 복구 시 OAuth2 + JWT 필터 주석 해제
-                /*
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository),
                         UsernamePasswordAuthenticationFilter.class);
-                */
 
         return http.build();
     }

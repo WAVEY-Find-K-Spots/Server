@@ -5,6 +5,11 @@ import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,52 +34,138 @@ public class YoutubeDataClient {
     private String apiKey;
 
     public YoutubeVideoDetails fetchVideo(String videoId) {
+        List<YoutubeVideoDetails> videos = fetchVideos(List.of(videoId));
+        if (videos.isEmpty()) {
+            throw new CustomException(ErrorCode.YOUTUBE_VIDEO_NOT_FOUND);
+        }
+        return videos.get(0);
+    }
+
+    public List<String> searchVideoIds(String query, int maxResults) {
         validateApiKey();
+        if (!StringUtils.hasText(query)) {
+            return List.of();
+        }
 
         try {
             JsonNode response = restClientBuilder.build()
                     .get()
-                    .uri(buildVideosUri(videoId))
+                    .uri(buildSearchUri(query, maxResults))
                     .retrieve()
                     .body(JsonNode.class);
 
-            JsonNode item = firstItem(response);
-            JsonNode snippet = item.path("snippet");
+            JsonNode items = response == null ? null : response.path("items");
+            if (items == null || !items.isArray()) {
+                return List.of();
+            }
 
-            return new YoutubeVideoDetails(
-                    videoId,
-                    text(snippet, "title"),
-                    text(snippet, "description"),
-                    thumbnailUrl(snippet),
-                    text(snippet, "channelTitle")
-            );
+            Set<String> videoIds = new LinkedHashSet<>();
+            for (JsonNode item : items) {
+                String videoId = text(item.path("id"), "videoId");
+                if (StringUtils.hasText(videoId)) {
+                    videoIds.add(videoId);
+                }
+            }
+            return List.copyOf(videoIds);
+        } catch (CustomException e) {
+            throw e;
+        } catch (RestClientResponseException e) {
+            log.warn("YouTube search failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new CustomException(ErrorCode.YOUTUBE_API_REQUEST_FAILED);
+        } catch (RestClientException e) {
+            log.warn("YouTube search failed. query={}", query, e);
+            throw new CustomException(ErrorCode.YOUTUBE_API_REQUEST_FAILED);
+        }
+    }
+
+    public List<YoutubeVideoDetails> fetchVideos(List<String> videoIds) {
+        validateApiKey();
+        if (videoIds == null || videoIds.isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            JsonNode response = restClientBuilder.build()
+                    .get()
+                    .uri(buildVideosUri(videoIds))
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            JsonNode items = response == null ? null : response.path("items");
+            if (items == null || !items.isArray() || items.isEmpty()) {
+                return List.of();
+            }
+
+            List<YoutubeVideoDetails> details = new ArrayList<>();
+            for (JsonNode item : items) {
+                YoutubeVideoDetails parsed = parseVideo(item);
+                if (parsed != null) {
+                    details.add(parsed);
+                }
+            }
+            return details;
         } catch (CustomException e) {
             throw e;
         } catch (RestClientResponseException e) {
             log.warn("YouTube API request failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new CustomException(ErrorCode.YOUTUBE_API_REQUEST_FAILED);
         } catch (RestClientException e) {
-            log.warn("YouTube API request failed. videoId={}", videoId, e);
+            log.warn("YouTube API request failed. videoIds={}", videoIds, e);
             throw new CustomException(ErrorCode.YOUTUBE_API_REQUEST_FAILED);
         }
     }
 
-    private URI buildVideosUri(String videoId) {
+    private YoutubeVideoDetails parseVideo(JsonNode item) {
+        String videoId = text(item, "id");
+        if (!StringUtils.hasText(videoId)) {
+            return null;
+        }
+        JsonNode snippet = item.path("snippet");
+        return new YoutubeVideoDetails(
+                videoId,
+                text(snippet, "title"),
+                text(snippet, "description"),
+                thumbnailUrl(snippet),
+                text(snippet, "channelTitle"),
+                parseDurationSec(text(item.path("contentDetails"), "duration"))
+        );
+    }
+
+    private URI buildSearchUri(String query, int maxResults) {
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .path("/search")
+                .queryParam("part", "snippet")
+                .queryParam("type", "video")
+                .queryParam("maxResults", Math.max(1, Math.min(maxResults, 10)))
+                .queryParam("q", query)
+                .queryParam("relevanceLanguage", "ko")
+                .queryParam("safeSearch", "moderate")
+                .queryParam("key", apiKey)
+                .encode()
+                .build()
+                .toUri();
+    }
+
+    private URI buildVideosUri(List<String> videoIds) {
         return UriComponentsBuilder.fromUriString(baseUrl)
                 .path("/videos")
                 .queryParam("part", "snippet,contentDetails,statistics")
-                .queryParam("id", videoId)
+                .queryParam("id", String.join(",", videoIds))
                 .queryParam("key", apiKey)
                 .build(true)
                 .toUri();
     }
 
-    private JsonNode firstItem(JsonNode response) {
-        JsonNode items = response == null ? null : response.path("items");
-        if (items == null || !items.isArray() || items.isEmpty()) {
-            throw new CustomException(ErrorCode.YOUTUBE_VIDEO_NOT_FOUND);
+    private Integer parseDurationSec(String isoDuration) {
+        if (!StringUtils.hasText(isoDuration)) {
+            return null;
         }
-        return items.get(0);
+        try {
+            return Math.toIntExact(Duration.parse(isoDuration).toSeconds());
+        } catch (RuntimeException e) {
+            log.warn("YouTube duration parse failed. value={}", isoDuration);
+            return null;
+        }
     }
 
     private String thumbnailUrl(JsonNode snippet) {

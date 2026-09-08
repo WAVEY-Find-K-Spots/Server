@@ -4,18 +4,17 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.ContentPlatform;
+import com.Wavey.WaveyService.domain.content.external.client.SpotifyApiClient;
 import com.Wavey.WaveyService.domain.content.external.client.YoutubeDataClient;
+import com.Wavey.WaveyService.domain.content.external.dto.SpotifyTrackDetails;
 import com.Wavey.WaveyService.domain.content.external.dto.YoutubeVideoDetails;
 import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,7 +36,7 @@ public class ContentService {
 
     private final ContentRepository contentRepository;
     private final YoutubeDataClient youtubeDataClient;
-    private final RestClient restClient = RestClient.builder().build();
+    private final SpotifyApiClient spotifyApiClient;
 
     @Transactional
     public ContentResponse createYoutube(ContentRequest request) {
@@ -88,13 +87,14 @@ public class ContentService {
     public ContentResponse createSpotify(ContentRequest request) {
         String songId = extractSpotifySongId(request.getUrl());
         validateDuplicate(ContentPlatform.SPOTIFY, songId);
+        SpotifyTrackDetails details = spotifyApiClient.fetchTrack(songId);
 
         Content content = Content.builder()
                 .platform(ContentPlatform.SPOTIFY)
-                .title(requireTitle(request.getTitle()))
-                .description(normalizeDescription(request.getDescription()))
+                .title(resolveSpotifyTitle(request.getTitle(), details))
+                .description(resolveSpotifyDescription(request.getDescription(), details))
                 .externalId(songId)
-                .thumbnailUrl(resolveSpotifyThumbnailUrl(request.getUrl()))
+                .thumbnailUrl(resolveSpotifyThumbnailUrl(details))
                 .build();
 
         return toResponse(contentRepository.save(content));
@@ -113,11 +113,12 @@ public class ContentService {
         Content content = getContent(contentId, ContentPlatform.SPOTIFY);
         String songId = extractSpotifySongId(request.getUrl());
         validateDuplicateOnUpdate(contentId, ContentPlatform.SPOTIFY, songId);
+        SpotifyTrackDetails details = spotifyApiClient.fetchTrack(songId);
         content.update(
-                requireTitle(request.getTitle()),
-                normalizeDescription(request.getDescription()),
+                resolveSpotifyTitle(request.getTitle(), details),
+                resolveSpotifyDescription(request.getDescription(), details),
                 songId,
-                resolveSpotifyThumbnailUrl(request.getUrl())
+                resolveSpotifyThumbnailUrl(details)
         );
         return toResponse(content);
     }
@@ -154,20 +155,6 @@ public class ContentService {
         return keyword == null ? "" : keyword.trim();
     }
 
-    private String normalizeDescription(String description) {
-        if (!StringUtils.hasText(description)) {
-            return null;
-        }
-        return description.trim();
-    }
-
-    private String requireTitle(String title) {
-        if (!StringUtils.hasText(title)) {
-            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
-        }
-        return title.trim();
-    }
-
     private String resolveYoutubeTitle(String requestedTitle, YoutubeVideoDetails details) {
         if (StringUtils.hasText(requestedTitle)) {
             return requestedTitle.trim();
@@ -195,25 +182,36 @@ public class ContentService {
         return YOUTUBE_THUMBNAIL_TEMPLATE.formatted(videoId);
     }
 
-    private String resolveSpotifyThumbnailUrl(String url) {
-        try {
-            SpotifyOEmbedResponse response = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .scheme("https")
-                            .host("open.spotify.com")
-                            .path("/oembed")
-                            .queryParam("url", url)
-                            .build())
-                    .retrieve()
-                    .body(SpotifyOEmbedResponse.class);
-
-            if (response != null && StringUtils.hasText(response.thumbnailUrl())) {
-                return response.thumbnailUrl().trim();
-            }
-        } catch (RestClientException e) {
-            throw new CustomException(ErrorCode.CONTENT_THUMBNAIL_RESOLVE_FAILED);
+    private String resolveSpotifyTitle(String requestedTitle, SpotifyTrackDetails details) {
+        if (StringUtils.hasText(requestedTitle)) {
+            return requestedTitle.trim();
         }
+        if (details != null && StringUtils.hasText(details.title())) {
+            return details.title().trim();
+        }
+        throw new CustomException(ErrorCode.SPOTIFY_TRACK_NOT_FOUND);
+    }
 
+    private String resolveSpotifyDescription(String requestedDescription, SpotifyTrackDetails details) {
+        if (StringUtils.hasText(requestedDescription)) {
+            return requestedDescription.trim();
+        }
+        if (details == null) {
+            return null;
+        }
+        if (StringUtils.hasText(details.artistName()) && StringUtils.hasText(details.albumName())) {
+            return details.artistName().trim() + " · " + details.albumName().trim();
+        }
+        if (StringUtils.hasText(details.artistName())) {
+            return details.artistName().trim();
+        }
+        return null;
+    }
+
+    private String resolveSpotifyThumbnailUrl(SpotifyTrackDetails details) {
+        if (details != null && StringUtils.hasText(details.thumbnailUrl())) {
+            return details.thumbnailUrl().trim();
+        }
         throw new CustomException(ErrorCode.CONTENT_THUMBNAIL_RESOLVE_FAILED);
     }
 
@@ -314,8 +312,5 @@ public class ContentService {
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();
-    }
-
-    private record SpotifyOEmbedResponse(@JsonProperty("thumbnail_url") String thumbnailUrl) {
     }
 }

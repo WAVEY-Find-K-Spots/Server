@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ContentRequest {
 
-    @Schema(description = "콘텐츠 제목. 유튜브는 비우면 Data API 제목을 사용합니다.", example = "BTS - Dynamite")
+    @Schema(description = "콘텐츠 제목. 비우면 유튜브/스포티파이 API 제목을 사용합니다.", example = "BTS - Dynamite")
     private String title;
 
     @NotBlank(message = "URL은 필수입니다.")

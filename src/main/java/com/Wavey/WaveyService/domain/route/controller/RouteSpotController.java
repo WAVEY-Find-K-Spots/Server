@@ -32,7 +32,7 @@ public class RouteSpotController {
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteSpotAddRequest request
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED.value(), "스팟 추가 성공", routeSpotService.addSpot(routeId, request, userId)));
     }
@@ -44,7 +44,7 @@ public class RouteSpotController {
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteSpotReorderRequest request
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         List<RouteSpotResponse> response = routeSpotService.reorderSpots(routeId, request, userId);
         return ResponseEntity.ok(ApiResponse.success("스팟 순서 변경 성공", response));
     }
@@ -56,16 +56,8 @@ public class RouteSpotController {
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @Parameter(description = "루트 스팟 ID") @PathVariable Long routeSpotId
     ) {
-        Long userId = extractUserId(user);
+        Long userId = user.getId();
         routeSpotService.removeSpot(routeId, routeSpotId, userId);
         return ResponseEntity.ok(ApiResponse.success("스팟 제거 성공", null));
-    }
-
-    // TODO: 로컬 개발용 — 인증 복구 시 null 분기를 지우고 user.getId()만 사용
-    private Long extractUserId(User user) {
-        if (user == null) {
-            return 1L;
-        }
-        return user.getId();
     }
 }

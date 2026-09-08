@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ErrorDetail {
 
-    @Schema(description = "에러 코드", example = "ROUTE_NOT_FOUND")
+    @Schema(description = "에러 코드", example = "COMMON_INVALID_PARAMETER")
     private String code;
 
-    @Schema(description = "에러 메시지", example = "해당 루트를 찾을 수 없습니다.")
+    @Schema(description = "에러 메시지", example = "요청 파라미터가 올바르지 않습니다.")
     private String message;
 
-    @Schema(description = "상세 에러 내역")
+    @Schema(description = "상세 에러 내역", nullable = true)
     private List<FieldErrorDetail> errors;
 }
