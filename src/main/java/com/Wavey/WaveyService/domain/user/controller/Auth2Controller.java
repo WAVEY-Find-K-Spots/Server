@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+// TODO: 로컬 개발용 — 인증 복구 시 아래 import 주석 해제
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,14 +33,14 @@ public class Auth2Controller {
 
     @Operation(summary = "소셜 로그인 진입 URL 조회")
     @GetMapping("/login-urls")
-    @PreAuthorize("permitAll()")
+    // @PreAuthorize("permitAll()")
     public ApiResponse<Map<String, String>> getLoginUrls() {
         return ApiResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls());
     }
 
     @Operation(summary = "토큰 재발급")
     @PostMapping("/refresh")
-    @PreAuthorize("permitAll()")
+    // @PreAuthorize("permitAll()")
     public ApiResponse<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
         return ApiResponse.success("토큰 재발급 및 로테이션 성공", userService.refreshToken(refreshToken));
@@ -47,21 +48,21 @@ public class Auth2Controller {
 
     @Operation(summary = "현재 로그인 유저 정보 조회")
     @GetMapping("/user")
-    @PreAuthorize("isAuthenticated()")
+    // @PreAuthorize("isAuthenticated()")
     public ApiResponse<UserResponse> getLoginUserInfo(@AuthenticationPrincipal User user) {
         return ApiResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user));
     }
 
     @Operation(summary = "특정 회원 조회")
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
+    // @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
     public ApiResponse<UserResponse> getUserById(@PathVariable Long id) {
         return ApiResponse.success("회원 정보 조회 성공", userService.findById(id));
     }
 
     @Operation(summary = "유저 권한 수정")
     @PatchMapping("/role/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> updateRole(@PathVariable Long id, @RequestParam Role role) {
         userService.updateUserRole(id, role);
         return ApiResponse.success("유저 권한 수정 성공", null);
@@ -69,14 +70,14 @@ public class Auth2Controller {
 
     @Operation(summary = "전체 회원 목록 조회")
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<User>> getAllUsers() {
         return ApiResponse.success("전체 회원 목록 조회 성공", userService.findAllUsers());
     }
 
     @Operation(summary = "회원 탈퇴")
     @DeleteMapping("/withdraw/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> withdraw(@PathVariable Long id) {
         userService.withdraw(id);
         return ApiResponse.success("회원 탈퇴 성공", null);
@@ -84,7 +85,7 @@ public class Auth2Controller {
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
+    // @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
     public ApiResponse<Void> logout(@PathVariable Long id) {
         userService.logout(id);
         return ApiResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null);

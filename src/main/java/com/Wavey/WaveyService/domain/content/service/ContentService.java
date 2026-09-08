@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.ContentPlatform;
+import com.Wavey.WaveyService.domain.content.external.client.YoutubeDataClient;
+import com.Wavey.WaveyService.domain.content.external.dto.YoutubeVideoDetails;
 import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
@@ -34,19 +36,21 @@ public class ContentService {
     private static final String YOUTUBE_THUMBNAIL_TEMPLATE = "https://i.ytimg.com/vi/%s/hqdefault.jpg";
 
     private final ContentRepository contentRepository;
+    private final YoutubeDataClient youtubeDataClient;
     private final RestClient restClient = RestClient.builder().build();
 
     @Transactional
     public ContentResponse createYoutube(ContentRequest request) {
         String videoId = extractYoutubeVideoId(request.getUrl());
         validateDuplicate(ContentPlatform.YOUTUBE, videoId);
+        YoutubeVideoDetails details = youtubeDataClient.fetchVideo(videoId);
 
         Content content = Content.builder()
                 .platform(ContentPlatform.YOUTUBE)
-                .title(request.getTitle().trim())
-                .description(normalizeDescription(request.getDescription()))
+                .title(resolveYoutubeTitle(request.getTitle(), details))
+                .description(resolveYoutubeDescription(request.getDescription(), details))
                 .externalId(videoId)
-                .thumbnailUrl(resolveYoutubeThumbnailUrl(videoId))
+                .thumbnailUrl(resolveYoutubeThumbnailUrl(videoId, details))
                 .build();
 
         return toResponse(contentRepository.save(content));
@@ -65,11 +69,12 @@ public class ContentService {
         Content content = getContent(contentId, ContentPlatform.YOUTUBE);
         String videoId = extractYoutubeVideoId(request.getUrl());
         validateDuplicateOnUpdate(contentId, ContentPlatform.YOUTUBE, videoId);
+        YoutubeVideoDetails details = youtubeDataClient.fetchVideo(videoId);
         content.update(
-                request.getTitle().trim(),
-                normalizeDescription(request.getDescription()),
+                resolveYoutubeTitle(request.getTitle(), details),
+                resolveYoutubeDescription(request.getDescription(), details),
                 videoId,
-                resolveYoutubeThumbnailUrl(videoId)
+                resolveYoutubeThumbnailUrl(videoId, details)
         );
         return toResponse(content);
     }
@@ -86,7 +91,7 @@ public class ContentService {
 
         Content content = Content.builder()
                 .platform(ContentPlatform.SPOTIFY)
-                .title(request.getTitle().trim())
+                .title(requireTitle(request.getTitle()))
                 .description(normalizeDescription(request.getDescription()))
                 .externalId(songId)
                 .thumbnailUrl(resolveSpotifyThumbnailUrl(request.getUrl()))
@@ -109,7 +114,7 @@ public class ContentService {
         String songId = extractSpotifySongId(request.getUrl());
         validateDuplicateOnUpdate(contentId, ContentPlatform.SPOTIFY, songId);
         content.update(
-                request.getTitle().trim(),
+                requireTitle(request.getTitle()),
                 normalizeDescription(request.getDescription()),
                 songId,
                 resolveSpotifyThumbnailUrl(request.getUrl())
@@ -156,7 +161,37 @@ public class ContentService {
         return description.trim();
     }
 
-    private String resolveYoutubeThumbnailUrl(String videoId) {
+    private String requireTitle(String title) {
+        if (!StringUtils.hasText(title)) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
+        }
+        return title.trim();
+    }
+
+    private String resolveYoutubeTitle(String requestedTitle, YoutubeVideoDetails details) {
+        if (StringUtils.hasText(requestedTitle)) {
+            return requestedTitle.trim();
+        }
+        if (details != null && StringUtils.hasText(details.title())) {
+            return details.title().trim();
+        }
+        throw new CustomException(ErrorCode.YOUTUBE_VIDEO_NOT_FOUND);
+    }
+
+    private String resolveYoutubeDescription(String requestedDescription, YoutubeVideoDetails details) {
+        if (StringUtils.hasText(requestedDescription)) {
+            return requestedDescription.trim();
+        }
+        if (details != null && StringUtils.hasText(details.description())) {
+            return details.description().trim();
+        }
+        return null;
+    }
+
+    private String resolveYoutubeThumbnailUrl(String videoId, YoutubeVideoDetails details) {
+        if (details != null && StringUtils.hasText(details.thumbnailUrl())) {
+            return details.thumbnailUrl().trim();
+        }
         return YOUTUBE_THUMBNAIL_TEMPLATE.formatted(videoId);
     }
 

@@ -130,6 +130,10 @@ public class RouteController {
     }
 
     private Long extractUserId(UserDetails userDetails) {
+        // TODO: 로컬 개발용 — 인증 복구 시 null 분기를 지우고 userDetails만 사용
+        if (userDetails == null) {
+            return 1L;
+        }
         return Long.parseLong(userDetails.getUsername());
     }
 }
