@@ -54,6 +54,7 @@ public enum ErrorCode {
     VISION_IMAGE_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "VISION_400_IMAGE_TYPE", "지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP 이미지만 업로드할 수 있습니다."),
     VISION_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "VISION_500_FAILED", "AI 이미지 분석 중 오류가 발생했습니다."),
     VISION_TOKEN_EXHAUSTED(HttpStatus.TOO_MANY_REQUESTS, "VISION_429_QUOTA", "이미지 분석 쿼터가 초과되었습니다."),
+    VISION_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "VISION_429_RATE_LIMIT", "이미지 분석 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."),
 
     // TRANSLATION
     GOOGLE_TRANSLATION_CONFIGURATION_MISSING(HttpStatus.SERVICE_UNAVAILABLE, "TRANSLATION_503_CONFIG", "Google Translation 인증 정보가 설정되지 않았습니다."),

@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 public class TranslationService {
 
     private static final String FOOD_DOMAIN = "FOOD";
+    private static final int MAX_TRANSLATION_CODE_POINTS = 30_000;
+    private static final int MAX_TRANSLATION_CONTENTS = 1_024;
     private static final Pattern PRICE_PATTERN = Pattern.compile("[0-9][0-9,]*\\s*원");
     private static final Pattern MENU_LINE_PATTERN = Pattern.compile(
             "^(.*?)(?:\\s+)?([0-9][0-9,]*\\s*원)?$"
@@ -110,10 +112,7 @@ public class TranslationService {
         List<String> inputs = plan.googleInputs().stream()
                 .filter(value -> value != null)
                 .toList();
-        List<String> translations = translationClient.translateKoreanToEnglish(inputs, false);
-        if (translations.size() != inputs.size()) {
-            throw new CustomException(ErrorCode.GOOGLE_TRANSLATION_FAILED);
-        }
+        List<String> translations = translateInBatches(inputs);
 
         List<String> translatedLines = new ArrayList<>(plan.sourceLines().size());
         int translationIndex = 0;
@@ -124,6 +123,88 @@ public class TranslationService {
             );
         }
         return String.join("\n", translatedLines);
+    }
+
+    private List<String> translateInBatches(List<String> inputs) {
+        if (inputs.isEmpty()) {
+            return List.of();
+        }
+
+        List<StringBuilder> translatedInputs = new ArrayList<>(inputs.size());
+        for (int index = 0; index < inputs.size(); index++) {
+            translatedInputs.add(new StringBuilder());
+        }
+
+        List<TranslationChunk> batch = new ArrayList<>();
+        int batchCodePoints = 0;
+        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+            for (String chunk : splitForTranslation(inputs.get(inputIndex))) {
+                int chunkCodePoints = chunk.codePointCount(0, chunk.length());
+                if (!batch.isEmpty() && (batchCodePoints + chunkCodePoints > MAX_TRANSLATION_CODE_POINTS
+                        || batch.size() >= MAX_TRANSLATION_CONTENTS)) {
+                    translateBatch(batch, translatedInputs);
+                    batch.clear();
+                    batchCodePoints = 0;
+                }
+                batch.add(new TranslationChunk(inputIndex, chunk));
+                batchCodePoints += chunkCodePoints;
+            }
+        }
+        if (!batch.isEmpty()) {
+            translateBatch(batch, translatedInputs);
+        }
+
+        return translatedInputs.stream().map(StringBuilder::toString).toList();
+    }
+
+    private void translateBatch(List<TranslationChunk> batch, List<StringBuilder> translatedInputs) {
+        List<String> sourceChunks = batch.stream().map(TranslationChunk::text).toList();
+        List<String> translatedChunks = translationClient.translateKoreanToEnglish(sourceChunks, false);
+        if (translatedChunks.size() != batch.size()) {
+            throw new CustomException(ErrorCode.GOOGLE_TRANSLATION_FAILED);
+        }
+        for (int index = 0; index < batch.size(); index++) {
+            translatedInputs.get(batch.get(index).inputIndex()).append(translatedChunks.get(index));
+        }
+    }
+
+    private List<String> splitForTranslation(String text) {
+        if (text.codePointCount(0, text.length()) <= MAX_TRANSLATION_CODE_POINTS) {
+            return List.of(text);
+        }
+
+        List<String> chunks = new ArrayList<>();
+        int start = 0;
+        while (start < text.length()) {
+            int remainingCodePoints = text.codePointCount(start, text.length());
+            int end = text.offsetByCodePoints(
+                    start,
+                    Math.min(MAX_TRANSLATION_CODE_POINTS, remainingCodePoints)
+            );
+            if (end < text.length()) {
+                end = preferredBoundary(text, start, end);
+            }
+            chunks.add(text.substring(start, end));
+            start = end;
+        }
+        return chunks;
+    }
+
+    private int preferredBoundary(String text, int start, int maximumEnd) {
+        int whitespaceBoundary = -1;
+        for (int index = maximumEnd - 1; index > start; index--) {
+            char value = text.charAt(index);
+            if (value == '\n') {
+                return index + 1;
+            }
+            if (value == '.' || value == '!' || value == '?') {
+                return index + 1;
+            }
+            if (whitespaceBoundary < 0 && Character.isWhitespace(value)) {
+                whitespaceBoundary = index + 1;
+            }
+        }
+        return whitespaceBoundary > start ? whitespaceBoundary : maximumEnd;
     }
 
     private boolean isMenu(String text, List<CulturalTerm> candidates) {
@@ -252,4 +333,6 @@ public class TranslationService {
     private record TermMatch(int start, int end, CulturalTerm term) { }
 
     private record MenuLine(String label, String englishPriceSuffix) { }
+
+    private record TranslationChunk(int inputIndex, String text) { }
 }

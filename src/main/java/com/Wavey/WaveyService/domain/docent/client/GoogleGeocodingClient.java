@@ -107,7 +107,8 @@ public class GoogleGeocodingClient implements GeocodingClient {
         if (apiKey == null || apiKey.isBlank()) {
             throw new CustomException(ErrorCode.GOOGLE_GEOCODING_CONFIGURATION_MISSING);
         }
-        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
+                || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
             throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
         }
     }

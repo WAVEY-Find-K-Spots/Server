@@ -80,4 +80,18 @@ class GoogleGeocodingClientTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GOOGLE_GEOCODING_CONFIGURATION_MISSING);
     }
+
+    @Test
+    void NaN_좌표는_외부_API_호출_전에_거부한다() {
+        GoogleGeocodingClient client = new GoogleGeocodingClient(
+                RestClient.builder(),
+                "https://maps.googleapis.com",
+                "test-api-key"
+        );
+
+        assertThatThrownBy(() -> client.reverseGeocode(Double.NaN, 126.977041))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMON_INVALID_PARAMETER);
+    }
 }

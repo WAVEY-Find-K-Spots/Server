@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.docent.controller;
 
 import com.Wavey.WaveyService.domain.docent.dto.VisionAnalysisResponse;
 import com.Wavey.WaveyService.domain.docent.dto.VisionFeature;
+import com.Wavey.WaveyService.domain.docent.service.VisionRequestRateLimiter;
 import com.Wavey.WaveyService.domain.docent.service.VisionService;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.global.exception.CustomException;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,13 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.Set;
 
 @Tag(name = "Vision", description = "Google Cloud Vision 기반 이미지 분석 API")
@@ -39,6 +48,7 @@ public class VisionController {
     );
 
     private final VisionService visionService;
+    private final VisionRequestRateLimiter requestRateLimiter;
 
     @Operation(
             summary = "선택 기능 기반 이미지 분석",
@@ -58,6 +68,7 @@ public class VisionController {
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<VisionAnalysisResponse>> analyze(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
+            @Parameter(hidden = true) HttpServletRequest request,
             @RequestPart("file") MultipartFile file,
             @Parameter(description = "실행 기능 목록: TRANSLATION, HERITAGE, WEB_SEARCH")
             @RequestParam("features") Set<VisionFeature> features,
@@ -68,6 +79,7 @@ public class VisionController {
     ) {
         validateFile(file);
         validateFeatures(features);
+        requestRateLimiter.check(user, request == null ? null : request.getRemoteAddr());
 
         VisionAnalysisResponse result = visionService.analyze(
                 file.getResource(),
@@ -83,14 +95,73 @@ public class VisionController {
             throw new CustomException(ErrorCode.COMMON_FILE_EMPTY);
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !SUPPORTED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-            throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
-        }
-
         if (file.getSize() > MAX_IMAGE_SIZE_BYTES) {
             throw new CustomException(ErrorCode.COMMON_FILE_SIZE_EXCEEDED);
         }
+
+        String declaredType = normalizeContentType(file.getContentType());
+        if (declaredType == null || !SUPPORTED_IMAGE_TYPES.contains(declaredType)) {
+            throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
+        }
+
+        String decodedType = detectImageType(file);
+        if (!declaredType.equals(decodedType)) {
+            throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
+        }
+    }
+
+    private String normalizeContentType(String contentType) {
+        if (contentType == null) {
+            return null;
+        }
+        try {
+            MediaType mediaType = MediaType.parseMediaType(contentType);
+            return (mediaType.getType() + "/" + mediaType.getSubtype()).toLowerCase(Locale.ROOT);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private String detectImageType(MultipartFile file) {
+        try (ImageInputStream input = ImageIO.createImageInputStream(
+                new ByteArrayInputStream(file.getBytes())
+        )) {
+            if (input == null) {
+                throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
+            }
+
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            while (readers.hasNext()) {
+                ImageReader reader = readers.next();
+                try {
+                    String detectedType = imageMediaType(reader.getFormatName());
+                    if (detectedType == null) {
+                        continue;
+                    }
+                    reader.setInput(input, true, true);
+                    if (reader.read(0) != null) {
+                        return detectedType;
+                    }
+                } finally {
+                    reader.dispose();
+                }
+            }
+        } catch (IOException | RuntimeException exception) {
+            if (exception instanceof CustomException customException) {
+                throw customException;
+            }
+            throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
+        }
+        throw new CustomException(ErrorCode.VISION_IMAGE_TYPE_UNSUPPORTED);
+    }
+
+    private String imageMediaType(String formatName) {
+        return switch (formatName.toUpperCase(Locale.ROOT)) {
+            case "JPEG", "JPG" -> MediaType.IMAGE_JPEG_VALUE;
+            case "PNG" -> MediaType.IMAGE_PNG_VALUE;
+            case "WEBP" -> "image/webp";
+            default -> null;
+        };
     }
 
     private void validateFeatures(Set<VisionFeature> features) {

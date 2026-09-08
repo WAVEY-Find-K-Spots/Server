@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -145,6 +146,25 @@ class TranslationServiceTest {
         assertThat(response.translatedText()).isEmpty();
         assertThat(response.terms()).isEmpty();
         verifyNoInteractions(culturalTermRepository, translationClient);
+    }
+
+    @Test
+    void 삼만일_code_point_원문은_API_제한_이하로_분할해_순서대로_결합한다() {
+        String firstChunk = "가".repeat(30_000);
+        String secondChunk = "나";
+        String text = firstChunk + secondChunk;
+        when(culturalTermRepository.findCandidates(text)).thenReturn(List.of());
+        when(translationClient.translateKoreanToEnglish(List.of(firstChunk), false))
+                .thenReturn(List.of("FIRST"));
+        when(translationClient.translateKoreanToEnglish(List.of(secondChunk), false))
+                .thenReturn(List.of("SECOND"));
+
+        TranslationResponse response = translationService.process(text);
+
+        assertThat(response.translatedText()).isEqualTo("FIRSTSECOND");
+        verify(translationClient).translateKoreanToEnglish(List.of(firstChunk), false);
+        verify(translationClient).translateKoreanToEnglish(List.of(secondChunk), false);
+        verifyNoMoreInteractions(translationClient);
     }
 
     private CulturalTerm term(

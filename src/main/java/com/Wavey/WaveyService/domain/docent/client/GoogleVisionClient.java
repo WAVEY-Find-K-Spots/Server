@@ -115,7 +115,7 @@ public class GoogleVisionClient {
 
         } catch (Exception e) {
             log.error("Vision AI Landmark Error: {}", e.getMessage());
-            throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
+            throw mapVisionException(e);
         }
     }
 
@@ -150,7 +150,7 @@ public class GoogleVisionClient {
 
         } catch (Exception e) {
             log.error("Vision AI Web Detection Error: {}", e.getMessage());
-            throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
+            throw mapVisionException(e);
         }
     }
 
