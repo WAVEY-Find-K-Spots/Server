@@ -3,6 +3,7 @@ package com.Wavey.WaveyService.domain.route.controller;
 import com.Wavey.WaveyService.domain.route.directions.service.RouteDirectionsService;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteDirectionsRequest;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteDirectionsResponse;
+import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,7 +13,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,16 +37,12 @@ public class RouteDirectionsController {
     })
     @PostMapping
     public ResponseEntity<ApiResponse<RouteDirectionsResponse>> getDirections(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteDirectionsRequest request
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         return ResponseEntity.ok(
                 ApiResponse.success("경로 계산 성공", routeDirectionsService.getDirections(routeId, request, userId)));
-    }
-
-    private Long extractUserId(UserDetails userDetails) {
-        return Long.parseLong(userDetails.getUsername());
     }
 }
