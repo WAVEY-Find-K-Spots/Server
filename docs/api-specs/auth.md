@@ -134,10 +134,10 @@
 
 | 실패 케이스 | 응답 |
 |-------------|------|
-| `refreshToken` 누락 / 서명·형식 오류 | `401 TOKEN_401` (`INVALID_TOKEN`) |
-| Refresh Token 만료 | `401 TOKEN_402` (`EXPIRED_TOKEN`) — 재로그인 유도 |
+| `refreshToken` 누락 | `401 TOKEN_401` (`INVALID_TOKEN`) |
 | DB 저장 토큰과 불일치 (이미 로테이션됨 / 로그아웃됨) | `401 TOKEN_401` |
 | 토큰의 유저가 존재하지 않음 | `404 USER_404` |
+| Refresh Token 만료 | **의도상 `401 TOKEN_402`(`EXPIRED_TOKEN`)** — 단, 현재 코드는 `validateToken(String)` 이 예외를 삼키고 `boolean` 만 반환하는데 그 반환값을 확인하지 않아, 만료 검증이 사실상 동작하지 않음 ([12장](#12-미구현--후속-과제)) |
 
 ---
 
@@ -308,6 +308,7 @@ PATCH /api/v1/auth/role/2?role=ADMIN
 - [ ] OAuth2 성공 응답을 HTML → **프론트 리다이렉트(딥링크) + 토큰 전달** 또는 JSON 으로 전환
 - [ ] `GET /api/v1/auth/all` 응답을 `UserResponse` 로 교체 (`providerId`, `refreshToken` 노출 제거)
 - [ ] `users.refresh_token` 평문 저장 → 해시 저장 검토
+- [ ] Refresh Token 만료 검증 수정 — `refreshToken()` 이 `validateToken(String)` 의 `boolean` 반환값을 확인하지 않아 만료된 Refresh Token 도 통과할 수 있음
 - [ ] Access Token 블랙리스트 / 짧은 만료로 로그아웃 즉시성 확보 (현재는 만료 전까지 Access 유효)
 - [ ] 본인 기준 로그아웃(`/logout`, id 불필요) 및 회원 탈퇴(`/withdraw`) 엔드포인트
 - [ ] `Auth2Controller` 응답을 `ResponseEntity` 로 바꿔 생성/삭제에 적절한 HTTP 상태 코드 부여
