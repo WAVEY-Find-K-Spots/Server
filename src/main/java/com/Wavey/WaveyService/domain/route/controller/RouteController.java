@@ -8,6 +8,7 @@ import com.Wavey.WaveyService.domain.route.dto.response.RouteResponse;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteSummaryResponse;
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.service.RouteService;
+import com.Wavey.WaveyService.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,7 +23,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -48,10 +48,10 @@ public class RouteController {
     })
     @GetMapping
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<List<RouteSummaryResponse>>> getMyRoutes(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "공개 여부 필터 (PUBLIC / PRIVATE)") @RequestParam(required = false) Visibility visibility
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("내 루트 목록 조회 성공", routeService.getMyRoutes(userId, visibility)));
     }
 
@@ -74,10 +74,10 @@ public class RouteController {
     })
     @GetMapping("/{routeId}")
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> getRoute(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("루트 상세 조회 성공", routeService.getRoute(routeId, userId)));
     }
 
@@ -89,10 +89,10 @@ public class RouteController {
     })
     @PostMapping
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> createRoute(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @RequestBody @Valid RouteCreateRequest request
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(success(HttpStatus.CREATED.value(), "루트 생성 성공", routeService.createRoute(request, userId)));
     }
@@ -105,11 +105,11 @@ public class RouteController {
     })
     @PatchMapping("/{routeId}")
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> updateRoute(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteUpdateRequest request
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         return ResponseEntity.ok(success("루트 수정 성공", routeService.updateRoute(routeId, request, userId)));
     }
 
@@ -121,15 +121,11 @@ public class RouteController {
     })
     @DeleteMapping("/{routeId}")
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<Void>> deleteRoute(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {
-        Long userId = extractUserId(userDetails);
+        Long userId = user.getId();
         routeService.deleteRoute(routeId, userId);
         return ResponseEntity.ok(success("루트 삭제 성공", null));
-    }
-
-    private Long extractUserId(UserDetails userDetails) {
-        return Long.parseLong(userDetails.getUsername());
     }
 }
