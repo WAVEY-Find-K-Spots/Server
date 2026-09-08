@@ -60,6 +60,7 @@ spring:
 # --- [수정 포인트] spring 계층 밖(맨 왼쪽)으로 이동하여 Placeholder 에러 해결 ---
 auth:
   server-url: ${SERVER_URL:http://localhost:8080}
+  frontend-redirect-uri: ${AUTH_FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/callback}
   base-url: ${AUTH_BASE_URL:/oauth2/authorization/}
   google-path: ${GOOGLE_AUTH_PATH:google}
   apple-path: ${APPLE_AUTH_PATH:apple}

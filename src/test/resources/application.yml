@@ -12,6 +12,7 @@ jwt:
 
 auth:
   server-url: http://localhost:8080
+  frontend-redirect-uri: http://localhost:3000/oauth/callback
   base-url: /oauth2/authorization/
   google-path: google
   apple-path: apple
