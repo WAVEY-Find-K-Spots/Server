@@ -12,7 +12,7 @@
 | 회원 조회 / 권한 변경 / 탈퇴 / 로그아웃 (관리자) | 구현됨 |
 | 애플 소셜 로그인 | 미구현 (`application.yml` registration 주석 처리) |
 
-> 미구현/후속 항목은 [9장](#9-미구현--후속-과제) 참고.
+> 미구현/후속 항목은 [12장](#12-미구현--후속-과제) 참고.
 
 ---
 
@@ -82,7 +82,7 @@
 ### 2.2 콜백 & 토큰 전달
 
 - 콜백: `GET {SERVER_URL}/login/oauth2/code/{provider}` (Spring Security 기본)
-- 성공 시 `OAuth2SuccessHandler` 가 **Access Token / Refresh Token 이 표시된 HTML 페이지**를 반환합니다. (JSON 아님 — 현재는 Swagger 테스트 편의용, [9장](#9-미구현--후속-과제) 참고)
+- 성공 시 `OAuth2SuccessHandler` 가 **Access Token / Refresh Token 이 표시된 HTML 페이지**를 반환합니다. (JSON 아님 — 현재는 Swagger 테스트 편의용, [12장](#12-미구현--후속-과제) 참고)
 - Refresh Token 은 `users.refresh_token` 에 평문 저장됨
 
 ---
@@ -228,7 +228,7 @@ PATCH /api/v1/auth/role/2?role=ADMIN
 }
 ```
 
-> ⚠️ 현재 `User` 엔티티를 그대로 반환해 `providerId`, `refreshToken` 이 노출됩니다. `UserResponse` 로 교체 필요 ([9장](#9-미구현--후속-과제)).
+> ⚠️ 현재 `User` 엔티티를 그대로 반환해 `providerId`, `refreshToken` 이 노출됩니다. `UserResponse` 로 교체 필요 ([12장](#12-미구현--후속-과제)).
 
 ### 7.3 `DELETE /api/v1/auth/withdraw/{id}` — 회원 탈퇴
 
@@ -243,7 +243,7 @@ PATCH /api/v1/auth/role/2?role=ADMIN
 ## 8. `POST /api/v1/auth/logout/{id}` — 로그아웃
 
 - 인증 필요 — **본인 또는 `ROLE_ADMIN`**
-- `users.refresh_token` 을 `null` 로 만들어 이후 재발급을 차단합니다. (Access Token 은 만료 전까지 유효 — [9장](#9-미구현--후속-과제))
+- `users.refresh_token` 을 `null` 로 만들어 이후 재발급을 차단합니다. (Access Token 은 만료 전까지 유효 — [12장](#12-미구현--후속-과제))
 
 ```json
 { "statusCode": 200, "message": "로그아웃 성공. 모든 토큰이 무효화되었습니다.", "data": null }
