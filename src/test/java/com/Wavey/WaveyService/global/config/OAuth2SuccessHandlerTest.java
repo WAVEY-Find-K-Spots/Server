@@ -1,0 +1,71 @@
+package com.Wavey.WaveyService.global.config;
+
+import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.global.common.JwtTokenProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OAuth2SuccessHandlerTest {
+
+    @Mock
+    private JwtTokenProvider tokenProvider;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private Authentication authentication;
+    @Mock
+    private OAuth2User oAuth2User;
+
+    @Test
+    void 로그인_성공시_토큰을_fragment에_담아_프론트로_리다이렉트한다() throws Exception {
+        OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
+                tokenProvider,
+                userRepository,
+                "http://localhost:3000/oauth/callback"
+        );
+        User user = User.builder()
+                .id(1L)
+                .provider("google")
+                .providerId("provider-id")
+                .email("user@example.com")
+                .name("사용자")
+                .role(Role.USER)
+                .build();
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("sub")).thenReturn("provider-id");
+        when(oAuth2User.getAttribute("provider")).thenReturn("google");
+        when(tokenProvider.createAccessToken("google", "provider-id")).thenReturn("access.token");
+        when(tokenProvider.createRefreshToken("google", "provider-id")).thenReturn("refresh.token");
+        when(userRepository.findByProviderAndProviderId("google", "provider-id"))
+                .thenReturn(Optional.of(user));
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getRedirectedUrl()).isEqualTo(
+                "http://localhost:3000/oauth/callback#accessToken=access.token&refreshToken=refresh.token&tokenType=Bearer"
+        );
+        assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
+        assertThat(response.getHeader(HttpHeaders.PRAGMA)).isEqualTo("no-cache");
+        assertThat(user.getRefreshToken()).isEqualTo("refresh.token");
+        verify(userRepository).findByProviderAndProviderId("google", "provider-id");
+    }
+}
