@@ -8,10 +8,15 @@ import com.Wavey.WaveyService.domain.route.entity.Route;
 import com.Wavey.WaveyService.domain.route.entity.RouteSpot;
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
+import com.Wavey.WaveyService.domain.spot.entity.Spot;
+import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +28,7 @@ import org.springframework.stereotype.Service;
 public class RouteService {
 
     private final RouteRepository routeRepository;
+    private final SpotRepository spotRepository;
 
     public List<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility) {
         List<Route> routes = visibility != null
@@ -42,7 +48,7 @@ public class RouteService {
     public RouteResponse getRoute(Long routeId, Long userId) {
         Route route = findRouteById(routeId);
         validateAccess(route, userId);
-        return RouteResponse.from(route);
+        return buildRouteResponse(route);
     }
 
     @Transactional
@@ -65,7 +71,7 @@ public class RouteService {
             });
         }
 
-        return RouteResponse.from(routeRepository.save(route));
+        return buildRouteResponse(routeRepository.save(route));
     }
 
     @Transactional
@@ -73,7 +79,7 @@ public class RouteService {
         Route route = findRouteById(routeId);
         validateOwner(route, userId);
         route.update(request.getName(), request.getDescription(), request.getVisibility());
-        return RouteResponse.from(route);
+        return buildRouteResponse(route);
     }
 
     @Transactional
@@ -81,6 +87,19 @@ public class RouteService {
         Route route = findRouteById(routeId);
         validateOwner(route, userId);
         routeRepository.delete(route);
+    }
+
+    private RouteResponse buildRouteResponse(Route route) {
+        List<Long> spotIds = route.getRouteSpots().stream()
+                .map(RouteSpot::getSpotId)
+                .toList();
+
+        Map<Long, Spot> spotMap = spotIds.isEmpty()
+                ? Map.of()
+                : spotRepository.findAllById(spotIds).stream()
+                        .collect(Collectors.toMap(Spot::getId, Function.identity()));
+
+        return RouteResponse.of(route, spotMap);
     }
 
     public Route findRouteById(Long routeId) {
