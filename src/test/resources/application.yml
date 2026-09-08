@@ -24,6 +24,11 @@ external-api:
   media-location:
     base-url: https://api.odcloud.kr/api/15111405/v1/uddi:d8741b9c-f484-4ea8-8f54-bd21ab62de14
 
+tmap:
+  base-url: https://apis.openapi.sk.com
+  app-key: test-tmap-app-key
+  directions-cache-ttl-seconds: 300
+
 spot:
   sync:
     scheduler:
