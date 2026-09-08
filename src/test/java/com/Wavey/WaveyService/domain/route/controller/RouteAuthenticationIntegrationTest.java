@@ -17,8 +17,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.cloud.spring.vision.CloudVisionTemplate;
+import com.google.cloud.vision.v1.ImageAnnotatorClient;
 
 /**
  * 인증 토큰으로 루트 API 를 호출했을 때 principal → userId 추출이 정상 동작하는지(500 이 아닌지) 확인한다.
@@ -28,6 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 @Transactional
 class RouteAuthenticationIntegrationTest {
+
+    @MockitoBean
+    private CloudVisionTemplate cloudVisionTemplate;
+
+    @MockitoBean
+    private ImageAnnotatorClient imageAnnotatorClient;
+
+    @MockitoBean
+    private CredentialsProvider credentialsProvider;
 
     @Autowired
     private MockMvc mockMvc;
