@@ -12,6 +12,15 @@ import com.Wavey.WaveyService.domain.spot.external.support.ExternalSpotRegionRes
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StringUtils;
+
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,22 +30,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
 public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
 
-    private static final List<SpotCategory> MEDIA_LOCATION_CATEGORIES = List.of(
-            SpotCategory.K_DRAMA,
-            SpotCategory.K_POP,
-            SpotCategory.K_MOVIE
-    );
+    private static final List<SpotCategory> MEDIA_LOCATION_CATEGORIES =
+            List.of(SpotCategory.K_DRAMA, SpotCategory.K_POP, SpotCategory.K_MOVIE);
 
     private final TourApiSpotClient tourApiSpotClient;
     private final MediaLocationSpotClient mediaLocationSpotClient;
@@ -55,16 +55,15 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
     public SpotSyncResponse syncAllHeritageSpots(int numOfRows) {
         validatePaging(1, numOfRows);
         return syncAllPages(
-                pageNo -> tourApiSpotClient.fetchHeritageSpotPage(pageNo, numOfRows),
-                false
-        );
+                pageNo -> tourApiSpotClient.fetchHeritageSpotPage(pageNo, numOfRows), false);
     }
 
     @Override
     public SpotSyncResponse syncMediaLocationSpots(SpotCategory category, int page, int perPage) {
         validatePaging(page, perPage);
         validateMediaCategory(category);
-        ExternalSpotPage spotPage = mediaLocationSpotClient.fetchMediaLocationSpotPage(category, page, perPage);
+        ExternalSpotPage spotPage =
+                mediaLocationSpotClient.fetchMediaLocationSpotPage(category, page, perPage);
         return syncPage(spotPage, true);
     }
 
@@ -73,14 +72,17 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
         validatePaging(1, perPage);
         validateMediaCategory(category);
 
-        List<SpotCategory> categories = category == null ? MEDIA_LOCATION_CATEGORIES : List.of(category);
+        List<SpotCategory> categories =
+                category == null ? MEDIA_LOCATION_CATEGORIES : List.of(category);
         SyncAccumulator accumulator = new SyncAccumulator();
 
         for (SpotCategory targetCategory : categories) {
-            accumulator.add(syncAllPages(
-                    page -> mediaLocationSpotClient.fetchMediaLocationSpotPage(targetCategory, page, perPage),
-                    false
-            ));
+            accumulator.add(
+                    syncAllPages(
+                            page ->
+                                    mediaLocationSpotClient.fetchMediaLocationSpotPage(
+                                            targetCategory, page, perPage),
+                            false));
         }
 
         return accumulator.toResponse();
@@ -92,12 +94,11 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
         validatePaging(1, limit);
         validateMediaCategory(category);
 
-        List<SpotCategory> categories = category == null ? MEDIA_LOCATION_CATEGORIES : List.of(category);
-        List<Spot> spots = spotRepository.findThumbnailTargets(
-                SpotSourceType.MEDIA_LOCATION_DATA,
-                categories,
-                PageRequest.of(0, limit)
-        );
+        List<SpotCategory> categories =
+                category == null ? MEDIA_LOCATION_CATEGORIES : List.of(category);
+        List<Spot> spots =
+                spotRepository.findThumbnailTargets(
+                        SpotSourceType.MEDIA_LOCATION_DATA, categories, PageRequest.of(0, limit));
         Map<String, Optional<String>> thumbnailCache = new HashMap<>();
 
         int updatedCount = 0;
@@ -119,9 +120,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
     }
 
     private SpotSyncResponse syncAllPages(
-            Function<Integer, ExternalSpotPage> pageFetcher,
-            boolean enrichMediaThumbnail
-    ) {
+            Function<Integer, ExternalSpotPage> pageFetcher, boolean enrichMediaThumbnail) {
         SyncAccumulator accumulator = new SyncAccumulator();
         int pageNo = 1;
         int totalCount = 0;
@@ -129,7 +128,8 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
 
         while (true) {
             ExternalSpotPage page = pageFetcher.apply(pageNo);
-            List<ExternalSpotPayload> payloads = page.getItems() == null ? List.of() : page.getItems();
+            List<ExternalSpotPayload> payloads =
+                    page.getItems() == null ? List.of() : page.getItems();
             if (enrichMediaThumbnail) {
                 payloads = enrichMediaThumbnails(payloads);
             }
@@ -189,7 +189,8 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
                 continue;
             }
 
-            String externalKey = externalKey(payload.getSourceType(), payload.getExternalContentId());
+            String externalKey =
+                    externalKey(payload.getSourceType(), payload.getExternalContentId());
             if (!requestedExternalKeys.add(externalKey)) {
                 skippedCount++;
                 continue;
@@ -208,19 +209,24 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
                 continue;
             }
 
-            boolean changed = existingSpot.updateFromExternal(
-                    regionId.get(),
-                    payload.getName(),
-                    payload.getCategory(),
-                    payload.getAddress(),
-                    payload.getLatitude(),
-                    payload.getLongitude(),
-                    payload.getDescription(),
-                    payload.getOpeningHours(),
-                    payload.getClosedDays(),
-                    payload.getTel(),
-                    payload.getThumbnailUrl()
-            );
+            boolean changed =
+                    existingSpot.updateFromExternal(
+                            regionId.get(),
+                            payload.getMediaType(),
+                            payload.getTitle(),
+                            payload.getName(),
+                            payload.getPlaceType(),
+                            payload.getCategory(),
+                            payload.getAddress(),
+                            payload.getLatitude(),
+                            payload.getLongitude(),
+                            payload.getDescription(),
+                            payload.getOpeningHours(),
+                            payload.getBreakTime(),
+                            payload.getClosedDays(),
+                            payload.getTel(),
+                            payload.getThumbnailUrl(),
+                            payload.getSourceUpdatedAt());
 
             if (changed) {
                 updatedCount++;
@@ -230,12 +236,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
         }
 
         return new SyncResult(
-                payloads.size(),
-                savedCount,
-                updatedCount,
-                unchangedCount,
-                skippedCount
-        );
+                payloads.size(), savedCount, updatedCount, unchangedCount, skippedCount);
     }
 
     private List<ExternalSpotPayload> enrichMediaThumbnails(List<ExternalSpotPayload> payloads) {
@@ -247,9 +248,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
     }
 
     private ExternalSpotPayload enrichMediaThumbnail(
-            ExternalSpotPayload payload,
-            Map<String, Optional<String>> thumbnailCache
-    ) {
+            ExternalSpotPayload payload, Map<String, Optional<String>> thumbnailCache) {
         if (payload == null || StringUtils.hasText(payload.getThumbnailUrl())) {
             return payload;
         }
@@ -260,15 +259,14 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
     }
 
     private Optional<String> findThumbnailWithCache(
-            ExternalSpotPayload payload,
-            Map<String, Optional<String>> thumbnailCache
-    ) {
+            ExternalSpotPayload payload, Map<String, Optional<String>> thumbnailCache) {
         String cacheKey = thumbnailCacheKey(payload);
         if (!StringUtils.hasText(cacheKey)) {
             return Optional.empty();
         }
 
-        return thumbnailCache.computeIfAbsent(cacheKey, ignored -> tourApiSpotClient.findBestThumbnail(payload));
+        return thumbnailCache.computeIfAbsent(
+                cacheKey, ignored -> tourApiSpotClient.findBestThumbnail(payload));
     }
 
     private Map<String, Spot> findExistingSpots(List<ExternalSpotPayload> payloads) {
@@ -276,32 +274,38 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
 
         payloads.stream()
                 .filter(this::isSavable)
-                .forEach(payload -> externalIdsBySource
-                        .computeIfAbsent(payload.getSourceType(), ignored -> new HashSet<>())
-                        .add(payload.getExternalContentId()));
+                .forEach(
+                        payload ->
+                                externalIdsBySource
+                                        .computeIfAbsent(
+                                                payload.getSourceType(), ignored -> new HashSet<>())
+                                        .add(payload.getExternalContentId()));
 
         Map<String, Spot> existingSpots = new HashMap<>();
-        externalIdsBySource.forEach((sourceType, externalContentIds) ->
-                spotRepository.findExternalSpots(sourceType, externalContentIds)
-                        .forEach(spot -> existingSpots.putIfAbsent(
-                                externalKey(spot.getSourceType(), spot.getExternalContentId()),
-                                spot
-                        ))
-        );
+        externalIdsBySource.forEach(
+                (sourceType, externalContentIds) ->
+                        spotRepository
+                                .findExternalSpots(sourceType, externalContentIds)
+                                .forEach(
+                                        spot ->
+                                                existingSpots.putIfAbsent(
+                                                        externalKey(
+                                                                spot.getSourceType(),
+                                                                spot.getExternalContentId()),
+                                                        spot)));
 
         return existingSpots;
     }
 
     private Optional<Long> resolveRegionIdWithCache(
-            String address,
-            Map<String, Optional<Long>> regionCache
-    ) {
+            String address, Map<String, Optional<Long>> regionCache) {
         String cacheKey = regionCacheKey(address);
         if (!StringUtils.hasText(cacheKey)) {
             return Optional.empty();
         }
 
-        return regionCache.computeIfAbsent(cacheKey, ignored -> regionResolver.resolveRegionId(address));
+        return regionCache.computeIfAbsent(
+                cacheKey, ignored -> regionResolver.resolveRegionId(address));
     }
 
     private ExternalSpotPayload toPayload(Spot spot) {
@@ -327,7 +331,9 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
         if (payload == null || !StringUtils.hasText(payload.getName())) {
             return "";
         }
-        return normalizeCacheValue(payload.getName()) + "|" + normalizeCacheValue(payload.getAddress());
+        return normalizeCacheValue(payload.getName())
+                + "|"
+                + normalizeCacheValue(payload.getAddress());
     }
 
     private String regionCacheKey(String address) {
@@ -341,24 +347,27 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
         if (!StringUtils.hasText(value)) {
             return "";
         }
-        return value.toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", "")
-                .trim();
+        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "").trim();
     }
 
     private Spot toEntity(ExternalSpotPayload payload, Long regionId) {
         return Spot.builder()
                 .regionId(regionId)
+                .mediaType(payload.getMediaType())
+                .title(payload.getTitle())
                 .name(payload.getName())
+                .placeType(payload.getPlaceType())
                 .category(payload.getCategory())
                 .address(payload.getAddress())
                 .latitude(payload.getLatitude())
                 .longitude(payload.getLongitude())
                 .description(payload.getDescription())
                 .openingHours(payload.getOpeningHours())
+                .breakTime(payload.getBreakTime())
                 .closedDays(payload.getClosedDays())
                 .tel(payload.getTel())
                 .thumbnailUrl(payload.getThumbnailUrl())
+                .sourceUpdatedAt(payload.getSourceUpdatedAt())
                 .sourceType(payload.getSourceType())
                 .externalContentId(payload.getExternalContentId())
                 .avgRating(0.0)
@@ -392,9 +401,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
             int savedCount,
             int updatedCount,
             int unchangedCount,
-            int skippedCount
-    ) {
-    }
+            int skippedCount) {}
 
     private static class SyncAccumulator {
 

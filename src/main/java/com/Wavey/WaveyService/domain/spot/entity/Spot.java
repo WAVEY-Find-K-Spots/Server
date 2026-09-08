@@ -3,6 +3,7 @@ package com.Wavey.WaveyService.domain.spot.entity;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
 import com.Wavey.WaveyService.global.common.BaseEntity;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,23 +11,27 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
-import java.util.Objects;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Objects;
+
 @Entity
 @Table(
         name = "spots",
         indexes = {
-                @Index(name = "idx_spots_region_id", columnList = "region_id"),
-                @Index(name = "idx_spots_category", columnList = "category"),
-                @Index(name = "idx_spots_location", columnList = "latitude, longitude"),
-                @Index(name = "idx_spots_source_external", columnList = "source_type, external_content_id")
-        }
-)
+            @Index(name = "idx_spots_region_id", columnList = "region_id"),
+            @Index(name = "idx_spots_category", columnList = "category"),
+            @Index(name = "idx_spots_location", columnList = "latitude, longitude"),
+            @Index(
+                    name = "idx_spots_source_external",
+                    columnList = "source_type, external_content_id")
+        })
 @AttributeOverride(name = "id", column = @Column(name = "spot_id"))
 @Getter
 @Builder
@@ -37,8 +42,17 @@ public class Spot extends BaseEntity {
     @Column(name = "region_id", nullable = false)
     private Long regionId;
 
+    @Column(name = "media_type", length = 50)
+    private String mediaType;
+
+    @Column(name = "title", length = 255)
+    private String title;
+
     @Column(name = "name", nullable = false, length = 255)
     private String name;
+
+    @Column(name = "place_type", length = 100)
+    private String placeType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 20)
@@ -59,6 +73,9 @@ public class Spot extends BaseEntity {
     @Column(name = "opening_hours", length = 500)
     private String openingHours;
 
+    @Column(name = "break_time", length = 100)
+    private String breakTime;
+
     @Column(name = "closed_days", length = 255)
     private String closedDays;
 
@@ -67,6 +84,9 @@ public class Spot extends BaseEntity {
 
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
+
+    @Column(name = "source_updated_at")
+    private LocalDate sourceUpdatedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type", nullable = false, length = 30)
@@ -79,6 +99,46 @@ public class Spot extends BaseEntity {
     @Column(name = "avg_rating", nullable = false)
     private Double avgRating = 0.0;
 
+    @Column(length = 255)
+    private String nameEn;
+
+    @Column(length = 500)
+    private String addressEn;
+
+    @Column(columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    @Column(length = 500)
+    private String transportInfo;
+
+    @Column(length = 500)
+    private String transportInfoEn;
+
+    @Column(length = 500)
+    private String openingHoursEn;
+
+    private String closedDaysEn;
+
+    @Column(length = 1000)
+    private String playlistUrl;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private long reviewCount = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private long savedCount = 0;
+
+    public void updateRating(double rating, long count) {
+        this.avgRating = rating;
+        this.reviewCount = count;
+    }
+
+    public void changeSavedCount(int delta) {
+        this.savedCount = Math.max(0, this.savedCount + delta);
+    }
+
     public Long getSpotId() {
         return getId();
     }
@@ -89,25 +149,41 @@ public class Spot extends BaseEntity {
 
     public boolean updateFromExternal(
             Long regionId,
+            String mediaType,
+            String title,
             String name,
+            String placeType,
             SpotCategory category,
             String address,
             BigDecimal latitude,
             BigDecimal longitude,
             String description,
             String openingHours,
+            String breakTime,
             String closedDays,
             String tel,
-            String thumbnailUrl
-    ) {
+            String thumbnailUrl,
+            LocalDate sourceUpdatedAt) {
         boolean changed = false;
 
         if (!Objects.equals(this.regionId, regionId)) {
             this.regionId = regionId;
             changed = true;
         }
+        if (!Objects.equals(this.mediaType, mediaType)) {
+            this.mediaType = mediaType;
+            changed = true;
+        }
+        if (!Objects.equals(this.title, title)) {
+            this.title = title;
+            changed = true;
+        }
         if (!Objects.equals(this.name, name)) {
             this.name = name;
+            changed = true;
+        }
+        if (!Objects.equals(this.placeType, placeType)) {
+            this.placeType = placeType;
             changed = true;
         }
         if (!Objects.equals(this.category, category)) {
@@ -134,6 +210,10 @@ public class Spot extends BaseEntity {
             this.openingHours = openingHours;
             changed = true;
         }
+        if (!Objects.equals(this.breakTime, breakTime)) {
+            this.breakTime = breakTime;
+            changed = true;
+        }
         if (!Objects.equals(this.closedDays, closedDays)) {
             this.closedDays = closedDays;
             changed = true;
@@ -146,32 +226,45 @@ public class Spot extends BaseEntity {
             this.thumbnailUrl = thumbnailUrl;
             changed = true;
         }
+        if (!Objects.equals(this.sourceUpdatedAt, sourceUpdatedAt)) {
+            this.sourceUpdatedAt = sourceUpdatedAt;
+            changed = true;
+        }
 
         return changed;
     }
 
     public void update(
+            String mediaType,
+            String title,
             String name,
+            String placeType,
             SpotCategory category,
             String address,
             BigDecimal latitude,
             BigDecimal longitude,
             String description,
             String openingHours,
+            String breakTime,
             String closedDays,
             String tel,
-            String thumbnailUrl
-    ) {
+            String thumbnailUrl,
+            LocalDate sourceUpdatedAt) {
+        this.mediaType = mediaType;
+        this.title = title;
         this.name = name;
+        this.placeType = placeType;
         this.category = category;
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
         this.description = description;
         this.openingHours = openingHours;
+        this.breakTime = breakTime;
         this.closedDays = closedDays;
         this.tel = tel;
         this.thumbnailUrl = thumbnailUrl;
+        this.sourceUpdatedAt = sourceUpdatedAt;
     }
 
     private boolean isDifferentDecimal(BigDecimal current, BigDecimal next) {
