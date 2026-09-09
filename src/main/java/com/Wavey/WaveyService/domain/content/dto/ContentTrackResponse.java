@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.content.dto;
 
-import com.Wavey.WaveyService.domain.content.entity.WorkTrack;
+import com.Wavey.WaveyService.domain.content.entity.ContentTrack;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkTrackResponse {
+public class ContentTrackResponse {
 
     @Schema(description = "DB ID", example = "1")
     private Long id;
@@ -43,9 +43,9 @@ public class WorkTrackResponse {
 
     private boolean hidden;
 
-    public static WorkTrackResponse from(WorkTrack track) {
-        return WorkTrackResponse.builder()
-                .id(track.getWorkTrackId())
+    public static ContentTrackResponse from(ContentTrack track) {
+        return ContentTrackResponse.builder()
+                .id(track.getContentTrackId())
                 .spotifyId(track.getSpotifyId())
                 .name(track.getName())
                 .artistName(track.getArtistName())
