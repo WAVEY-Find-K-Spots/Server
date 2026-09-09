@@ -6,12 +6,19 @@ import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface SpotRepository extends JpaRepository<Spot, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Spot s where s.id = :id")
+    Optional<Spot> findLockedById(@Param("id") Long id);
 
     @Query("""
             SELECT s

@@ -79,12 +79,21 @@ public class Spot extends BaseEntity {
     @Column(name = "avg_rating", nullable = false)
     private Double avgRating = 0.0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private long reviewCount = 0;
+
     public Long getSpotId() {
         return getId();
     }
 
     public void updateThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public void updateRating(Double average, long count) {
+        this.avgRating = average == null ? 0.0 : average;
+        this.reviewCount = count;
     }
 
     public boolean updateFromExternal(
