@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface RegionRepository extends JpaRepository<Region, Long> {
 
-    Optional<Region> findByName(String name);
+    Optional<Region> findByNameKo(String nameKo);
 
     Optional<Region> findByCode(String code);
 

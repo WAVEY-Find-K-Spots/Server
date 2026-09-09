@@ -63,9 +63,9 @@ public class ExternalSpotRegionResolver {
 
         String regionCode = resolveRegionCode(regionName);
         Region region = regionRepository.findByCode(regionCode)
-                .or(() -> regionRepository.findByName(regionName))
+                .or(() -> regionRepository.findByNameKo(regionName))
                 .orElseGet(() -> regionRepository.save(Region.builder()
-                        .name(regionName)
+                        .nameKo(regionName)
                         .code(regionCode)
                         .build()));
 

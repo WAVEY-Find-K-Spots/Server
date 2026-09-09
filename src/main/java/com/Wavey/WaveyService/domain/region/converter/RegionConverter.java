@@ -13,10 +13,8 @@ public class RegionConverter {
 
     public static Region toEntity(RegionCreateRequest request) {
         return Region.builder()
-                .name(request.getName().trim())
+                .nameKo(request.getName().trim())
                 .code(request.getCode().trim())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
                 .build();
     }
 
@@ -24,10 +22,8 @@ public class RegionConverter {
         return RegionResponse.builder()
                 .regionId(region.getRegionId())
                 .nameEn(region.getNameEn())
-                .name(region.getName())
+                .name(region.getNameKo())
                 .code(region.getCode())
-                .latitude(region.getLatitude())
-                .longitude(region.getLongitude())
                 .createdAt(region.getCreatedAt())
                 .updatedAt(region.getUpdatedAt())
                 .build();
@@ -37,7 +33,7 @@ public class RegionConverter {
         String name =
                 StringUtils.hasText(request.getName())
                         ? request.getName().trim()
-                        : region.getName();
+                        : region.getNameKo();
         String code =
                 StringUtils.hasText(request.getCode())
                         ? request.getCode().trim()
@@ -46,7 +42,7 @@ public class RegionConverter {
         region.update(
                 name,
                 code,
-                request.getLatitude() != null ? request.getLatitude() : region.getLatitude(),
-                request.getLongitude() != null ? request.getLongitude() : region.getLongitude());
+                request.getLatitude(),
+                request.getLongitude());
     }
 }
