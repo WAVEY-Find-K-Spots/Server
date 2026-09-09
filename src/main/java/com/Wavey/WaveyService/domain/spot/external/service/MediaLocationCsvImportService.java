@@ -3,6 +3,7 @@ package com.Wavey.WaveyService.domain.spot.external.service;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
+import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
 import com.Wavey.WaveyService.domain.spot.external.support.ExternalSpotRegionResolver;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
@@ -151,7 +152,7 @@ public class MediaLocationCsvImportService {
                                 .mediaType(clean(columns.get(1)))
                                 .title(clean(columns.get(2)))
                                 .name(clean(columns.get(3)))
-                                .placeType(clean(columns.get(4)))
+                                .placeType(PlaceType.from(clean(columns.get(4))).name())
                                 .description(clean(columns.get(5)))
                                 .openingHours(clean(columns.get(6)))
                                 .breakTime(clean(columns.get(7)))
@@ -207,7 +208,7 @@ public class MediaLocationCsvImportService {
                 .mediaType(row.getMediaType())
                 .title(row.getTitle())
                 .name(row.getName())
-                .placeType(row.getPlaceType())
+                .placeType(PlaceType.from(row.getPlaceType()))
                 .category(category)
                 .address(row.getAddress())
                 .latitude(row.getLatitude())
