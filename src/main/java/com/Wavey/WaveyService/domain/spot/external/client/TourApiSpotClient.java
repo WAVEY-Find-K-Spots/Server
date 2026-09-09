@@ -7,6 +7,19 @@ import com.Wavey.WaveyService.domain.spot.external.dto.ExternalSpotPayload;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
+
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -17,16 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 
 @Slf4j
 @Component
@@ -58,17 +61,19 @@ public class TourApiSpotClient {
         validateServiceKey();
 
         try {
-            JsonNode response = restClientBuilder.build()
-                    .get()
-                    .uri(buildHeritageUri(pageNo, numOfRows))
-                    .retrieve()
-                    .body(JsonNode.class);
+            // DB-only mode: external HTTP request disabled.
+            /* JsonNode response = restClientBuilder.build()
+            .get()
+            .uri(buildHeritageUri(pageNo, numOfRows))
+            .retrieve()
+            .body(JsonNode.class); */
+            JsonNode response = externalRequestsDisabled();
 
-            List<ExternalSpotPayload> items = extractItems(response)
-                    .stream()
-                    .map(this::toHeritagePayload)
-                    .filter(Objects::nonNull)
-                    .toList();
+            List<ExternalSpotPayload> items =
+                    extractItems(response).stream()
+                            .map(this::toHeritagePayload)
+                            .filter(Objects::nonNull)
+                            .toList();
 
             return ExternalSpotPage.builder()
                     .items(items)
@@ -77,10 +82,13 @@ public class TourApiSpotClient {
                     .totalCount(totalCount(response))
                     .build();
         } catch (RestClientResponseException e) {
-            log.warn("Tour API request failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            log.warn(
+                    "관광 정보 API 요청 실패. 상태={}, 응답 본문={}",
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString());
             throw new CustomException(ErrorCode.SPOT_EXTERNAL_API_REQUEST_FAILED);
         } catch (RestClientException e) {
-            log.warn("Tour API request failed.", e);
+            log.warn("관광 정보 API 요청에 실패했습니다.", e);
             throw new CustomException(ErrorCode.SPOT_EXTERNAL_API_REQUEST_FAILED);
         }
     }
@@ -91,14 +99,15 @@ public class TourApiSpotClient {
         }
 
         try {
-            JsonNode response = restClientBuilder.build()
-                    .get()
-                    .uri(buildKeywordSearchUri(payload.getName()))
-                    .retrieve()
-                    .body(JsonNode.class);
+            // DB-only mode: external HTTP request disabled.
+            /* JsonNode response = restClientBuilder.build()
+            .get()
+            .uri(buildKeywordSearchUri(payload.getName()))
+            .retrieve()
+            .body(JsonNode.class); */
+            JsonNode response = null; // No remote enrichment; retain stored thumbnails.
 
-            return extractItems(response)
-                    .stream()
+            return extractItems(response).stream()
                     .map(item -> toThumbnailCandidate(payload, item))
                     .flatMap(Optional::stream)
                     .filter(candidate -> candidate.score() >= THUMBNAIL_MATCH_MIN_SCORE)
@@ -106,48 +115,49 @@ public class TourApiSpotClient {
                     .map(ThumbnailCandidate::thumbnailUrl);
         } catch (RestClientResponseException e) {
             log.warn(
-                    "Tour API thumbnail enrichment failed. spotName={}, status={}, body={}",
+                    "관광 정보 API 썸네일 보강 실패. 장소명={}, 상태={}, 응답 본문={}",
                     payload.getName(),
                     e.getStatusCode(),
-                    e.getResponseBodyAsString()
-            );
+                    e.getResponseBodyAsString());
             return Optional.empty();
         } catch (RestClientException e) {
-            log.warn("Tour API thumbnail enrichment failed. spotName={}", payload.getName(), e);
+            log.warn("관광 정보 API 썸네일 보강 실패. 장소명={}", payload.getName(), e);
             return Optional.empty();
         }
     }
 
     private URI buildHeritageUri(int pageNo, int numOfRows) {
-        String uriWithoutServiceKey = UriComponentsBuilder.fromUriString(resolveEndpoint("/areaBasedList2"))
-                .queryParam("MobileOS", "ETC")
-                .queryParam("MobileApp", "WAVEY")
-                .queryParam("_type", "json")
-                .queryParam("contentTypeId", HERITAGE_CONTENT_TYPE_ID)
-                .queryParam("cat1", HERITAGE_CAT1)
-                .queryParam("cat2", HERITAGE_CAT2)
-                .queryParam("arrange", "A")
-                .queryParam("pageNo", pageNo)
-                .queryParam("numOfRows", numOfRows)
-                .build(false)
-                .toUriString();
+        String uriWithoutServiceKey =
+                UriComponentsBuilder.fromUriString(resolveEndpoint("/areaBasedList2"))
+                        .queryParam("MobileOS", "ETC")
+                        .queryParam("MobileApp", "WAVEY")
+                        .queryParam("_type", "json")
+                        .queryParam("contentTypeId", HERITAGE_CONTENT_TYPE_ID)
+                        .queryParam("cat1", HERITAGE_CAT1)
+                        .queryParam("cat2", HERITAGE_CAT2)
+                        .queryParam("arrange", "A")
+                        .queryParam("pageNo", pageNo)
+                        .queryParam("numOfRows", numOfRows)
+                        .build(false)
+                        .toUriString();
 
         return URI.create(uriWithoutServiceKey + "&serviceKey=" + encodedServiceKey());
     }
 
     private URI buildKeywordSearchUri(String keyword) {
-        String uriWithoutServiceKey = UriComponentsBuilder.fromUriString(resolveEndpoint("/searchKeyword2"))
-                .queryParam("MobileOS", "ETC")
-                .queryParam("MobileApp", "WAVEY")
-                .queryParam("_type", "json")
-                .queryParam("listYN", "Y")
-                .queryParam("arrange", "O")
-                .queryParam("pageNo", 1)
-                .queryParam("numOfRows", THUMBNAIL_SEARCH_ROWS)
-                .queryParam("keyword", keyword)
-                .encode(StandardCharsets.UTF_8)
-                .build(false)
-                .toUriString();
+        String uriWithoutServiceKey =
+                UriComponentsBuilder.fromUriString(resolveEndpoint("/searchKeyword2"))
+                        .queryParam("MobileOS", "ETC")
+                        .queryParam("MobileApp", "WAVEY")
+                        .queryParam("_type", "json")
+                        .queryParam("listYN", "Y")
+                        .queryParam("arrange", "O")
+                        .queryParam("pageNo", 1)
+                        .queryParam("numOfRows", THUMBNAIL_SEARCH_ROWS)
+                        .queryParam("keyword", keyword)
+                        .encode(StandardCharsets.UTF_8)
+                        .build(false)
+                        .toUriString();
 
         return URI.create(uriWithoutServiceKey + "&serviceKey=" + encodedServiceKey());
     }
@@ -160,9 +170,10 @@ public class TourApiSpotClient {
     }
 
     private List<JsonNode> extractItems(JsonNode response) {
-        JsonNode itemNode = response == null
-                ? null
-                : response.path("response").path("body").path("items").path("item");
+        JsonNode itemNode =
+                response == null
+                        ? null
+                        : response.path("response").path("body").path("items").path("item");
 
         if (itemNode == null || itemNode.isMissingNode() || itemNode.isNull()) {
             return List.of();
@@ -181,10 +192,7 @@ public class TourApiSpotClient {
         if (response == null) {
             return 0;
         }
-        return response.path("response")
-                .path("body")
-                .path("totalCount")
-                .asInt(0);
+        return response.path("response").path("body").path("totalCount").asInt(0);
     }
 
     private ExternalSpotPayload toHeritagePayload(JsonNode item) {
@@ -214,7 +222,8 @@ public class TourApiSpotClient {
                 .build();
     }
 
-    private Optional<ThumbnailCandidate> toThumbnailCandidate(ExternalSpotPayload payload, JsonNode item) {
+    private Optional<ThumbnailCandidate> toThumbnailCandidate(
+            ExternalSpotPayload payload, JsonNode item) {
         String thumbnailUrl = thumbnailUrl(item);
         if (!StringUtils.hasText(thumbnailUrl)) {
             return Optional.empty();
@@ -225,12 +234,12 @@ public class TourApiSpotClient {
             return Optional.empty();
         }
 
-        int distanceScore = distanceScore(
-                payload.getLatitude(),
-                payload.getLongitude(),
-                decimal(item, "mapy"),
-                decimal(item, "mapx")
-        );
+        int distanceScore =
+                distanceScore(
+                        payload.getLatitude(),
+                        payload.getLongitude(),
+                        decimal(item, "mapy"),
+                        decimal(item, "mapx"));
         if (distanceScore < 0) {
             return Optional.empty();
         }
@@ -251,7 +260,8 @@ public class TourApiSpotClient {
         String normalizedSourceName = normalizeName(sourceName);
         String normalizedCandidateName = normalizeName(candidateName);
 
-        if (!StringUtils.hasText(normalizedSourceName) || !StringUtils.hasText(normalizedCandidateName)) {
+        if (!StringUtils.hasText(normalizedSourceName)
+                || !StringUtils.hasText(normalizedCandidateName)) {
             return 0;
         }
         if (normalizedSourceName.equals(normalizedCandidateName)) {
@@ -260,7 +270,7 @@ public class TourApiSpotClient {
         if (normalizedSourceName.length() >= 3
                 && normalizedCandidateName.length() >= 3
                 && (normalizedSourceName.contains(normalizedCandidateName)
-                || normalizedCandidateName.contains(normalizedSourceName))) {
+                        || normalizedCandidateName.contains(normalizedSourceName))) {
             return 35;
         }
         return 0;
@@ -274,9 +284,7 @@ public class TourApiSpotClient {
             return 0;
         }
 
-        long overlapCount = sourceTokens.stream()
-                .filter(candidateTokens::contains)
-                .count();
+        long overlapCount = sourceTokens.stream().filter(candidateTokens::contains).count();
 
         if (overlapCount >= 3) {
             return 25;
@@ -306,18 +314,20 @@ public class TourApiSpotClient {
             BigDecimal sourceLatitude,
             BigDecimal sourceLongitude,
             BigDecimal candidateLatitude,
-            BigDecimal candidateLongitude
-    ) {
-        if (sourceLatitude == null || sourceLongitude == null || candidateLatitude == null || candidateLongitude == null) {
+            BigDecimal candidateLongitude) {
+        if (sourceLatitude == null
+                || sourceLongitude == null
+                || candidateLatitude == null
+                || candidateLongitude == null) {
             return 0;
         }
 
-        double distanceKm = distanceKm(
-                sourceLatitude.doubleValue(),
-                sourceLongitude.doubleValue(),
-                candidateLatitude.doubleValue(),
-                candidateLongitude.doubleValue()
-        );
+        double distanceKm =
+                distanceKm(
+                        sourceLatitude.doubleValue(),
+                        sourceLongitude.doubleValue(),
+                        candidateLatitude.doubleValue(),
+                        candidateLongitude.doubleValue());
 
         if (distanceKm > THUMBNAIL_MATCH_MAX_DISTANCE_KM) {
             return -1;
@@ -334,15 +344,22 @@ public class TourApiSpotClient {
         return 5;
     }
 
-    private double distanceKm(double sourceLatitude, double sourceLongitude, double candidateLatitude, double candidateLongitude) {
+    private double distanceKm(
+            double sourceLatitude,
+            double sourceLongitude,
+            double candidateLatitude,
+            double candidateLongitude) {
         double latDistance = Math.toRadians(candidateLatitude - sourceLatitude);
         double lngDistance = Math.toRadians(candidateLongitude - sourceLongitude);
         double sourceLatRadians = Math.toRadians(sourceLatitude);
         double candidateLatRadians = Math.toRadians(candidateLatitude);
 
-        double haversine = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(sourceLatRadians) * Math.cos(candidateLatRadians)
-                * Math.sin(lngDistance / 2) * Math.sin(lngDistance / 2);
+        double haversine =
+                Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                        + Math.cos(sourceLatRadians)
+                                * Math.cos(candidateLatRadians)
+                                * Math.sin(lngDistance / 2)
+                                * Math.sin(lngDistance / 2);
 
         return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
     }
@@ -426,6 +443,9 @@ public class TourApiSpotClient {
         return UriUtils.encodeQueryParam(trimmedServiceKey, StandardCharsets.UTF_8);
     }
 
-    private record ThumbnailCandidate(String thumbnailUrl, int score) {
+    private record ThumbnailCandidate(String thumbnailUrl, int score) {}
+
+    private JsonNode externalRequestsDisabled() {
+        throw new CustomException(ErrorCode.EXTERNAL_API_DISABLED);
     }
 }
