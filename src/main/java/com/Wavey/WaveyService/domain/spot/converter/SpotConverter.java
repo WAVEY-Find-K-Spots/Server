@@ -24,7 +24,7 @@ public final class SpotConverter {
                 .openingHours(request.getOpeningHours())
                 .closedDays(request.getClosedDays())
                 .tel(request.getTel())
-                .thumbnailUrl(request.getThumbnailUrl())
+                .imageUrl(request.getThumbnailUrl())
                 .sourceType(request.getSourceType())
                 .externalContentId(normalizeNullableText(request.getExternalContentId()))
                 .avgRating(0.0)
@@ -38,7 +38,7 @@ public final class SpotConverter {
                 .mediaType(spot.getMediaType())
                 .title(spot.getTitle())
                 .name(spot.getName())
-                .placeType(spot.getPlaceType())
+                .placeType(spot.getPlaceType() == null ? null : spot.getPlaceType().name())
                 .category(spot.getCategory())
                 .address(spot.getAddress())
                 .latitude(spot.getLatitude())
@@ -76,7 +76,7 @@ public final class SpotConverter {
                 spot.getMediaType(),
                 spot.getTitle(),
                 request.getName() != null ? request.getName().trim() : spot.getName(),
-                spot.getPlaceType(),
+                spot.getPlaceType() == null ? null : spot.getPlaceType().name(),
                 request.getCategory() != null ? request.getCategory() : spot.getCategory(),
                 request.getAddress() != null ? request.getAddress() : spot.getAddress(),
                 request.getLatitude() != null ? request.getLatitude() : spot.getLatitude(),

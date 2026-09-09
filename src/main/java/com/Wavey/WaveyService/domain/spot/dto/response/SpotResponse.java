@@ -24,7 +24,6 @@ public class SpotResponse {
     private String categoryCode;
     private String categoryLabel;
     private String transportInfo;
-    private String playlistUrl;
     private String mapProvider;
     private String googleMapsUrl;
     private long reviewCount;

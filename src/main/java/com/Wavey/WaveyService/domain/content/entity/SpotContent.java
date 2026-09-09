@@ -1,59 +1,28 @@
 package com.Wavey.WaveyService.domain.content.entity;
 
 import com.Wavey.WaveyService.global.common.BaseEntity;
-
-import jakarta.persistence.*;
-
-import lombok.*;
-
-import java.time.*;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "spot_contents")
+@Table(name = "spot_contents", uniqueConstraints = @UniqueConstraint(
+        name = "uk_spot_contents_spot_content", columnNames = {"spot_id", "content_id"}))
+@AttributeOverride(name = "id", column = @Column(name = "id"))
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SpotContent extends BaseEntity {
-
-    @Column(nullable = false)
+    @Column(name = "spot_id", nullable = false)
     private Long spotId;
 
-    @Column(nullable = false)
+    @Column(name = "content_id", nullable = false)
     private Long contentId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Kind kind;
-
-    private String titleEn;
-
-    @Column(length = 2000)
-    private String descriptionEn;
-
-    private String artist;
-    private String episodes;
-
-    @Column(length = 2000)
-    private String sceneDescription;
-
-    @Column(length = 2000)
-    private String sceneDescriptionEn;
-
-    @Column(length = 1000)
-    private String playbackUrl;
-
-    @Column(length = 1000)
-    private String sceneUrl;
-
-    private Integer durationSeconds;
-    private Integer displayOrder;
-
-    public enum Kind {
-        DRAMA,
-        MOVIE,
-        MUSIC,
-        VIDEO
-    }
 }

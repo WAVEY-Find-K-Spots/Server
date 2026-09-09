@@ -27,7 +27,7 @@ public class SpotifyOstPolicy {
         if (containsAny(albumName, properties.getSpotify().getAlbumDenyKeywords())) {
             return false;
         }
-        return containsWorkTitle(albumName, workTitle, titleEn);
+        return containsContentTitle(albumName, workTitle, titleEn);
     }
 
     public boolean shouldKeepAlbumTrack(String trackName, Long durationMs) {
@@ -71,7 +71,7 @@ public class SpotifyOstPolicy {
         return false;
     }
 
-    private boolean containsWorkTitle(String albumName, String workTitle, String titleEn) {
+    private boolean containsContentTitle(String albumName, String workTitle, String titleEn) {
         if (StringUtils.hasText(workTitle) && containsAny(albumName, List.of(workTitle))) {
             return true;
         }

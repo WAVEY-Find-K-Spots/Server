@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.spot.entity;
 
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
+import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
 import com.Wavey.WaveyService.global.common.BaseEntity;
 
 import jakarta.persistence.AttributeOverride;
@@ -52,7 +53,8 @@ public class Spot extends BaseEntity {
     private String name;
 
     @Column(name = "place_type", length = 100)
-    private String placeType;
+    @Enumerated(EnumType.STRING)
+    private PlaceType placeType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 20)
@@ -82,8 +84,8 @@ public class Spot extends BaseEntity {
     @Column(name = "tel", length = 50)
     private String tel;
 
-    @Column(name = "thumbnail_url", length = 500)
-    private String thumbnailUrl;
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @Column(name = "source_updated_at")
     private LocalDate sourceUpdatedAt;
@@ -119,9 +121,6 @@ public class Spot extends BaseEntity {
 
     private String closedDaysEn;
 
-    @Column(length = 1000)
-    private String playlistUrl;
-
     @Builder.Default
     @Column(nullable = false)
     private long reviewCount = 0;
@@ -144,7 +143,11 @@ public class Spot extends BaseEntity {
     }
 
     public void updateThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
+        this.imageUrl = thumbnailUrl;
+    }
+
+    public String getThumbnailUrl() {
+        return imageUrl;
     }
 
     public boolean updateFromExternal(
@@ -182,8 +185,9 @@ public class Spot extends BaseEntity {
             this.name = name;
             changed = true;
         }
-        if (!Objects.equals(this.placeType, placeType)) {
-            this.placeType = placeType;
+        PlaceType normalizedPlaceType = PlaceType.from(placeType);
+        if (!Objects.equals(this.placeType, normalizedPlaceType)) {
+            this.placeType = normalizedPlaceType;
             changed = true;
         }
         if (!Objects.equals(this.category, category)) {
@@ -222,8 +226,8 @@ public class Spot extends BaseEntity {
             this.tel = tel;
             changed = true;
         }
-        if (thumbnailUrl != null && !Objects.equals(this.thumbnailUrl, thumbnailUrl)) {
-            this.thumbnailUrl = thumbnailUrl;
+        if (thumbnailUrl != null && !Objects.equals(this.imageUrl, thumbnailUrl)) {
+            this.imageUrl = thumbnailUrl;
             changed = true;
         }
         if (!Objects.equals(this.sourceUpdatedAt, sourceUpdatedAt)) {
@@ -253,7 +257,7 @@ public class Spot extends BaseEntity {
         this.mediaType = mediaType;
         this.title = title;
         this.name = name;
-        this.placeType = placeType;
+        this.placeType = PlaceType.from(placeType);
         this.category = category;
         this.address = address;
         this.latitude = latitude;
@@ -263,7 +267,7 @@ public class Spot extends BaseEntity {
         this.breakTime = breakTime;
         this.closedDays = closedDays;
         this.tel = tel;
-        this.thumbnailUrl = thumbnailUrl;
+        this.imageUrl = thumbnailUrl;
         this.sourceUpdatedAt = sourceUpdatedAt;
     }
 

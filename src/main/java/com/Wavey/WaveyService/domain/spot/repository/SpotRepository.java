@@ -76,7 +76,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificat
             FROM Spot s
             WHERE s.sourceType = :sourceType
               AND s.category IN :categories
-              AND (s.thumbnailUrl IS NULL OR s.thumbnailUrl = '')
+              AND (s.imageUrl IS NULL OR s.imageUrl = '')
             ORDER BY s.id ASC
             """)
     List<Spot> findThumbnailTargets(

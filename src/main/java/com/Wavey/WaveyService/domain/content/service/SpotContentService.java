@@ -1,16 +1,14 @@
 package com.Wavey.WaveyService.domain.content.service;
 
-import com.Wavey.WaveyService.domain.content.entity.SpotContent;
-import com.Wavey.WaveyService.domain.content.repository.*;
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
+import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
+import com.Wavey.WaveyService.domain.content.repository.SpotContentRepository;
 import com.Wavey.WaveyService.domain.spot.service.SpotDiscoveryService;
-import com.Wavey.WaveyService.global.common.UiSupport;
-
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -20,63 +18,23 @@ public class SpotContentService {
     private final ContentRepository contents;
     private final SpotDiscoveryService discovery;
 
-    public record Item(
-            Long contentId,
-            SpotContent.Kind kind,
-            String title,
-            String artist,
-            String episodes,
-            String description,
-            String sceneDescription,
-            String thumbnailUrl,
-            String playbackUrl,
-            String sceneUrl,
-            Integer durationSeconds) {}
-
-    public record Result(
-            List<Item> dramas,
-            List<Item> movies,
-            List<Item> music,
-            List<Item> videos,
-            String playlistUrl) {}
+    public record Item(Long contentId, ContentCategory category, String title) {}
+    public record Result(List<Item> dramas, List<Item> movies, List<Item> music, List<Item> videos) {}
 
     public Result get(Long spotId, Long userId, String language) {
-        var spot = discovery.require(spotId);
-        String lang = discovery.language(userId, language);
+        discovery.require(spotId);
         List<Item> all = new ArrayList<>();
-        for (var link : links.findBySpotIdOrderByDisplayOrderAscIdAsc(spotId))
-            contents.findById(link.getContentId())
-                    .ifPresent(
-                            c ->
-                                    all.add(
-                                            new Item(
-                                                    c.getId(),
-                                                    link.getKind(),
-                                                    UiSupport.localized(
-                                                            c.getTitle(), link.getTitleEn(), lang),
-                                                    link.getArtist(),
-                                                    link.getEpisodes(),
-                                                    UiSupport.localized(
-                                                            c.getDescription(),
-                                                            link.getDescriptionEn(),
-                                                            lang),
-                                                    UiSupport.localized(
-                                                            link.getSceneDescription(),
-                                                            link.getSceneDescriptionEn(),
-                                                            lang),
-                                                    c.getThumbnailUrl(),
-                                                    link.getPlaybackUrl(),
-                                                    link.getSceneUrl(),
-                                                    link.getDurationSeconds())));
+        links.findBySpotIdOrderByIdAsc(spotId).forEach(link ->
+                contents.findById(link.getContentId())
+                        .ifPresent(content -> all.add(new Item(content.getContentId(), content.getCategory(), content.getTitle()))));
         return new Result(
-                group(all, SpotContent.Kind.DRAMA),
-                group(all, SpotContent.Kind.MOVIE),
-                group(all, SpotContent.Kind.MUSIC),
-                group(all, SpotContent.Kind.VIDEO),
-                spot.getPlaylistUrl());
+                filter(all, ContentCategory.DRAMA),
+                filter(all, ContentCategory.MOVIE),
+                filter(all, ContentCategory.ARTIST),
+                List.copyOf(all));
     }
 
-    private List<Item> group(List<Item> items, SpotContent.Kind kind) {
-        return items.stream().filter(i -> i.kind() == kind).toList();
+    private List<Item> filter(List<Item> items, ContentCategory category) {
+        return items.stream().filter(item -> item.category() == category).toList();
     }
 }

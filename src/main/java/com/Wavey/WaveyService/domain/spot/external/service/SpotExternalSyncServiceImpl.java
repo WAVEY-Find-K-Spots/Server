@@ -4,6 +4,7 @@ import com.Wavey.WaveyService.domain.spot.dto.response.SpotSyncResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
+import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
 import com.Wavey.WaveyService.domain.spot.external.client.MediaLocationSpotClient;
 import com.Wavey.WaveyService.domain.spot.external.client.TourApiSpotClient;
 import com.Wavey.WaveyService.domain.spot.external.dto.ExternalSpotPage;
@@ -356,7 +357,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
                 .mediaType(payload.getMediaType())
                 .title(payload.getTitle())
                 .name(payload.getName())
-                .placeType(payload.getPlaceType())
+                .placeType(PlaceType.from(payload.getPlaceType()))
                 .category(payload.getCategory())
                 .address(payload.getAddress())
                 .latitude(payload.getLatitude())
@@ -366,7 +367,7 @@ public class SpotExternalSyncServiceImpl implements SpotExternalSyncService {
                 .breakTime(payload.getBreakTime())
                 .closedDays(payload.getClosedDays())
                 .tel(payload.getTel())
-                .thumbnailUrl(payload.getThumbnailUrl())
+                .imageUrl(payload.getThumbnailUrl())
                 .sourceUpdatedAt(payload.getSourceUpdatedAt())
                 .sourceType(payload.getSourceType())
                 .externalContentId(payload.getExternalContentId())

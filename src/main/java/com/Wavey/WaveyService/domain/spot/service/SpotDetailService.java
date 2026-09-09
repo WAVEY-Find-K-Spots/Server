@@ -39,7 +39,6 @@ public class SpotDetailService {
         r.setTransportInfo(UiSupport.localized(s.getTransportInfo(), s.getTransportInfoEn(), lang));
         r.setCategoryCode(UiSupport.categoryCode(s.getCategory()));
         r.setCategoryLabel(UiSupport.categoryLabel(s.getCategory(), lang));
-        r.setPlaylistUrl(s.getPlaylistUrl());
         r.setMapProvider("GOOGLE_MAPS");
         r.setGoogleMapsUrl(
                 "https://www.google.com/maps/search/?api=1&query="
@@ -60,7 +59,7 @@ public class SpotDetailService {
                         .toList());
         var tags = new LinkedHashSet<String>();
         if (s.getTitle() != null && !s.getTitle().isBlank()) tags.add(s.getTitle());
-        links.findBySpotIdOrderByDisplayOrderAscIdAsc(id)
+        links.findBySpotIdOrderByIdAsc(id)
                 .forEach(
                         link ->
                                 contents.findById(link.getContentId())
@@ -69,7 +68,7 @@ public class SpotDetailService {
                                                         tags.add(
                                                                 UiSupport.localized(
                                                                         c.getTitle(),
-                                                                        link.getTitleEn(),
+                                                                        null,
                                                                         lang))));
         r.setTags(List.copyOf(tags));
         return r;
