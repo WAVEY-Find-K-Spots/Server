@@ -1,25 +1,26 @@
 package com.Wavey.WaveyService.domain.region.entity;
 
 import com.Wavey.WaveyService.global.common.BaseEntity;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+
 @Entity
 @Table(
         name = "regions",
         indexes = {
-                @Index(name = "idx_regions_code", columnList = "code", unique = true),
-                @Index(name = "idx_regions_name", columnList = "name")
-        }
-)
+            @Index(name = "idx_regions_code", columnList = "code", unique = true),
+            @Index(name = "idx_regions_name_ko", columnList = "name_ko")
+        })
 @AttributeOverride(name = "id", column = @Column(name = "region_id"))
 @Getter
 @Builder
@@ -27,26 +28,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Region extends BaseEntity {
 
-    @Column(name = "name", nullable = false, length = 100)
-    private String name;
-
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    @Column(name = "latitude", precision = 10, scale = 8)
-    private BigDecimal latitude;
+    @Column(name = "name_ko", nullable = false, length = 50)
+    private String nameKo;
 
-    @Column(name = "longitude", precision = 11, scale = 8)
-    private BigDecimal longitude;
+    @Column(name = "name_en", length = 50)
+    private String nameEn;
 
     public Long getRegionId() {
         return getId();
     }
 
-    public void update(String name, String code, BigDecimal latitude, BigDecimal longitude) {
-        this.name = name;
+    public void update(String name, String code, java.math.BigDecimal latitude, java.math.BigDecimal longitude) {
+        this.nameKo = name;
         this.code = code;
-        this.latitude = latitude;
-        this.longitude = longitude;
     }
 }

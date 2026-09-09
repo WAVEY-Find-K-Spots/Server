@@ -9,14 +9,14 @@ import org.springframework.data.repository.query.Param;
 
 public interface RegionRepository extends JpaRepository<Region, Long> {
 
-    Optional<Region> findByName(String name);
+    Optional<Region> findByNameKo(String nameKo);
 
     Optional<Region> findByCode(String code);
 
     @Query("""
             SELECT r
             FROM Region r
-            ORDER BY r.name ASC
+            ORDER BY r.nameKo ASC
             """)
     List<Region> findAllOrderByName();
 
