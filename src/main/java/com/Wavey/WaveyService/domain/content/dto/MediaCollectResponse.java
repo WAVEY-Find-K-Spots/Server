@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class MediaCollectResponse {
 
     @Schema(example = "1")
-    private Long workId;
+    private Long contentId;
 
     @Schema(description = "저장된 개수")
     private int saved;
@@ -23,8 +23,8 @@ public class MediaCollectResponse {
     private int dropped;
 
     @Schema(nullable = true)
-    private List<WorkVideoResponse> videos;
+    private List<ContentVideoResponse> videos;
 
     @Schema(nullable = true)
-    private List<WorkTrackResponse> tracks;
+    private List<ContentTrackResponse> tracks;
 }
