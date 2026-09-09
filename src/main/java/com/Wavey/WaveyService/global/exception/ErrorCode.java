@@ -14,6 +14,8 @@ public enum ErrorCode {
     COMMON_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMON_FILE_SIZE", "파일 용량이 제한을 초과했습니다."),
     COMMON_FILE_EMPTY(HttpStatus.BAD_REQUEST, "COMMON_FILE", "파일이 비어있거나 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "\uC11C\uBC84 \uB0B4\uBD80 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "요청한 데이터를 찾을 수 없습니다."),
+    STAMP_TOO_FAR(HttpStatus.BAD_REQUEST, "STAMP_TOO_FAR", "스탬프 획득 가능 거리 밖입니다."),
 
     // ROUTE
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", "\uD574\uB2F9 \uB8E8\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."),
