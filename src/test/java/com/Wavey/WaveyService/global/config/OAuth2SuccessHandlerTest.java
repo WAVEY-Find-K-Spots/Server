@@ -3,7 +3,7 @@ package com.Wavey.WaveyService.global.config;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
-import com.Wavey.WaveyService.global.common.JwtTokenProvider;
+import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class OAuth2SuccessHandlerTest {
 
     @Mock
-    private JwtTokenProvider tokenProvider;
+    private RedisAuthTokenService authTokenService;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -33,9 +33,9 @@ class OAuth2SuccessHandlerTest {
     private OAuth2User oAuth2User;
 
     @Test
-    void 로그인_성공시_토큰을_fragment에_담아_프론트로_리다이렉트한다() throws Exception {
+    void 로그인_성공시_일회성_코드를_담아_프론트로_리다이렉트한다() throws Exception {
         OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
-                tokenProvider,
+                authTokenService,
                 userRepository,
                 "http://localhost:3000/oauth/callback"
         );
@@ -48,12 +48,11 @@ class OAuth2SuccessHandlerTest {
                 .role(Role.USER)
                 .build();
         when(authentication.getPrincipal()).thenReturn(oAuth2User);
-        when(oAuth2User.getAttribute("sub")).thenReturn("provider-id");
+        when(oAuth2User.getAttribute("providerId")).thenReturn("provider-id");
         when(oAuth2User.getAttribute("provider")).thenReturn("google");
-        when(tokenProvider.createAccessToken("google", "provider-id")).thenReturn("access.token");
-        when(tokenProvider.createRefreshToken("google", "provider-id")).thenReturn("refresh.token");
         when(userRepository.findByProviderAndProviderId("google", "provider-id"))
                 .thenReturn(Optional.of(user));
+        when(authTokenService.issueLoginCode(1L)).thenReturn("login-code");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -61,11 +60,11 @@ class OAuth2SuccessHandlerTest {
 
         assertThat(response.getStatus()).isEqualTo(302);
         assertThat(response.getRedirectedUrl()).isEqualTo(
-                "http://localhost:3000/oauth/callback#accessToken=access.token&refreshToken=refresh.token&tokenType=Bearer"
+                "http://localhost:3000/oauth/callback?code=login-code"
         );
         assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
         assertThat(response.getHeader(HttpHeaders.PRAGMA)).isEqualTo("no-cache");
-        assertThat(user.getRefreshToken()).isEqualTo("refresh.token");
+        verify(authTokenService).issueLoginCode(1L);
         verify(userRepository).findByProviderAndProviderId("google", "provider-id");
     }
 }

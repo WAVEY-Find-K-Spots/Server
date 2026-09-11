@@ -9,7 +9,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
+import com.google.cloud.spring.vision.CloudVisionTemplate;
+import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.api.gax.core.CredentialsProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 인증 토큰으로 루트 API 를 호출했을 때 principal → userId 추출이 정상 동작하는지(500 이 아닌지) 확인한다.
@@ -37,6 +42,18 @@ class RouteAuthenticationIntegrationTest {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RedisAuthTokenService authTokenService;
+
+    @MockitoBean
+    private CloudVisionTemplate cloudVisionTemplate;
+
+    @MockitoBean
+    private ImageAnnotatorClient imageAnnotatorClient;
+
+    @MockitoBean
+    private CredentialsProvider credentialsProvider;
 
     private static final String PROVIDER = "google";
     private static final String PROVIDER_ID = "auth-it-user-1";
