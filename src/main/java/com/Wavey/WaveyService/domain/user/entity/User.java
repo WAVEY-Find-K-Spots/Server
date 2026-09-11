@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_users_provider_provider_id",
+                columnNames = {"provider", "provider_id"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -15,7 +21,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "provider_id", nullable = false)
     private String providerId;
 
     @Column(nullable = false)
@@ -25,14 +31,11 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private String provider; // "google", "apple"
+    private String provider; // "google", "apple", "kakao"
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
-
-    @Column(length = 500)
-    private String refreshToken;
 
     public User update(String name, String email) {
         if (name != null && !name.isEmpty()) {
@@ -48,7 +51,4 @@ public class User {
         this.role = role;
     }
 
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
 }

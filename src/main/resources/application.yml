@@ -8,6 +8,11 @@ spring:
       max-file-size: 5MB
       max-request-size: 6MB
 
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      connect-timeout: 2s
+      timeout: 2s
   config:
     import: optional:file:.env[.properties]
 
@@ -29,8 +34,24 @@ spring:
             scope:
               - profile
               - email
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - profile_nickname
+              - account_email
+            client-name: Kakao
             #apple:
             #client-id: ${APPLE_CLIENT_ID}
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
 
   # [Database Configuration]
   datasource:
@@ -48,10 +69,10 @@ spring:
   # [H2 Console Settings]
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:false}
       path: /h2-console
       settings:
-        web-allow-others: true
+        web-allow-others: ${H2_CONSOLE_WEB_ALLOW_OTHERS:false}
 
   # [JPA & Hibernate Settings]
   jpa:
@@ -71,12 +92,19 @@ spring:
 
 # --- [수정 포인트] spring 계층 밖(맨 왼쪽)으로 이동하여 Placeholder 에러 해결 ---
 auth:
+  allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:3000}
+  login-code-ttl: ${AUTH_LOGIN_CODE_TTL:3m}
   server-url: ${SERVER_URL:http://localhost:8080}
   frontend-redirect-uri: ${AUTH_FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/callback}
   base-url: ${AUTH_BASE_URL:/oauth2/authorization/}
   google-path: ${GOOGLE_AUTH_PATH:google}
   apple-path: ${APPLE_AUTH_PATH:apple}
+  kakao-path: ${KAKAO_AUTH_PATH:kakao}
   admin-white-list: ${ADMIN_EMAILS}
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
 
 jwt:
   secret: ${key}
@@ -150,9 +178,11 @@ logging:
 
 # [Swagger / OpenAPI Documentation]
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
   api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
     path: /api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /swagger-ui.html
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
