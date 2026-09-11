@@ -12,9 +12,9 @@ public interface ContentTrackRepository extends JpaRepository<ContentTrack, Long
 
     List<ContentTrack> findByContentId(Long contentId);
 
-    Optional<ContentTrack> findByContentIdAndSpotifyId(Long contentId, String spotifyId);
+    Optional<ContentTrack> findByContentIdAndSpotifyTrackId(Long contentId, String spotifyTrackId);
 
     void deleteByContentIdAndHiddenFalse(Long contentId);
 
-    void deleteByContentIdAndHiddenFalseAndSpotifyIdNotIn(Long contentId, Collection<String> spotifyIds);
+    void deleteByContentIdAndHiddenFalseAndSpotifyTrackIdNotIn(Long contentId, Collection<String> spotifyTrackIds);
 }

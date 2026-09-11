@@ -213,7 +213,7 @@ public class MediaCollectService {
         if (keepIds.isEmpty()) {
             workTrackRepository.deleteByContentIdAndHiddenFalse(contentId);
         } else {
-            workTrackRepository.deleteByContentIdAndHiddenFalseAndSpotifyIdNotIn(contentId, keepIds);
+            workTrackRepository.deleteByContentIdAndHiddenFalseAndSpotifyTrackIdNotIn(contentId, keepIds);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -222,14 +222,14 @@ public class MediaCollectService {
             String spotifyUrl = StringUtils.hasText(track.spotifyUrl())
                     ? track.spotifyUrl()
                     : SPOTIFY_TRACK_URL_TEMPLATE.formatted(track.trackId());
-            ContentTrack entity = workTrackRepository.findByContentIdAndSpotifyId(contentId, track.trackId())
+            ContentTrack entity = workTrackRepository.findByContentIdAndSpotifyTrackId(contentId, track.trackId())
                     .orElseGet(() -> ContentTrack.builder()
                             .contentId(contentId)
-                            .spotifyId(track.trackId())
-                            .name(track.title())
+                            .contentAlbumId(null)
+                            .spotifyTrackId(track.trackId())
+                            .title(track.title())
                             .artistName(track.artistName())
                             .imageUrl(track.thumbnailUrl())
-                            .previewUrl(track.previewUrl())
                             .spotifyUrl(spotifyUrl)
                             .durationMs(track.durationMs())
                             .hidden(false)
@@ -237,10 +237,10 @@ public class MediaCollectService {
                             .build());
             if (entity.getContentTrackId() != null) {
                 entity.updateFetched(
+                        null,
                         track.title(),
                         track.artistName(),
                         track.thumbnailUrl(),
-                        track.previewUrl(),
                         spotifyUrl,
                         track.durationMs()
                 );
@@ -268,7 +268,7 @@ public class MediaCollectService {
     private Set<String> hiddenSpotifyIds(Long contentId) {
         return workTrackRepository.findByContentId(contentId).stream()
                 .filter(ContentTrack::isHidden)
-                .map(ContentTrack::getSpotifyId)
+                .map(ContentTrack::getSpotifyTrackId)
                 .collect(Collectors.toSet());
     }
 }

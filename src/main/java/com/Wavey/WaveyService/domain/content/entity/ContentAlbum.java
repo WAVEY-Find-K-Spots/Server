@@ -14,36 +14,33 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-        name = "content_videos",
+        name = "content_albums",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_content_videos_content_youtube",
-                columnNames = {"content_id", "youtube_video_id"}
+                name = "uk_content_albums_content_spotify",
+                columnNames = {"content_id", "spotify_album_id"}
         )
 )
-@AttributeOverride(name = "id", column = @Column(name = "content_video_id"))
+@AttributeOverride(name = "id", column = @Column(name = "content_album_id"))
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ContentVideo extends BaseEntity {
+public class ContentAlbum extends BaseEntity {
 
     @Column(name = "content_id", nullable = false)
     private Long contentId;
 
-    @Column(name = "youtube_video_id", nullable = false, length = 32)
-    private String youtubeVideoId;
+    @Column(name = "spotify_album_id", nullable = false, length = 64)
+    private String spotifyAlbumId;
 
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(name = "channel_title", length = 255)
-    private String channelTitle;
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
-    @Column(name = "thumbnail_url", nullable = false, length = 500)
-    private String thumbnailUrl;
-
-    @Column(name = "duration_sec", nullable = false)
-    private int durationSec;
+    @Column(name = "spotify_url", length = 500)
+    private String spotifyUrl;
 
     @Builder.Default
     @Column(nullable = false)
@@ -52,23 +49,18 @@ public class ContentVideo extends BaseEntity {
     @Column(name = "fetched_at", nullable = false)
     private LocalDateTime fetchedAt;
 
-    public Long getContentVideoId() {
+    public Long getContentAlbumId() {
         return getId();
     }
 
-    public void updateFetched(String title, String channelTitle, String thumbnailUrl, int durationSec) {
+    public void updateFetched(String title, String imageUrl, String spotifyUrl) {
         this.title = title;
-        this.channelTitle = channelTitle;
-        this.thumbnailUrl = thumbnailUrl;
-        this.durationSec = durationSec;
+        this.imageUrl = imageUrl;
+        this.spotifyUrl = spotifyUrl;
         this.fetchedAt = LocalDateTime.now();
     }
 
     public void updateHidden(boolean hidden) {
         this.hidden = hidden;
-    }
-
-    public String kind() {
-        return durationSec <= 60 ? "SHORT" : "LONG";
     }
 }

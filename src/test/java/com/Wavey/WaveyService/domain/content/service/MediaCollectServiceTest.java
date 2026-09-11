@@ -105,7 +105,7 @@ class MediaCollectServiceTest {
                 "https://i.scdn.co/image/cover",
                 List.of(track("stay1", "Stay With Me", "album-1", "Guardian (Original Television Soundtrack), Pt. 1"))
         ));
-        given(contentTrackRepository.findByContentIdAndSpotifyId(1L, "stay1")).willReturn(Optional.empty());
+        given(contentTrackRepository.findByContentIdAndSpotifyTrackId(1L, "stay1")).willReturn(Optional.empty());
         given(contentTrackRepository.save(any())).willAnswer(invocation -> {
             var track = invocation.getArgument(0);
             ReflectionTestUtils.setField(track, "id", 20L);
@@ -115,8 +115,8 @@ class MediaCollectServiceTest {
         MediaCollectResponse response = mediaCollectService.refreshTracks(1L);
 
         assertThat(response.getSaved()).isEqualTo(1);
-        assertThat(response.getTracks().get(0).getName()).isEqualTo("Stay With Me");
-        assertThat(response.getTracks().get(0).isPreviewAvailable()).isFalse();
+        assertThat(response.getTracks().get(0).getTitle()).isEqualTo("Stay With Me");
+        assertThat(response.getTracks().get(0).getSpotifyTrackId()).isEqualTo("stay1");
         verify(spotifyApiClient, never()).searchTracks(eq("도깨비 original soundtrack"), anyInt());
     }
 

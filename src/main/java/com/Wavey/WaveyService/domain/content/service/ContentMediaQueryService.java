@@ -9,7 +9,6 @@ import com.Wavey.WaveyService.domain.content.repository.ContentVideoRepository;
 import com.Wavey.WaveyService.domain.content.service.ContentService;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,8 +34,6 @@ public class ContentMediaQueryService {
     public List<ContentTrackResponse> listTracks(Long contentId) {
         workService.getContent(contentId);
         return workTrackRepository.findByContentIdAndHiddenFalseOrderByIdAsc(contentId).stream()
-                .sorted(Comparator.comparing(ContentTrack::isPreviewAvailable).reversed()
-                        .thenComparing(ContentTrack::getContentTrackId, Comparator.nullsLast(Long::compareTo)))
                 .map(ContentTrackResponse::from)
                 .toList();
     }
