@@ -4,7 +4,6 @@ import com.Wavey.WaveyService.domain.region.dto.request.RegionCreateRequest;
 import com.Wavey.WaveyService.domain.region.dto.request.RegionUpdateRequest;
 import com.Wavey.WaveyService.domain.region.dto.response.RegionResponse;
 import com.Wavey.WaveyService.domain.region.entity.Region;
-
 import org.springframework.util.StringUtils;
 
 public class RegionConverter {
@@ -13,36 +12,31 @@ public class RegionConverter {
 
     public static Region toEntity(RegionCreateRequest request) {
         return Region.builder()
-                .nameKo(request.getName().trim())
-                .code(request.getCode().trim())
+                .nameKo(request.getNameKo().trim())
+                .nameEn(request.getNameEn().trim())
                 .build();
     }
 
     public static RegionResponse toResponse(Region region) {
         return RegionResponse.builder()
                 .regionId(region.getRegionId())
+                .nameKo(region.getNameKo())
                 .nameEn(region.getNameEn())
-                .name(region.getNameKo())
-                .code(region.getCode())
                 .createdAt(region.getCreatedAt())
                 .updatedAt(region.getUpdatedAt())
                 .build();
     }
 
     public static void updateEntity(Region region, RegionUpdateRequest request) {
-        String name =
-                StringUtils.hasText(request.getName())
-                        ? request.getName().trim()
+        String nameKo =
+                StringUtils.hasText(request.getNameKo())
+                        ? request.getNameKo().trim()
                         : region.getNameKo();
-        String code =
-                StringUtils.hasText(request.getCode())
-                        ? request.getCode().trim()
-                        : region.getCode();
+        String nameEn =
+                StringUtils.hasText(request.getNameEn())
+                        ? request.getNameEn().trim()
+                        : region.getNameEn();
 
-        region.update(
-                name,
-                code,
-                request.getLatitude(),
-                request.getLongitude());
+        region.update(nameKo, nameEn);
     }
 }
