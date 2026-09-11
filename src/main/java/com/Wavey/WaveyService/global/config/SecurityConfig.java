@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.global.config;
 
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
+import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.Wavey.WaveyService.global.response.ApiResponse;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,9 +37,14 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final RedisAuthTokenService authTokenService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${auth.allowed-origins:http://localhost:3000}")
+    private List<String> allowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -48,15 +55,12 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**",
-                                "/swagger-ui.html", "/swagger-resources/**", "/webjars/**",
-                                "/h2-console/**", "/",
-                                "/api/v1/auth/login-urls",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/spots/sync/**"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/routes/public").permitAll()
+                        .requestMatchers(SecurityEndpoints.DOCUMENTATION).permitAll()
+                        .requestMatchers(SecurityEndpoints.DEVELOPMENT).permitAll()
+                        .requestMatchers(SecurityEndpoints.OAUTH).permitAll()
+                        .requestMatchers(SecurityEndpoints.PUBLIC).permitAll()
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.VISION_ANALYZE).permitAll()
+                        .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_ROUTE).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
@@ -75,8 +79,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository),
+                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository, authTokenService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -103,7 +108,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

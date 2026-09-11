@@ -16,7 +16,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,7 +63,6 @@ public class VisionController {
             @ApiResponse(responseCode = "429", description = "Google Vision API 할당량 초과"),
             @ApiResponse(responseCode = "500", description = "이미지 분석 실패")
     })
-    @PreAuthorize("permitAll()")
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<VisionAnalysisResponse>> analyze(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,

@@ -2,8 +2,10 @@ package com.Wavey.WaveyService.global.config;
 
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
+import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.response.ApiResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final RedisAuthTokenService authTokenService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return SecurityEndpoints.shouldBypassJwtFilter(request);
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -36,6 +44,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             if (tokenProvider.validateToken(token, request)) {
                 Claims claims = tokenProvider.getClaims(token);
+                try {
+                    if (authTokenService.isAccessTokenBlacklisted(claims.getId())) {
+                        setErrorResponse(response, ErrorCode.REVOKED_TOKEN);
+                        return;
+                    }
+                } catch (CustomException e) {
+                    setErrorResponse(response, e.getErrorCode());
+                    return;
+                }
                 String providerId = claims.getSubject();
                 String provider = (String) claims.get("provider");
 
@@ -80,17 +97,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String json = objectMapper.writeValueAsString(apiResponse);
         response.getWriter().write(json);
-    }
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/swagger-ui") ||
-                path.startsWith("/v3/api-docs") ||
-                path.startsWith("/api-docs") ||
-                path.startsWith("/api/v1/auth/login-urls") ||
-                path.startsWith("/api/v1/auth/refresh") ||
-                path.startsWith("/h2-console");
     }
 
     private String resolveToken(HttpServletRequest request) {
