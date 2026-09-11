@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.spot.controller;
 
-import static com.Wavey.WaveyService.global.response.ApiResponse.success;
+import static com.Wavey.WaveyService.global.response.CommonResponse.success;
 
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotCreateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotUpdateRequest;
@@ -8,6 +8,7 @@ import com.Wavey.WaveyService.domain.spot.dto.response.SpotListResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.service.SpotService;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -49,7 +50,7 @@ public class SpotController {
             @ApiResponse(responseCode = "409", description = "중복된 외부 장소 데이터")
     })
     @PostMapping
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotResponse>> createSpot(
+    public ResponseEntity<CommonResponse<SpotResponse>> createSpot(
             @Valid @RequestBody SpotCreateRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -62,7 +63,7 @@ public class SpotController {
             @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
     })
     @GetMapping("/{spotId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotResponse>> getSpot(
+    public ResponseEntity<CommonResponse<SpotResponse>> getSpot(
             @Parameter(description = "장소 ID") @PathVariable Long spotId
     ) {
         return ResponseEntity.ok(success("장소 단건 조회 성공", spotService.getSpot(spotId)));
@@ -73,7 +74,7 @@ public class SpotController {
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
     @GetMapping
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<List<SpotListResponse>>> getSpots(
+    public ResponseEntity<CommonResponse<List<SpotListResponse>>> getSpots(
             @Parameter(description = "장소 카테고리 필터") @RequestParam(required = false) SpotCategory category,
             @Parameter(description = "지역 ID 필터") @RequestParam(required = false) Long regionId
     ) {
@@ -86,7 +87,7 @@ public class SpotController {
             @ApiResponse(responseCode = "400", description = "잘못된 지도 범위")
     })
     @GetMapping("/map")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<List<SpotListResponse>>> getSpotsInMapBounds(
+    public ResponseEntity<CommonResponse<List<SpotListResponse>>> getSpotsInMapBounds(
             @Parameter(description = "최소 위도")
             @RequestParam @NotNull @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0") BigDecimal minLat,
             @Parameter(description = "최대 위도")
@@ -105,7 +106,7 @@ public class SpotController {
             @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
     })
     @PatchMapping("/{spotId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotResponse>> updateSpot(
+    public ResponseEntity<CommonResponse<SpotResponse>> updateSpot(
             @Parameter(description = "장소 ID") @PathVariable Long spotId,
             @Valid @RequestBody SpotUpdateRequest request
     ) {
@@ -118,7 +119,7 @@ public class SpotController {
             @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
     })
     @DeleteMapping("/{spotId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<Void>> deleteSpot(
+    public ResponseEntity<CommonResponse<Void>> deleteSpot(
             @Parameter(description = "장소 ID") @PathVariable Long spotId
     ) {
         spotService.deleteSpot(spotId);

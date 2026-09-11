@@ -3,7 +3,7 @@ package com.Wavey.WaveyService.domain.content.controller;
 import com.Wavey.WaveyService.domain.content.dto.WorkTrackResponse;
 import com.Wavey.WaveyService.domain.content.dto.WorkVideoResponse;
 import com.Wavey.WaveyService.domain.content.service.WorkMediaQueryService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -24,13 +24,13 @@ public class WorkMediaController {
 
     @Operation(summary = "작품 영상")
     @GetMapping("/videos")
-    public ResponseEntity<ApiResponse<List<WorkVideoResponse>>> videos(@PathVariable Long workId) {
-        return ResponseEntity.ok(ApiResponse.success("작품 영상 조회 성공", workMediaQueryService.listVideos(workId)));
+    public ResponseEntity<CommonResponse<List<WorkVideoResponse>>> videos(@PathVariable Long workId) {
+        return ResponseEntity.ok(CommonResponse.success("작품 영상 조회 성공", workMediaQueryService.listVideos(workId)));
     }
 
     @Operation(summary = "작품 OST")
     @GetMapping("/tracks")
-    public ResponseEntity<ApiResponse<List<WorkTrackResponse>>> tracks(@PathVariable Long workId) {
-        return ResponseEntity.ok(ApiResponse.success("작품 트랙 조회 성공", workMediaQueryService.listTracks(workId)));
+    public ResponseEntity<CommonResponse<List<WorkTrackResponse>>> tracks(@PathVariable Long workId) {
+        return ResponseEntity.ok(CommonResponse.success("작품 트랙 조회 성공", workMediaQueryService.listTracks(workId)));
     }
 }

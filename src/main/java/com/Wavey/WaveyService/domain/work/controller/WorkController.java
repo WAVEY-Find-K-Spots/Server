@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.work.dto.WorkRequest;
 import com.Wavey.WaveyService.domain.work.dto.WorkResponse;
 import com.Wavey.WaveyService.domain.work.entity.WorkType;
 import com.Wavey.WaveyService.domain.work.service.WorkService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,21 +34,21 @@ public class WorkController {
 
     @Operation(summary = "작품 목록")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<WorkResponse>>> list(
+    public ResponseEntity<CommonResponse<List<WorkResponse>>> list(
             @Parameter(description = "DRAMA | MOVIE | KPOP") @RequestParam(required = false) WorkType type
     ) {
-        return ResponseEntity.ok(ApiResponse.success("작품 목록 조회 성공", workService.list(type)));
+        return ResponseEntity.ok(CommonResponse.success("작품 목록 조회 성공", workService.list(type)));
     }
 
     @Operation(summary = "작품 단건")
     @GetMapping("/{workId}")
-    public ResponseEntity<ApiResponse<WorkResponse>> get(@PathVariable Long workId) {
-        return ResponseEntity.ok(ApiResponse.success("작품 조회 성공", workService.get(workId)));
+    public ResponseEntity<CommonResponse<WorkResponse>> get(@PathVariable Long workId) {
+        return ResponseEntity.ok(CommonResponse.success("작품 조회 성공", workService.get(workId)));
     }
 
     @Operation(summary = "작품 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<WorkResponse>> create(
+    public ResponseEntity<CommonResponse<WorkResponse>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
                             schema = @Schema(implementation = WorkRequest.class),
@@ -65,6 +65,6 @@ public class WorkController {
             @Valid @RequestBody WorkRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(HttpStatus.CREATED.value(), "작품 등록 성공", workService.create(request)));
+                .body(CommonResponse.success(HttpStatus.CREATED.value(), "작품 등록 성공", workService.create(request)));
     }
 }
