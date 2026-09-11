@@ -179,10 +179,10 @@ logging:
 # [Swagger / OpenAPI Documentation]
 springdoc:
   api-docs:
-    enabled: ${SWAGGER_ENABLED:true}
+    enabled: ${SWAGGER_ENABLED:false}
     path: /api-docs
   swagger-ui:
-    enabled: ${SWAGGER_ENABLED:true}
+    enabled: ${SWAGGER_ENABLED:false}
     path: /swagger-ui.html
   default-consumes-media-type: application/json
   default-produces-media-type: application/json

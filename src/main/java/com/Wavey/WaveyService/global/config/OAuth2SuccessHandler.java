@@ -37,28 +37,37 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        String redirectUrl;
+        try {
+            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        String providerId = oAuth2User.getAttribute("providerId");
-        String provider = oAuth2User.getAttribute("provider");
+            String providerId = oAuth2User.getAttribute("providerId");
+            String provider = oAuth2User.getAttribute("provider");
 
-        if (providerId == null || provider == null) {
-            throw new IllegalStateException("Missing required OAuth2 attributes: providerId or provider");
+            if (providerId == null || provider == null) {
+                throw new CustomException(ErrorCode.OAUTH_INVALID_USER_INFO);
+            }
+
+            User user = userRepository.findByProviderAndProviderId(provider, providerId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+            String loginCode = authTokenService.issueLoginCode(user.getId());
+
+            redirectUrl = buildRedirectUrl("code", loginCode);
+        } catch (CustomException e) {
+            redirectUrl = buildRedirectUrl("error", e.getErrorCode().getCode());
         }
-
-        User user = userRepository.findByProviderAndProviderId(provider, providerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        String loginCode = authTokenService.issueLoginCode(user.getId());
-
-        String redirectUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
-                .queryParam("code", loginCode)
-                .build()
-                .encode()
-                .toUriString();
 
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
         response.setHeader(HttpHeaders.PRAGMA, "no-cache");
         clearAuthenticationAttributes(request);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+    }
+
+    private String buildRedirectUrl(String parameter, String value) {
+        return UriComponentsBuilder.fromUriString(frontendRedirectUri)
+                .queryParam(parameter, value)
+                .build()
+                .encode()
+                .toUriString();
     }
 }

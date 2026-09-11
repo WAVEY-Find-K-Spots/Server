@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -66,5 +68,39 @@ class OAuth2SuccessHandlerTest {
         assertThat(response.getHeader(HttpHeaders.PRAGMA)).isEqualTo("no-cache");
         verify(authTokenService).issueLoginCode(1L);
         verify(userRepository).findByProviderAndProviderId("google", "provider-id");
+    }
+
+    @Test
+    void 로그인_코드_저장_실패시_오류코드로_프론트에_리다이렉트한다() throws Exception {
+        OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
+                authTokenService,
+                userRepository,
+                "http://localhost:3000/oauth/callback"
+        );
+        User user = User.builder()
+                .id(1L)
+                .provider("google")
+                .providerId("provider-id")
+                .email("user@example.com")
+                .name("사용자")
+                .role(Role.USER)
+                .build();
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("providerId")).thenReturn("provider-id");
+        when(oAuth2User.getAttribute("provider")).thenReturn("google");
+        when(userRepository.findByProviderAndProviderId("google", "provider-id"))
+                .thenReturn(Optional.of(user));
+        when(authTokenService.issueLoginCode(1L))
+                .thenThrow(new CustomException(ErrorCode.AUTH_STORAGE_UNAVAILABLE));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        handler.onAuthenticationSuccess(
+                new MockHttpServletRequest(), response, authentication
+        );
+
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getRedirectedUrl()).isEqualTo(
+                "http://localhost:3000/oauth/callback?error=AUTH_503_STORAGE"
+        );
     }
 }

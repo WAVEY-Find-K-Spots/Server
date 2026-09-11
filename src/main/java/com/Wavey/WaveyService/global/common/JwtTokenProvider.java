@@ -9,14 +9,15 @@ import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component; // 이 임포트 확인
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.time.Duration;
 import java.util.Date;
 import java.util.UUID;
 
-@Component // <--- 이 어노테이션이 있는지 꼭 확인하세요!
+@Component
 public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
@@ -66,7 +67,11 @@ public class JwtTokenProvider {
     public boolean validateToken(String token, HttpServletRequest request, TokenType expectedType) {
         try {
             Claims claims = parseClaims(token);
-            return expectedType.name().equals(claims.get("tokenType", String.class));
+            if (!hasRequiredClaims(claims, expectedType)) {
+                if (request != null) request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
+                return false;
+            }
+            return true;
         } catch (MalformedJwtException | SignatureException e) {
             if (request != null) request.setAttribute("exception", ErrorCode.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
@@ -84,7 +89,7 @@ public class JwtTokenProvider {
     public Claims getValidatedClaims(String token, TokenType expectedType) {
         try {
             Claims claims = parseClaims(token);
-            if (!expectedType.name().equals(claims.get("tokenType", String.class))) {
+            if (!hasRequiredClaims(claims, expectedType)) {
                 throw new CustomException(ErrorCode.INVALID_TOKEN);
             }
             return claims;
@@ -108,5 +113,12 @@ public class JwtTokenProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private boolean hasRequiredClaims(Claims claims, TokenType expectedType) {
+        if (!expectedType.name().equals(claims.get("tokenType", String.class))) {
+            return false;
+        }
+        return expectedType != TokenType.ACCESS || StringUtils.hasText(claims.getId());
     }
 }

@@ -35,35 +35,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] DOCUMENTATION_ENDPOINTS = {
-            "/v3/api-docs/**",
-            "/api-docs/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/swagger-resources/**",
-            "/webjars/**"
-    };
-
-    private static final String[] DEVELOPMENT_ENDPOINTS = {
-            "/h2-console/**"
-    };
-
-    private static final String[] OAUTH_ENDPOINTS = {
-            "/oauth2/**",
-            "/login/oauth2/**",
-            "/api/v1/auth/login-urls",
-            "/api/v1/auth/exchange",
-            "/api/v1/auth/refresh"
-    };
-
-    private static final String[] PUBLIC_ENDPOINTS = {
-            "/",
-            "/error"
-    };
-
-    private static final String VISION_ANALYZE_ENDPOINT = "/api/v1/vision/analyze";
-    private static final String PUBLIC_ROUTE_ENDPOINT = "/api/v1/routes/public";
-
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
@@ -84,12 +55,12 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(DOCUMENTATION_ENDPOINTS).permitAll()
-                        .requestMatchers(DEVELOPMENT_ENDPOINTS).permitAll()
-                        .requestMatchers(OAUTH_ENDPOINTS).permitAll()
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.POST, VISION_ANALYZE_ENDPOINT).permitAll()
-                        .requestMatchers(HttpMethod.GET, PUBLIC_ROUTE_ENDPOINT).permitAll()
+                        .requestMatchers(SecurityEndpoints.DOCUMENTATION).permitAll()
+                        .requestMatchers(SecurityEndpoints.DEVELOPMENT).permitAll()
+                        .requestMatchers(SecurityEndpoints.OAUTH).permitAll()
+                        .requestMatchers(SecurityEndpoints.PUBLIC).permitAll()
+                        .requestMatchers(HttpMethod.POST, SecurityEndpoints.VISION_ANALYZE).permitAll()
+                        .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_ROUTE).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

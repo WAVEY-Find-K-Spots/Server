@@ -38,15 +38,24 @@ class RedisAuthTokenIntegrationTest {
     }
 
     @Test
-    void 실제_Redis에서_로그인코드와_refresh_토큰을_한번만_소비한다() {
+    void 실제_Redis에서_로그인코드_교환과_refresh_회전을_원자적으로_처리한다() {
         String loginCode = authTokenService.issueLoginCode(99L);
-        assertThat(authTokenService.consumeLoginCode(loginCode)).isEqualTo(99L);
-        assertThatThrownBy(() -> authTokenService.consumeLoginCode(loginCode))
-                .isInstanceOf(CustomException.class);
+        assertThat(authTokenService.getLoginCodeUserId(loginCode)).isEqualTo(99L);
 
         String refreshToken = "refresh-" + UUID.randomUUID();
-        authTokenService.saveRefreshToken(99L, refreshToken, Duration.ofMinutes(1));
-        assertThat(authTokenService.consumeRefreshToken(99L, refreshToken)).isTrue();
-        assertThat(authTokenService.consumeRefreshToken(99L, refreshToken)).isFalse();
+        assertThat(authTokenService.exchangeLoginCode(
+                loginCode, 99L, refreshToken, Duration.ofMinutes(1)
+        )).isTrue();
+        assertThatThrownBy(() -> authTokenService.getLoginCodeUserId(loginCode))
+                .isInstanceOf(CustomException.class);
+
+        String replacementToken = "refresh-" + UUID.randomUUID();
+        assertThat(authTokenService.rotateRefreshToken(
+                99L, refreshToken, replacementToken, Duration.ofMinutes(1)
+        )).isTrue();
+        assertThat(authTokenService.rotateRefreshToken(
+                99L, refreshToken, "replay", Duration.ofMinutes(1)
+        )).isFalse();
+        authTokenService.deleteRefreshToken(99L);
     }
 }

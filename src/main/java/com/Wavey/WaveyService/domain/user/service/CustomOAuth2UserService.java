@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -68,16 +69,31 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         User user = findByProviderAndProviderId(provider, providerId);
 
-        if (!authTokenService.consumeRefreshToken(user.getId(), refreshToken)) {
+        IssuedTokenPair issuedTokenPair = createTokenPair(user);
+        if (!authTokenService.rotateRefreshToken(
+                user.getId(),
+                refreshToken,
+                issuedTokenPair.response().refreshToken(),
+                issuedTokenPair.refreshTokenTtl()
+        )) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        return issueTokenPair(user);
+        return issuedTokenPair.response();
     }
 
     public TokenResponse exchangeLoginCode(String loginCode) {
-        Long userId = authTokenService.consumeLoginCode(loginCode);
-        return issueTokenPair(findEntityById(userId));
+        Long userId = authTokenService.getLoginCodeUserId(loginCode);
+        IssuedTokenPair issuedTokenPair = createTokenPair(findEntityById(userId));
+        if (!authTokenService.exchangeLoginCode(
+                loginCode,
+                userId,
+                issuedTokenPair.response().refreshToken(),
+                issuedTokenPair.refreshTokenTtl()
+        )) {
+            throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
+        }
+        return issuedTokenPair.response();
     }
 
     @Override
@@ -104,16 +120,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Transactional
     public User saveOrUpdate(OAuth2UserInfo userInfo) {
         if (!hasText(userInfo.getProviderId())) {
-            throw new OAuth2AuthenticationException("소셜 로그인 사용자 식별자를 확인할 수 없습니다");
+            throw oauth2Exception(ErrorCode.OAUTH_INVALID_USER_INFO);
         }
 
         return userRepository.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId())
                 .map(entity -> entity.update(userInfo.getName(), userInfo.getEmail()))
                 .orElseGet(() -> {
-                    if (!hasText(userInfo.getEmail()) || !hasText(userInfo.getName())) {
-                        throw new OAuth2AuthenticationException(
-                                "신규 가입에 필요한 이메일 또는 프로필 이름 제공에 동의해야 합니다"
-                        );
+                    if (!hasText(userInfo.getEmail())) {
+                        throw oauth2Exception(ErrorCode.OAUTH_EMAIL_REQUIRED);
+                    }
+                    if (!hasText(userInfo.getName())) {
+                        throw oauth2Exception(ErrorCode.OAUTH_PROFILE_REQUIRED);
                     }
                     Role initialRole = Role.USER;
                     if (adminWhiteList != null && adminWhiteList.contains(userInfo.getEmail())) {
@@ -171,16 +188,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         revokeTokens(user, accessToken);
     }
 
-    private TokenResponse issueTokenPair(User user) {
+    private OAuth2AuthenticationException oauth2Exception(ErrorCode errorCode) {
+        return new OAuth2AuthenticationException(
+                new OAuth2Error(errorCode.getCode()),
+                errorCode.getMessage()
+        );
+    }
+
+    private IssuedTokenPair createTokenPair(User user) {
         String accessToken = tokenProvider.createAccessToken(user.getProvider(), user.getProviderId());
         String refreshToken = tokenProvider.createRefreshToken(user.getProvider(), user.getProviderId());
         Claims refreshClaims = tokenProvider.getValidatedClaims(refreshToken, TokenType.REFRESH);
-        authTokenService.saveRefreshToken(
-                user.getId(),
-                refreshToken,
+        return new IssuedTokenPair(
+                TokenResponse.bearer(accessToken, refreshToken),
                 tokenProvider.getRemainingValidity(refreshClaims)
         );
-        return TokenResponse.bearer(accessToken, refreshToken);
     }
 
     private void revokeTokens(User user, String accessToken) {
@@ -195,5 +217,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 tokenProvider.getRemainingValidity(claims)
         );
         authTokenService.deleteRefreshToken(user.getId());
+    }
+
+    private record IssuedTokenPair(TokenResponse response, java.time.Duration refreshTokenTtl) {
     }
 }
