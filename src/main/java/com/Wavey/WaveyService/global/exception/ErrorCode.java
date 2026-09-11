@@ -65,6 +65,9 @@ public enum ErrorCode {
     // JWT
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_401", "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uD1A0\uD070\uC785\uB2C8\uB2E4."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_402", "\uB9CC\uB8CC\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4."),
+    REVOKED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_403", "로그아웃되어 사용할 수 없는 토큰입니다."),
+    INVALID_LOGIN_CODE(HttpStatus.UNAUTHORIZED, "AUTH_401_LOGIN_CODE", "로그인 코드가 만료되었거나 이미 사용되었습니다."),
+    AUTH_STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AUTH_503_STORAGE", "인증 저장소에 일시적으로 연결할 수 없습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_403", "\uC811\uADFC \uAD8C\uD55C\uC774 \uBD80\uC871\uD569\uB2C8\uB2E4."),
 
     // VISION
