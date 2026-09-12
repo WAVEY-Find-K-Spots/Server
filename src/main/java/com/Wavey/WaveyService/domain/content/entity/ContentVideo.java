@@ -14,21 +14,21 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-        name = "work_videos",
+        name = "content_videos",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_work_videos_work_youtube",
-                columnNames = {"work_id", "youtube_video_id"}
+                columnNames = {"content_id", "youtube_video_id"}
         )
 )
-@AttributeOverride(name = "id", column = @Column(name = "work_video_id"))
+@AttributeOverride(name = "id", column = @Column(name = "content_video_id"))
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkVideo extends BaseEntity {
+public class ContentVideo extends BaseEntity {
 
-    @Column(name = "work_id", nullable = false)
-    private Long workId;
+    @Column(name = "content_id", nullable = false)
+    private Long contentId;
 
     @Column(name = "youtube_video_id", nullable = false, length = 32)
     private String youtubeVideoId;
@@ -52,7 +52,7 @@ public class WorkVideo extends BaseEntity {
     @Column(name = "fetched_at", nullable = false)
     private LocalDateTime fetchedAt;
 
-    public Long getWorkVideoId() {
+    public Long getContentVideoId() {
         return getId();
     }
 

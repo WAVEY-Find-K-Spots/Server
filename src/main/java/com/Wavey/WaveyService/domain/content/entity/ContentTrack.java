@@ -14,21 +14,21 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-        name = "work_tracks",
+        name = "content_tracks",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_work_tracks_work_spotify",
-                columnNames = {"work_id", "spotify_id"}
+                columnNames = {"content_id", "spotify_id"}
         )
 )
-@AttributeOverride(name = "id", column = @Column(name = "work_track_id"))
+@AttributeOverride(name = "id", column = @Column(name = "content_track_id"))
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkTrack extends BaseEntity {
+public class ContentTrack extends BaseEntity {
 
-    @Column(name = "work_id", nullable = false)
-    private Long workId;
+    @Column(name = "content_id", nullable = false)
+    private Long contentId;
 
     @Column(name = "spotify_id", nullable = false, length = 64)
     private String spotifyId;
@@ -61,14 +61,13 @@ public class WorkTrack extends BaseEntity {
     @Column(name = "fetched_at", nullable = false)
     private LocalDateTime fetchedAt;
 
-    public Long getWorkTrackId() {
+    public Long getContentTrackId() {
         return getId();
     }
 
     public void updateFetched(
             String name,
             String artistName,
-            String albumName,
             String imageUrl,
             String previewUrl,
             String spotifyUrl,
@@ -76,7 +75,6 @@ public class WorkTrack extends BaseEntity {
     ) {
         this.name = name;
         this.artistName = artistName;
-        this.albumName = albumName;
         this.imageUrl = imageUrl;
         this.previewUrl = previewUrl;
         this.spotifyUrl = spotifyUrl;
