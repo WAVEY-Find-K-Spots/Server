@@ -1,10 +1,11 @@
 package com.Wavey.WaveyService.domain.spot.controller;
 
-import static com.Wavey.WaveyService.global.response.ApiResponse.success;
+import static com.Wavey.WaveyService.global.response.CommonResponse.success;
 
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotSyncResponse;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.external.service.SpotExternalSyncService;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,7 +36,7 @@ public class SpotSyncController {
             @ApiResponse(responseCode = "502", description = "외부 API 요청 실패")
     })
     @PostMapping("/heritage")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotSyncResponse>> syncHeritageSpots(
+    public ResponseEntity<CommonResponse<SpotSyncResponse>> syncHeritageSpots(
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageNo,
             @Parameter(description = "페이지당 조회 개수") @RequestParam(defaultValue = "100") int numOfRows
     ) {
@@ -55,7 +56,7 @@ public class SpotSyncController {
             @ApiResponse(responseCode = "502", description = "외부 API 요청 실패")
     })
     @PostMapping("/heritage/all")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotSyncResponse>> syncAllHeritageSpots(
+    public ResponseEntity<CommonResponse<SpotSyncResponse>> syncAllHeritageSpots(
             @Parameter(description = "페이지당 조회 개수") @RequestParam(defaultValue = "100") int numOfRows
     ) {
         return ResponseEntity.ok(success(
@@ -74,7 +75,7 @@ public class SpotSyncController {
             @ApiResponse(responseCode = "502", description = "외부 API 요청 실패")
     })
     @PostMapping("/media-locations")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotSyncResponse>> syncMediaLocationSpots(
+    public ResponseEntity<CommonResponse<SpotSyncResponse>> syncMediaLocationSpots(
             @Parameter(description = "동기화할 카테고리. 비우면 K_DRAMA, K_POP, K_MOVIE 전체 매핑")
             @RequestParam(required = false) SpotCategory category,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int page,
@@ -96,7 +97,7 @@ public class SpotSyncController {
             @ApiResponse(responseCode = "502", description = "외부 API 요청 실패")
     })
     @PostMapping("/media-locations/all")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotSyncResponse>> syncAllMediaLocationSpots(
+    public ResponseEntity<CommonResponse<SpotSyncResponse>> syncAllMediaLocationSpots(
             @Parameter(description = "동기화할 카테고리. 비우면 K_DRAMA, K_POP, K_MOVIE 전체 대상")
             @RequestParam(required = false) SpotCategory category,
             @Parameter(description = "페이지당 조회 개수") @RequestParam(defaultValue = "100") int perPage
@@ -117,7 +118,7 @@ public class SpotSyncController {
             @ApiResponse(responseCode = "502", description = "외부 API 요청 실패")
     })
     @PostMapping("/media-locations/thumbnails")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<SpotSyncResponse>> fillMediaLocationThumbnails(
+    public ResponseEntity<CommonResponse<SpotSyncResponse>> fillMediaLocationThumbnails(
             @Parameter(description = "보강할 카테고리. 비우면 K_DRAMA, K_POP, K_MOVIE 전체 대상")
             @RequestParam(required = false) SpotCategory category,
             @Parameter(description = "한 번에 보강할 최대 장소 수") @RequestParam(defaultValue = "100") int limit

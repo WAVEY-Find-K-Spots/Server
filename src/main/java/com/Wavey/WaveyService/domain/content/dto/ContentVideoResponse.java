@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.content.dto;
 
-import com.Wavey.WaveyService.domain.content.entity.WorkVideo;
+import com.Wavey.WaveyService.domain.content.entity.ContentVideo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkVideoResponse {
+public class ContentVideoResponse {
 
     @Schema(description = "DB ID", example = "1")
     private Long id;
@@ -34,9 +34,9 @@ public class WorkVideoResponse {
 
     private boolean hidden;
 
-    public static WorkVideoResponse from(WorkVideo video) {
-        return WorkVideoResponse.builder()
-                .id(video.getWorkVideoId())
+    public static ContentVideoResponse from(ContentVideo video) {
+        return ContentVideoResponse.builder()
+                .id(video.getContentVideoId())
                 .videoId(video.getYoutubeVideoId())
                 .title(video.getTitle())
                 .channelTitle(video.getChannelTitle())

@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkMediaCollectResponse {
+public class ContentMediaCollectResponse {
 
     @Schema(example = "1")
-    private Long workId;
+    private Long contentId;
 
     private MediaCollectResponse videos;
 

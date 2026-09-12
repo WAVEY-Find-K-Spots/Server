@@ -33,10 +33,10 @@ public class YoutubePromoPolicy {
         if (containsAny(video.title(), properties.getYoutube().getDenyKeywords())) {
             return false;
         }
-        return containsWorkTitle(video.title(), workTitle, titleEn);
+        return containsContentTitle(video.title(), workTitle, titleEn);
     }
 
-    private boolean containsWorkTitle(String title, String workTitle, String titleEn) {
+    private boolean containsContentTitle(String title, String workTitle, String titleEn) {
         if (containsNormalized(title, workTitle)) {
             return true;
         }

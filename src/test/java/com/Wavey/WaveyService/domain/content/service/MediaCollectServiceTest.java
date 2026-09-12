@@ -12,7 +12,7 @@ import static org.mockito.Mockito.verify;
 
 import com.Wavey.WaveyService.domain.content.config.MediaCollectProperties;
 import com.Wavey.WaveyService.domain.content.dto.MediaCollectResponse;
-import com.Wavey.WaveyService.domain.content.entity.WorkVideo;
+import com.Wavey.WaveyService.domain.content.entity.ContentVideo;
 import com.Wavey.WaveyService.domain.content.external.client.SpotifyApiClient;
 import com.Wavey.WaveyService.domain.content.external.client.YoutubeDataClient;
 import com.Wavey.WaveyService.domain.content.external.dto.SpotifyAlbumTracks;
@@ -20,11 +20,11 @@ import com.Wavey.WaveyService.domain.content.external.dto.SpotifySearchTrack;
 import com.Wavey.WaveyService.domain.content.external.dto.YoutubeVideoDetails;
 import com.Wavey.WaveyService.domain.content.policy.SpotifyOstPolicy;
 import com.Wavey.WaveyService.domain.content.policy.YoutubePromoPolicy;
-import com.Wavey.WaveyService.domain.content.repository.WorkTrackRepository;
-import com.Wavey.WaveyService.domain.content.repository.WorkVideoRepository;
-import com.Wavey.WaveyService.domain.work.entity.Work;
-import com.Wavey.WaveyService.domain.work.entity.WorkType;
-import com.Wavey.WaveyService.domain.work.service.WorkService;
+import com.Wavey.WaveyService.domain.content.repository.ContentTrackRepository;
+import com.Wavey.WaveyService.domain.content.repository.ContentVideoRepository;
+import com.Wavey.WaveyService.domain.content.entity.Content;
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
+import com.Wavey.WaveyService.domain.content.service.ContentService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,15 +38,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 class MediaCollectServiceTest {
 
     @Mock
-    private WorkService workService;
+    private ContentService contentService;
     @Mock
     private YoutubeDataClient youtubeDataClient;
     @Mock
     private SpotifyApiClient spotifyApiClient;
     @Mock
-    private WorkVideoRepository workVideoRepository;
+    private ContentVideoRepository contentVideoRepository;
     @Mock
-    private WorkTrackRepository workTrackRepository;
+    private ContentTrackRepository contentTrackRepository;
 
     private MediaCollectService mediaCollectService;
 
@@ -54,29 +54,29 @@ class MediaCollectServiceTest {
     void setUp() {
         MediaCollectProperties properties = new MediaCollectProperties();
         mediaCollectService = new MediaCollectService(
-                workService,
+                contentService,
                 youtubeDataClient,
                 spotifyApiClient,
                 new YoutubePromoPolicy(properties),
                 new SpotifyOstPolicy(properties),
-                workVideoRepository,
-                workTrackRepository,
+                contentVideoRepository,
+                contentTrackRepository,
                 properties
         );
     }
 
     @Test
     void 유튜브_수집은_예고편만_저장한다() {
-        given(workService.getWork(1L)).willReturn(goblin());
-        given(workVideoRepository.findByWorkId(1L)).willReturn(List.of());
+        given(contentService.getContent(1L)).willReturn(goblin());
+        given(contentVideoRepository.findByContentId(1L)).willReturn(List.of());
         given(youtubeDataClient.searchVideoIds(anyString(), anyInt())).willReturn(List.of("promo111111", "full2222222"));
         given(youtubeDataClient.fetchVideos(any())).willReturn(List.of(
                 youtube("promo111111", "도깨비 메인 예고편", 90),
                 youtube("full2222222", "도깨비 1화 다시보기", 4200)
         ));
-        given(workVideoRepository.findByWorkIdAndYoutubeVideoId(1L, "promo111111")).willReturn(Optional.empty());
-        given(workVideoRepository.save(any(WorkVideo.class))).willAnswer(invocation -> {
-            WorkVideo video = invocation.getArgument(0);
+        given(contentVideoRepository.findByContentIdAndYoutubeVideoId(1L, "promo111111")).willReturn(Optional.empty());
+        given(contentVideoRepository.save(any(ContentVideo.class))).willAnswer(invocation -> {
+            ContentVideo video = invocation.getArgument(0);
             ReflectionTestUtils.setField(video, "id", 10L);
             return video;
         });
@@ -87,14 +87,14 @@ class MediaCollectServiceTest {
         assertThat(response.getDropped()).isEqualTo(1);
         assertThat(response.getVideos()).hasSize(1);
         assertThat(response.getVideos().get(0).getTitle()).isEqualTo("도깨비 메인 예고편");
-        verify(workVideoRepository).deleteByWorkIdAndHiddenFalseAndYoutubeVideoIdNotIn(eq(1L), anyCollection());
+        verify(contentVideoRepository).deleteByContentIdAndHiddenFalseAndYoutubeVideoIdNotIn(eq(1L), anyCollection());
         verify(spotifyApiClient, never()).searchTracks(anyString(), anyInt());
     }
 
     @Test
     void 스포티파이_수집은_공식_OST_앨범_수록곡을_저장한다() {
-        given(workService.getWork(1L)).willReturn(goblin());
-        given(workTrackRepository.findByWorkId(1L)).willReturn(List.of());
+        given(contentService.getContent(1L)).willReturn(musicWork());
+        given(contentTrackRepository.findByContentId(1L)).willReturn(List.of());
         given(spotifyApiClient.searchTracks("도깨비 OST", 10)).willReturn(List.of(
                 track("stay1", "Stay With Me", "album-1", "Guardian (Original Television Soundtrack), Pt. 1")
         ));
@@ -105,8 +105,8 @@ class MediaCollectServiceTest {
                 "https://i.scdn.co/image/cover",
                 List.of(track("stay1", "Stay With Me", "album-1", "Guardian (Original Television Soundtrack), Pt. 1"))
         ));
-        given(workTrackRepository.findByWorkIdAndSpotifyId(1L, "stay1")).willReturn(Optional.empty());
-        given(workTrackRepository.save(any())).willAnswer(invocation -> {
+        given(contentTrackRepository.findByContentIdAndSpotifyId(1L, "stay1")).willReturn(Optional.empty());
+        given(contentTrackRepository.save(any())).willAnswer(invocation -> {
             var track = invocation.getArgument(0);
             ReflectionTestUtils.setField(track, "id", 20L);
             return track;
@@ -120,14 +120,24 @@ class MediaCollectServiceTest {
         verify(spotifyApiClient, never()).searchTracks(eq("도깨비 original soundtrack"), anyInt());
     }
 
-    private Work goblin() {
-        Work work = Work.builder()
-                .title("도깨비")
+    private Content goblin() {
+        Content content = Content.builder()
+                .titleKo("도깨비")
                 .titleEn("Guardian")
-                .type(WorkType.DRAMA)
+                .category(ContentCategory.DRAMA)
                 .build();
-        ReflectionTestUtils.setField(work, "id", 1L);
-        return work;
+        ReflectionTestUtils.setField(content, "id", 1L);
+        return content;
+    }
+
+    private Content musicWork() {
+        Content content = Content.builder()
+                .titleKo("도깨비")
+                .titleEn("Guardian")
+                .category(ContentCategory.DRAMA)
+                .build();
+        ReflectionTestUtils.setField(content, "id", 1L);
+        return content;
     }
 
     private YoutubeVideoDetails youtube(String videoId, String title, int durationSec) {
