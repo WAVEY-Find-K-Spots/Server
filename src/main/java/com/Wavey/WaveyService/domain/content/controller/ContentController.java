@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
 import com.Wavey.WaveyService.domain.content.service.ContentService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,22 +37,22 @@ public class ContentController {
 
     @Operation(summary = "콘텐츠 카테고리별 목록")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ContentResponse>>> list(
+    public ResponseEntity<CommonResponse<List<ContentResponse>>> list(
             @Parameter(description = "ARTIST | DRAMA | MOVIE") @RequestParam(required = false) ContentCategory category
     ) {
-        return ResponseEntity.ok(ApiResponse.success("카테고리별 목록 조회 성공", contentService.list(category)));
+        return ResponseEntity.ok(CommonResponse.success("카테고리별 목록 조회 성공", contentService.list(category)));
     }
 
     @Operation(summary = "콘텐츠 단건 조회")
     @GetMapping("/{contentId}")
-    public ResponseEntity<ApiResponse<ContentResponse>> get(@PathVariable Long contentId) {
-        return ResponseEntity.ok(ApiResponse.success("콘텐츠 단건 조회 성공", contentService.get(contentId)));
+    public ResponseEntity<CommonResponse<ContentResponse>> get(@PathVariable Long contentId) {
+        return ResponseEntity.ok(CommonResponse.success("콘텐츠 단건 조회 성공", contentService.get(contentId)));
     }
 
     @Operation(summary = "콘텐츠 등록")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ApiResponse<ContentResponse>> create(
+    public ResponseEntity<CommonResponse<ContentResponse>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
                             schema = @Schema(implementation = ContentRequest.class),
@@ -68,7 +68,7 @@ public class ContentController {
             @Valid @RequestBody ContentRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(HttpStatus.CREATED.value(), "콘텐츠 등록 성공", contentService.create(request)));
+                .body(CommonResponse.success(HttpStatus.CREATED.value(), "콘텐츠 등록 성공", contentService.create(request)));
     }
 
     @Operation(
@@ -77,7 +77,7 @@ public class ContentController {
     )
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{contentId}")
-    public ResponseEntity<ApiResponse<ContentResponse>> update(
+    public ResponseEntity<CommonResponse<ContentResponse>> update(
             @PathVariable Long contentId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
@@ -93,7 +93,7 @@ public class ContentController {
             )
             @Valid @RequestBody ContentRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success("콘텐츠 수정 성공", contentService.update(contentId, request)));
+        return ResponseEntity.ok(CommonResponse.success("콘텐츠 수정 성공", contentService.update(contentId, request)));
     }
 
     @Operation(
@@ -102,8 +102,8 @@ public class ContentController {
     )
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{contentId}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long contentId) {
+    public ResponseEntity<CommonResponse<Void>> delete(@PathVariable Long contentId) {
         contentService.delete(contentId);
-        return ResponseEntity.ok(ApiResponse.success("콘텐츠 삭제 성공", null));
+        return ResponseEntity.ok(CommonResponse.success("콘텐츠 삭제 성공", null));
     }
 }

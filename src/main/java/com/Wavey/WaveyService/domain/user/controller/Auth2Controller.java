@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -33,60 +33,60 @@ public class Auth2Controller {
     @Operation(summary = "소셜 로그인 진입 URL 조회")
     @GetMapping("/login-urls")
     @PreAuthorize("permitAll()")
-    public ApiResponse<Map<String, String>> getLoginUrls() {
-        return ApiResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls());
+    public CommonResponse<Map<String, String>> getLoginUrls() {
+        return CommonResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls());
     }
 
     @Operation(summary = "토큰 재발급")
     @PostMapping("/refresh")
     @PreAuthorize("permitAll()")
-    public ApiResponse<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
+    public CommonResponse<Map<String, String>> refresh(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-        return ApiResponse.success("토큰 재발급 및 로테이션 성공", userService.refreshToken(refreshToken));
+        return CommonResponse.success("토큰 재발급 및 로테이션 성공", userService.refreshToken(refreshToken));
     }
 
     @Operation(summary = "현재 로그인 유저 정보 조회")
     @GetMapping("/user")
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<UserResponse> getLoginUserInfo(@AuthenticationPrincipal User user) {
-        return ApiResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user));
+    public CommonResponse<UserResponse> getLoginUserInfo(@AuthenticationPrincipal User user) {
+        return CommonResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user));
     }
 
     @Operation(summary = "특정 회원 조회")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
-    public ApiResponse<UserResponse> getUserById(@PathVariable Long id) {
-        return ApiResponse.success("회원 정보 조회 성공", userService.findById(id));
+    public CommonResponse<UserResponse> getUserById(@PathVariable Long id) {
+        return CommonResponse.success("회원 정보 조회 성공", userService.findById(id));
     }
 
     @Operation(summary = "유저 권한 수정")
     @PatchMapping("/role/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<Void> updateRole(@PathVariable Long id, @RequestParam Role role) {
+    public CommonResponse<Void> updateRole(@PathVariable Long id, @RequestParam Role role) {
         userService.updateUserRole(id, role);
-        return ApiResponse.success("유저 권한 수정 성공", null);
+        return CommonResponse.success("유저 권한 수정 성공", null);
     }
 
     @Operation(summary = "전체 회원 목록 조회")
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<User>> getAllUsers() {
-        return ApiResponse.success("전체 회원 목록 조회 성공", userService.findAllUsers());
+    public CommonResponse<List<User>> getAllUsers() {
+        return CommonResponse.success("전체 회원 목록 조회 성공", userService.findAllUsers());
     }
 
     @Operation(summary = "회원 탈퇴")
     @DeleteMapping("/withdraw/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<Void> withdraw(@PathVariable Long id) {
+    public CommonResponse<Void> withdraw(@PathVariable Long id) {
         userService.withdraw(id);
-        return ApiResponse.success("회원 탈퇴 성공", null);
+        return CommonResponse.success("회원 탈퇴 성공", null);
     }
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
-    public ApiResponse<Void> logout(@PathVariable Long id) {
+    public CommonResponse<Void> logout(@PathVariable Long id) {
         userService.logout(id);
-        return ApiResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null);
+        return CommonResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null);
     }
 }
