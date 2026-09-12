@@ -4,7 +4,11 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
+import com.Wavey.WaveyService.domain.content.repository.ContentAlbumRepository;
 import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
+import com.Wavey.WaveyService.domain.content.repository.ContentTrackRepository;
+import com.Wavey.WaveyService.domain.content.repository.ContentVideoRepository;
+import com.Wavey.WaveyService.domain.content.repository.SpotContentRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import java.util.List;
@@ -18,6 +22,10 @@ import org.springframework.util.StringUtils;
 public class ContentService {
 
     private final ContentRepository contentRepository;
+    private final ContentVideoRepository contentVideoRepository;
+    private final ContentAlbumRepository contentAlbumRepository;
+    private final ContentTrackRepository contentTrackRepository;
+    private final SpotContentRepository spotContentRepository;
 
     @Transactional
     public ContentResponse create(ContentRequest request) {
@@ -36,27 +44,12 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse createYoutube(ContentRequest request) {
-        return create(request);
-    }
-
-    @Transactional
-    public ContentResponse createSpotify(ContentRequest request) {
-        return create(request);
-    }
-
-    @Transactional(readOnly = true)
-    public ContentResponse get(Long contentId) {
-        return ContentResponse.from(getContent(contentId));
-    }
-
-    @Transactional
     public ContentResponse update(Long contentId, ContentRequest request) {
         Content content = getContent(contentId);
         String title = request.getTitleKo().trim();
         contentRepository.findByTitleKoAndCategory(title, request.getCategory())
-                .filter(found -> !found.getContentId().equals(contentId))
-                .ifPresent(found -> {
+                .filter(existing -> !existing.getContentId().equals(contentId))
+                .ifPresent(existing -> {
                     throw new CustomException(ErrorCode.WORK_ALREADY_EXISTS);
                 });
 
@@ -65,28 +58,19 @@ public class ContentService {
     }
 
     @Transactional
-    public ContentResponse updateYoutube(Long contentId, ContentRequest request) {
-        return update(contentId, request);
-    }
-
-    @Transactional
-    public ContentResponse updateSpotify(Long contentId, ContentRequest request) {
-        return update(contentId, request);
-    }
-
-    @Transactional
     public void delete(Long contentId) {
-        contentRepository.delete(getContent(contentId));
+        getContent(contentId);
+        // tracks → albums (FK), videos, spot links, then content
+        contentTrackRepository.deleteByContentId(contentId);
+        contentAlbumRepository.deleteByContentId(contentId);
+        contentVideoRepository.deleteByContentId(contentId);
+        spotContentRepository.deleteByContentId(contentId);
+        contentRepository.deleteById(contentId);
     }
 
-    @Transactional
-    public void deleteYoutube(Long contentId) {
-        delete(contentId);
-    }
-
-    @Transactional
-    public void deleteSpotify(Long contentId) {
-        delete(contentId);
+    @Transactional(readOnly = true)
+    public ContentResponse get(Long contentId) {
+        return ContentResponse.from(getContent(contentId));
     }
 
     @Transactional(readOnly = true)
@@ -98,28 +82,9 @@ public class ContentService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContentResponse> searchYoutube(String keyword) {
-        return search(keyword);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ContentResponse> searchSpotify(String keyword) {
-        return search(keyword);
-    }
-
-    @Transactional(readOnly = true)
     public Content getContent(Long contentId) {
         return contentRepository.findById(contentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.WORK_NOT_FOUND));
-    }
-
-    private List<ContentResponse> search(String keyword) {
-        String normalizedKeyword = normalizeKeyword(keyword);
-        return contentRepository.findAllByOrderByIdDesc().stream()
-                .filter(content -> containsIgnoreCase(content.getTitleKo(), normalizedKeyword)
-                        || containsIgnoreCase(content.getTitleEn(), normalizedKeyword))
-                .map(ContentResponse::from)
-                .toList();
     }
 
     private String trimToNull(String value) {
@@ -127,13 +92,5 @@ public class ContentService {
             return null;
         }
         return value.trim();
-    }
-
-    private String normalizeKeyword(String keyword) {
-        return keyword == null ? "" : keyword.trim();
-    }
-
-    private boolean containsIgnoreCase(String value, String keyword) {
-        return value != null && value.toLowerCase().contains(keyword.toLowerCase());
     }
 }

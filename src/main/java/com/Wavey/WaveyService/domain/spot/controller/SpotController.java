@@ -10,6 +10,8 @@ import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.service.SpotDetailService;
 import com.Wavey.WaveyService.domain.spot.service.SpotDiscoveryService;
 import com.Wavey.WaveyService.domain.spot.service.SpotService;
+import com.Wavey.WaveyService.domain.content.dto.SpotMediaResponse;
+import com.Wavey.WaveyService.domain.content.service.ContentMediaQueryService;
 import com.Wavey.WaveyService.global.response.CommonResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,6 +51,7 @@ import java.util.List;
 public class SpotController {
 
     private final SpotService spotService;
+    private final ContentMediaQueryService contentMediaQueryService;
 
     @Operation(summary = "장소 생성", description = "새로운 장소를 생성합니다.")
     @ApiResponses({
@@ -74,6 +77,18 @@ public class SpotController {
             @Parameter(description = "장소 ID") @PathVariable Long spotId
     ) {
         return ResponseEntity.ok(success("장소 단건 조회 성공", spotService.getSpot(spotId)));
+    }
+
+    @Operation(summary = "장소 미디어 조회", description = "장소에 연결된 콘텐츠의 영상·앨범(또는 단독 트랙)을 한 번에 조회합니다. 앨범 수록곡은 앨범 상세 API로 따로 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
+    })
+    @GetMapping("/{spotId}/media")
+    public ResponseEntity<CommonResponse<SpotMediaResponse>> getSpotMedia(
+            @Parameter(description = "장소 ID") @PathVariable Long spotId
+    ) {
+        return ResponseEntity.ok(success("장소 미디어 조회 성공", contentMediaQueryService.getSpotMedia(spotId)));
     }
 
     @Operation(summary = "장소 목록 조회", description = "category, regionId 필터를 선택적으로 사용해 장소 목록을 조회합니다.")

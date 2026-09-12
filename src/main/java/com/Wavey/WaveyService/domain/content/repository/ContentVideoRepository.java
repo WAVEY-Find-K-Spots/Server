@@ -10,9 +10,13 @@ public interface ContentVideoRepository extends JpaRepository<ContentVideo, Long
 
     List<ContentVideo> findByContentIdAndHiddenFalseOrderByIdAsc(Long contentId);
 
+    List<ContentVideo> findByContentIdInAndHiddenFalseOrderByIdAsc(Collection<Long> contentIds);
+
     List<ContentVideo> findByContentId(Long contentId);
 
     Optional<ContentVideo> findByContentIdAndYoutubeVideoId(Long contentId, String youtubeVideoId);
+
+    void deleteByContentId(Long contentId);
 
     void deleteByContentIdAndHiddenFalse(Long contentId);
 

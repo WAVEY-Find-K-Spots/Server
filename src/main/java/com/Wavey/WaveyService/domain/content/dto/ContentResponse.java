@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ContentResponse {
 
-    @Schema(description = "작품 ID", example = "1")
+    @Schema(description = "콘텐츠 ID", example = "1")
     private Long contentId;
 
     @Schema(description = "한글 제목", example = "도깨비")
@@ -24,7 +24,7 @@ public class ContentResponse {
     @Schema(description = "영문 제목", example = "Guardian", nullable = true)
     private String titleEn;
 
-    @Schema(description = "작품 종류")
+    @Schema(description = "콘텐츠 종류")
     private ContentCategory category;
 
     private LocalDateTime createdAt;

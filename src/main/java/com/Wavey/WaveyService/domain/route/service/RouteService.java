@@ -30,14 +30,12 @@ public class RouteService {
     private final RouteRepository routeRepository;
     private final SpotRepository spotRepository;
 
-    public List<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility) {
-        List<Route> routes = visibility != null
-                ? routeRepository.findByUserIdAndVisibility(userId, visibility)
-                : routeRepository.findByUserId(userId);
+    public Page<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility, Pageable pageable) {
+        Page<Route> routes = visibility != null
+                ? routeRepository.findByUserIdAndVisibility(userId, visibility, pageable)
+                : routeRepository.findByUserId(userId, pageable);
 
-        return routes.stream()
-                .map(RouteSummaryResponse::from)
-                .toList();
+        return routes.map(RouteSummaryResponse::from);
     }
 
     public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable) {
