@@ -8,20 +8,32 @@ import com.Wavey.WaveyService.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
+import java.nio.charset.StandardCharsets;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.HtmlUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
-@RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final String frontendRedirectUri;
+
+    public OAuth2SuccessHandler(
+            JwtTokenProvider tokenProvider,
+            UserRepository userRepository,
+            @Value("${auth.frontend-redirect-uri:http://localhost:3000/oauth/callback}") String frontendRedirectUri
+    ) {
+        this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
+        this.frontendRedirectUri = frontendRedirectUri;
+    }
 
     @Override
     @Transactional
@@ -42,40 +54,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         user.updateRefreshToken(refreshToken);
 
-        response.setContentType("text/html;charset=UTF-8");
-        response.getWriter().write(String.format(
-                "<html><head><style>" +
-                        "body { font-family: 'Segoe UI', sans-serif; padding: 40px; background-color: #f4f7f6; }" +
-                        ".card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }" +
-                        "h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }" +
-                        "h3 { margin-top: 25px; font-size: 16px; color: #7f8c8d; }" +
-                        "textarea { width: 100%%; height: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; font-family: monospace; resize: none; }" +
-                        "code { background: #eee; padding: 2px 5px; border-radius: 4px; color: #e74c3c; }" +
-                        ".btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; }" +
-                        ".btn-copy { background: #2ecc71; margin-left: 5px; }" +
-                        "</style></head><body>" +
-                        "<div class='card'>" +
-                        "<h2>WAVEY API 인증 테스트 도구</h2>" +
-                        "<p><strong>사용자</strong> %s (권한: %s)</p>" +
-                        "<hr>" +
-                        "<h3>1. Access Token (Swagger Authorize 입력)</h3>" +
-                        "<textarea id='access'>%s</textarea>" +
-                        "<button class='btn btn-copy' onclick=\"copyText('access')\">Access Token 복사</button>" +
-                        "<h3>2. Refresh Token (재발급 API 테스트용 Body)</h3>" +
-                        "<p>아래 내용을 그대로 <code>POST /api/v1/auth/refresh</code>의 <b>Request Body</b>에 붙여넣으세요.</p>" +
-                        "<textarea id='refresh-json'>{\n  \"refreshToken\": \"%s\"\n}</textarea>" +
-                        "<button class='btn btn-copy' onclick=\"copyText('refresh-json')\">JSON Body 복사</button>" +
-                        "<br><br>" +
-                        "<a href='/swagger-ui/index.html' class='btn'>Swagger로 돌아가기</a>" +
-                        "</div>" +
-                        "<script>" +
-                        "function copyText(id) { var copyText = document.getElementById(id); copyText.select(); document.execCommand('copy'); alert('복사되었습니다.'); }" +
-                        "</script>" +
-                        "</body></html>",
-                HtmlUtils.htmlEscape(user.getName()),
-                HtmlUtils.htmlEscape(user.getRole().name()),
-                HtmlUtils.htmlEscape(accessToken),
-                HtmlUtils.htmlEscape(refreshToken)
-        ));
+        String redirectUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
+                .fragment("accessToken={accessToken}&refreshToken={refreshToken}&tokenType=Bearer")
+                .buildAndExpand(accessToken, refreshToken)
+                .encode(StandardCharsets.UTF_8)
+                .toUriString();
+
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        response.setHeader(HttpHeaders.PRAGMA, "no-cache");
+        clearAuthenticationAttributes(request);
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
