@@ -10,9 +10,21 @@ public interface ContentTrackRepository extends JpaRepository<ContentTrack, Long
 
     List<ContentTrack> findByContentIdAndHiddenFalseOrderByIdAsc(Long contentId);
 
+    List<ContentTrack> findByContentIdInAndHiddenFalseOrderByIdAsc(Collection<Long> contentIds);
+
+    List<ContentTrack> findByContentIdAndContentAlbumIdIsNullAndHiddenFalseOrderByIdAsc(Long contentId);
+
+    List<ContentTrack> findByContentIdInAndContentAlbumIdIsNullAndHiddenFalseOrderByIdAsc(Collection<Long> contentIds);
+
+    List<ContentTrack> findByContentAlbumIdAndHiddenFalseOrderByIdAsc(Long contentAlbumId);
+
+    List<ContentTrack> findByContentAlbumIdInAndHiddenFalseOrderByIdAsc(Collection<Long> contentAlbumIds);
+
     List<ContentTrack> findByContentId(Long contentId);
 
     Optional<ContentTrack> findByContentIdAndSpotifyTrackId(Long contentId, String spotifyTrackId);
+
+    void deleteByContentId(Long contentId);
 
     void deleteByContentIdAndHiddenFalse(Long contentId);
 

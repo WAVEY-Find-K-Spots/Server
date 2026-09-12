@@ -38,4 +38,10 @@ public class Content extends BaseEntity {
 
     public String getTitle() { return titleKo; }
     public ContentCategory getCategory() { return category; }
+
+    public void update(String titleKo, String titleEn, ContentCategory category) {
+        this.titleKo = titleKo;
+        this.titleEn = titleEn;
+        this.category = category;
+    }
 }
