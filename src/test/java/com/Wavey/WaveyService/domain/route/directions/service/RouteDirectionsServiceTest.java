@@ -19,7 +19,6 @@ import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
-import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
@@ -71,11 +70,10 @@ class RouteDirectionsServiceTest {
 
     private Spot spot(Long id, double lat, double lng) {
         Spot spot = Spot.builder()
-                .name("spot" + id)
+                .nameKo("spot" + id)
                 .category(SpotCategory.K_HERITAGE)
                 .latitude(BigDecimal.valueOf(lat))
                 .longitude(BigDecimal.valueOf(lng))
-                .sourceType(SpotSourceType.TOUR_API)
                 .build();
         ReflectionTestUtils.setField(spot, "id", id);
         return spot;
