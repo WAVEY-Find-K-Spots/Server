@@ -61,8 +61,8 @@
 
 로그인 사용자 본인의 루트 목록을 반환합니다.
 
-- 쿼리 파라미터: `visibility` (`PUBLIC` / `PRIVATE`, 선택 — 미입력 시 전체)
-- **페이징 없음** (`data` 가 곧 배열)
+- 쿼리 파라미터: `visibility` (`PUBLIC` / `PRIVATE`, 선택 — 미입력 시 전체), `page`(기본 0), `size`(기본 20)
+- 응답 `data` 는 Spring `Page` 직렬화 원형 (2.2 공개 루트 조회와 동일한 형태)
 
 요청 헤더: `Authorization: Bearer {accessToken}`
 
@@ -72,19 +72,32 @@
 {
   "statusCode": 200,
   "message": "내 루트 목록 조회 성공",
-  "data": [
-    {
-      "routeId": 1,
-      "name": "경복궁 궁궐 투어",
-      "description": null,
-      "visibility": "PRIVATE",
-      "spotCount": 3,
-      "createdAt": "2025-04-01T10:00:00",
-      "updatedAt": "2025-04-10T15:30:00"
-    }
-  ]
+  "data": {
+    "content": [
+      {
+        "routeId": 1,
+        "name": "경복궁 궁궐 투어",
+        "description": null,
+        "visibility": "PRIVATE",
+        "spotCount": 3,
+        "createdAt": "2025-04-01T10:00:00",
+        "updatedAt": "2025-04-10T15:30:00"
+      }
+    ],
+    "pageable": { "pageNumber": 0, "pageSize": 20, "offset": 0, "paged": true, "unpaged": false },
+    "totalElements": 12,
+    "totalPages": 1,
+    "number": 0,
+    "size": 20,
+    "first": true,
+    "last": true,
+    "numberOfElements": 1,
+    "empty": false
+  }
 }
 ```
+
+> 클라이언트는 `data.content`, `data.totalElements`, `data.number` 사용.
 
 ---
 
@@ -452,7 +465,7 @@
 | 값 | 라벨 | 비고 |
 |----|------|------|
 | `WALK` | 도보 | |
-| `TRANSIT` | 대중교통 | **Tmap 대중교통 API 승인 대기 중** — 승인 전에는 502 |
+| `TRANSIT` | 대중교통 | Tmap 대중교통 API 승인 완료, 정상 동작 |
 | `CAR` | 자동차 | |
 
 클라이언트 `TransportMode`(`"walk" | "transit" | "car"`) ↔ 대문자 enum 매핑.
@@ -562,11 +575,10 @@
 
 ## 10. 미구현 / 후속 과제
 
-- [ ] `GET /api/v1/routes` 페이징 (현재 `List` 전체 반환)
+- [x] `GET /api/v1/routes` 페이징
 - [ ] `GET /api/v1/routes/public` `regionId` 지역 필터
 - [ ] 루트 상세 `spots[].kContentTitle` (content 도메인 대표 K-콘텐츠 연계)
 - [ ] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
-- [ ] `TRANSIT` — Tmap 대중교통 API 승인 후 활성화 (승인 시 AppKey 공유 여부 확인)
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
 - [ ] `GET /api/v1/spots` `excludeRouteId` 쿼리 파라미터
 - [ ] 루트 공유 정책 확정 (공개 전환 후 링크 vs 별도 공유 토큰)

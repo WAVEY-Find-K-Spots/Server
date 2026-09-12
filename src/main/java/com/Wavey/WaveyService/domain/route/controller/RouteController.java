@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,12 +47,13 @@ public class RouteController {
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @GetMapping
-    public ResponseEntity<CommonResponse<List<RouteSummaryResponse>>> getMyRoutes(
+    public ResponseEntity<CommonResponse<Page<RouteSummaryResponse>>> getMyRoutes(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
-            @Parameter(description = "공개 여부 필터 (PUBLIC / PRIVATE)") @RequestParam(required = false) Visibility visibility
+            @Parameter(description = "공개 여부 필터 (PUBLIC / PRIVATE)") @RequestParam(required = false) Visibility visibility,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
         Long userId = user.getId();
-        return ResponseEntity.ok(success("내 루트 목록 조회 성공", routeService.getMyRoutes(userId, visibility)));
+        return ResponseEntity.ok(success("내 루트 목록 조회 성공", routeService.getMyRoutes(userId, visibility, pageable)));
     }
 
     @Operation(summary = "공개 루트 전체 조회", description = "모든 사용자의 공개 루트를 조회합니다. 인증 없이 접근 가능합니다.")
