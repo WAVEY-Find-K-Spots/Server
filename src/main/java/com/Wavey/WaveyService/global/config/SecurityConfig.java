@@ -57,6 +57,12 @@ public class SecurityConfig {
                                 "/api/v1/spots/sync/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/routes/public").permitAll()
+                        // 콘텐츠·미디어 조회는 비로그인 허용 (등록/수정/삭제/수집은 인증 필요)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/contents/**",
+                                "/api/v1/albums/**",
+                                "/api/v1/spots/*/media"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

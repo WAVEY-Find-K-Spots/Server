@@ -53,10 +53,11 @@ public enum ErrorCode {
     SPOTIFY_API_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "CONTENT_502_SPOTIFY", "\uC2A4\uD3EC\uD2F0\uD30C\uC774 API \uC694\uCCAD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."),
 
     // WORK
-    WORK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_404", "해당 작품을 찾을 수 없습니다."),
-    WORK_ALREADY_EXISTS(HttpStatus.CONFLICT, "WORK_409", "이미 등록된 작품입니다."),
-    WORK_VIDEO_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_VIDEO_404", "해당 작품 영상을 찾을 수 없습니다."),
-    WORK_TRACK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_TRACK_404", "해당 작품 트랙을 찾을 수 없습니다."),
+    WORK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_404", "해당 콘텐츠을 찾을 수 없습니다."),
+    WORK_ALREADY_EXISTS(HttpStatus.CONFLICT, "WORK_409", "이미 등록된 콘텐츠입니다."),
+    WORK_VIDEO_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_VIDEO_404", "해당 콘텐츠 영상을 찾을 수 없습니다."),
+    WORK_TRACK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_TRACK_404", "해당 콘텐츠 트랙을 찾을 수 없습니다."),
+    CONTENT_ALBUM_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTENT_ALBUM_404", "해당 앨범을 찾을 수 없습니다."),
 
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "\uD574\uB2F9 \uC720\uC800\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."),

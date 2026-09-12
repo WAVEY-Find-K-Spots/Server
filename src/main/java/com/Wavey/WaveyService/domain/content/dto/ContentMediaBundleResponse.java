@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.content.dto;
 
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -11,23 +12,18 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MediaCollectResponse {
+public class ContentMediaBundleResponse {
 
-    @Schema(example = "1")
     private Long contentId;
+    private String title;
+    private ContentCategory category;
 
-    @Schema(description = "저장된 개수")
-    private int saved;
-
-    @Schema(description = "탈락한 개수")
-    private int dropped;
-
-    @Schema(nullable = true)
+    @Schema(description = "YouTube 영상 카드")
     private List<ContentVideoResponse> videos;
 
-    @Schema(nullable = true)
+    @Schema(description = "앨범 카드(수록 트랙 포함). 없으면 빈 배열")
     private List<ContentAlbumResponse> albums;
 
-    @Schema(nullable = true)
+    @Schema(description = "앨범에 속하지 않는 단독 트랙. 없으면 빈 배열")
     private List<ContentTrackResponse> tracks;
 }
