@@ -1,13 +1,13 @@
 package com.Wavey.WaveyService.domain.content.dto;
 
-import com.Wavey.WaveyService.domain.content.entity.ContentPlatform;
+import com.Wavey.WaveyService.domain.content.entity.Content;
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -15,27 +15,30 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ContentResponse {
 
-    @Schema(description = "콘텐츠 ID", example = "1")
+    @Schema(description = "작품 ID", example = "1")
     private Long contentId;
 
-    @Schema(description = "플랫폼", example = "YOUTUBE")
-    private ContentPlatform platform;
+    @Schema(description = "한글 제목", example = "도깨비")
+    private String titleKo;
 
-    @Schema(description = "제목", example = "밤양갱")
-    private String title;
+    @Schema(description = "영문 제목", example = "Guardian", nullable = true)
+    private String titleEn;
 
-    @Schema(description = "콘텐츠 설명", example = "플레이리스트에 저장하고 싶은 콘텐츠")
-    private String description;
+    @Schema(description = "작품 종류")
+    private ContentCategory category;
 
-    @Schema(description = "플랫폼 고유 ID", example = "dQw4w9WgXcQ")
-    private String externalId;
-
-    @Schema(description = "썸네일 URL", example = "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg")
-    private String thumbnailUrl;
-
-    @Schema(description = "생성 시각", example = "2026-03-23T10:00:00")
     private LocalDateTime createdAt;
 
-    @Schema(description = "수정 시각", example = "2026-03-23T11:00:00")
     private LocalDateTime updatedAt;
+
+    public static ContentResponse from(Content content) {
+        return ContentResponse.builder()
+                .contentId(content.getContentId())
+                .titleKo(content.getTitle())
+                .titleEn(content.getTitleEn())
+                .category(content.getCategory())
+                .createdAt(content.getCreatedAt())
+                .updatedAt(content.getUpdatedAt())
+                .build();
+    }
 }
