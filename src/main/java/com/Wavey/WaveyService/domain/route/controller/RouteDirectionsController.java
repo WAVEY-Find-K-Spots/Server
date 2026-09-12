@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.route.directions.service.RouteDirectionsSer
 import com.Wavey.WaveyService.domain.route.dto.request.RouteDirectionsRequest;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteDirectionsResponse;
 import com.Wavey.WaveyService.domain.user.entity.User;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -36,13 +36,13 @@ public class RouteDirectionsController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "502", description = "외부 경로 엔진 오류")
     })
     @PostMapping
-    public ResponseEntity<ApiResponse<RouteDirectionsResponse>> getDirections(
+    public ResponseEntity<CommonResponse<RouteDirectionsResponse>> getDirections(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteDirectionsRequest request
     ) {
         Long userId = user.getId();
         return ResponseEntity.ok(
-                ApiResponse.success("경로 계산 성공", routeDirectionsService.getDirections(routeId, request, userId)));
+                CommonResponse.success("경로 계산 성공", routeDirectionsService.getDirections(routeId, request, userId)));
     }
 }

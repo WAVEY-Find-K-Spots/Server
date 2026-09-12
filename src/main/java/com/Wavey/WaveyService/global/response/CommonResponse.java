@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
+public class CommonResponse<T> {
 
     @Schema(description = "HTTP 상태 코드", example = "200")
     private int statusCode;
@@ -26,12 +26,12 @@ public class ApiResponse<T> {
     @Schema(description = "에러 정보", nullable = true)
     private ErrorDetail error;
 
-    public static <T> ApiResponse<T> success(String message, T data) {
+    public static <T> CommonResponse<T> success(String message, T data) {
         return success(200, message, data);
     }
 
-    public static <T> ApiResponse<T> success(int statusCode, String message, T data) {
-        return ApiResponse.<T>builder()
+    public static <T> CommonResponse<T> success(int statusCode, String message, T data) {
+        return CommonResponse.<T>builder()
                 .statusCode(statusCode)
                 .message(message)
                 .data(data)
@@ -39,8 +39,8 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static ApiResponse<Void> error(int statusCode, ErrorDetail error) {
-        return ApiResponse.<Void>builder()
+    public static CommonResponse<Void> error(int statusCode, ErrorDetail error) {
+        return CommonResponse.<Void>builder()
                 .statusCode(statusCode)
                 .message(null)
                 .data(null)
