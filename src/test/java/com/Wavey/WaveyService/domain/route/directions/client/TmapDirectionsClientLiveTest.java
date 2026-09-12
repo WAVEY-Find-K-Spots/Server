@@ -54,4 +54,15 @@ class TmapDirectionsClientLiveTest {
         assertThat(leg.durationSeconds()).isPositive();
         assertThat(leg.path()).hasSizeGreaterThan(1);
     }
+
+    @Test
+    void 대중교통_경로를_실제로_불러온다() {
+        RouteLeg leg = client().route(TransportMode.TRANSIT, FROM_LNG, FROM_LAT, TO_LNG, TO_LAT);
+
+        System.out.printf("[TRANSIT] distance=%dm, duration=%ds, points=%d%n",
+                leg.distanceMeters(), leg.durationSeconds(), leg.path().size());
+
+        assertThat(leg.durationSeconds()).isPositive();
+        assertThat(leg.path()).hasSizeGreaterThan(1);
+    }
 }
