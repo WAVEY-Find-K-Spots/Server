@@ -14,6 +14,7 @@ public enum ErrorCode {
     COMMON_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMON_FILE_SIZE", "파일 용량이 제한을 초과했습니다."),
     COMMON_FILE_EMPTY(HttpStatus.BAD_REQUEST, "COMMON_FILE", "파일이 비어있거나 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "\uC11C\uBC84 \uB0B4\uBD80 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."),
+    EXTERNAL_API_DISABLED(HttpStatus.SERVICE_UNAVAILABLE, "EXTERNAL_API_DISABLED", "현재 DB 전용 모드입니다."),
 
     // ROUTE
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", "\uD574\uB2F9 \uB8E8\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."),
@@ -53,10 +54,11 @@ public enum ErrorCode {
     SPOTIFY_API_REQUEST_FAILED(HttpStatus.BAD_GATEWAY, "CONTENT_502_SPOTIFY", "\uC2A4\uD3EC\uD2F0\uD30C\uC774 API \uC694\uCCAD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."),
 
     // WORK
-    WORK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_404", "해당 작품을 찾을 수 없습니다."),
-    WORK_ALREADY_EXISTS(HttpStatus.CONFLICT, "WORK_409", "이미 등록된 작품입니다."),
-    WORK_VIDEO_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_VIDEO_404", "해당 작품 영상을 찾을 수 없습니다."),
-    WORK_TRACK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_TRACK_404", "해당 작품 트랙을 찾을 수 없습니다."),
+    WORK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_404", "해당 콘텐츠을 찾을 수 없습니다."),
+    WORK_ALREADY_EXISTS(HttpStatus.CONFLICT, "WORK_409", "이미 등록된 콘텐츠입니다."),
+    WORK_VIDEO_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_VIDEO_404", "해당 콘텐츠 영상을 찾을 수 없습니다."),
+    WORK_TRACK_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_TRACK_404", "해당 콘텐츠 트랙을 찾을 수 없습니다."),
+    CONTENT_ALBUM_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTENT_ALBUM_404", "해당 앨범을 찾을 수 없습니다."),
 
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "\uD574\uB2F9 \uC720\uC800\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."),

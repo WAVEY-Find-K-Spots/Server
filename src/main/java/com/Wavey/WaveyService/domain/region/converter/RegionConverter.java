@@ -8,39 +8,35 @@ import org.springframework.util.StringUtils;
 
 public class RegionConverter {
 
-    private RegionConverter() {
-    }
+    private RegionConverter() {}
 
     public static Region toEntity(RegionCreateRequest request) {
         return Region.builder()
-                .name(request.getName().trim())
-                .code(request.getCode().trim())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
+                .nameKo(request.getNameKo().trim())
+                .nameEn(request.getNameEn().trim())
                 .build();
     }
 
     public static RegionResponse toResponse(Region region) {
         return RegionResponse.builder()
                 .regionId(region.getRegionId())
-                .name(region.getName())
-                .code(region.getCode())
-                .latitude(region.getLatitude())
-                .longitude(region.getLongitude())
+                .nameKo(region.getNameKo())
+                .nameEn(region.getNameEn())
                 .createdAt(region.getCreatedAt())
                 .updatedAt(region.getUpdatedAt())
                 .build();
     }
 
     public static void updateEntity(Region region, RegionUpdateRequest request) {
-        String name = StringUtils.hasText(request.getName()) ? request.getName().trim() : region.getName();
-        String code = StringUtils.hasText(request.getCode()) ? request.getCode().trim() : region.getCode();
+        String nameKo =
+                StringUtils.hasText(request.getNameKo())
+                        ? request.getNameKo().trim()
+                        : region.getNameKo();
+        String nameEn =
+                StringUtils.hasText(request.getNameEn())
+                        ? request.getNameEn().trim()
+                        : region.getNameEn();
 
-        region.update(
-                name,
-                code,
-                request.getLatitude() != null ? request.getLatitude() : region.getLatitude(),
-                request.getLongitude() != null ? request.getLongitude() : region.getLongitude()
-        );
+        region.update(nameKo, nameEn);
     }
 }

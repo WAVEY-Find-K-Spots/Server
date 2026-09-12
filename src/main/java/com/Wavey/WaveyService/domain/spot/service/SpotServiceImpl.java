@@ -4,103 +4,113 @@ import com.Wavey.WaveyService.domain.region.repository.RegionRepository;
 import com.Wavey.WaveyService.domain.spot.converter.SpotConverter;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotCreateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotUpdateRequest;
-import com.Wavey.WaveyService.domain.spot.dto.response.SpotListResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
-import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
-import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import java.math.BigDecimal;
-import java.util.List;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class SpotServiceImpl implements SpotService {
 
     private final SpotRepository spotRepository;
     private final RegionRepository regionRepository;
+    private final SpotConverter spotConverter;
 
     @Override
-    public SpotResponse createSpot(SpotCreateRequest request) {
-        validateRegion(request.getRegionId());
-        Spot spot = SpotConverter.toEntity(request);
+    @Transactional
+    public SpotResponse createSpot(
+            SpotCreateRequest request
+    ) {
+        validateRegion(request.regionId());
 
-        if (spot.getExternalContentId() != null
-                && existsExternalSpot(request.getSourceType(), spot.getExternalContentId())) {
-            throw new CustomException(ErrorCode.SPOT_EXTERNAL_DATA_ALREADY_EXISTS);
+        Spot spot =
+                spotRepository.save(
+                        spotConverter.toEntity(request)
+                );
+
+        return spotConverter.toResponse(
+                spot,
+                false,
+                currentLocale()
+        );
+    }
+
+    @Override
+    public SpotResponse getSpot(
+            Long spotId,
+            Long userId
+    ) {
+        Spot spot = findSpot(spotId);
+
+        return spotConverter.toResponse(
+                spot,
+                false,
+                currentLocale()
+        );
+    }
+
+    @Override
+    @Transactional
+    public SpotResponse updateSpot(
+            Long spotId,
+            SpotUpdateRequest request
+    ) {
+        Spot spot = findSpot(spotId);
+
+        if (request.regionId() != null) {
+            validateRegion(request.regionId());
         }
 
-        Spot savedSpot = spotRepository.save(spot);
-        return SpotConverter.toResponse(savedSpot);
+        spotConverter.updateEntity(
+                spot,
+                request
+        );
+
+        return spotConverter.toResponse(
+                spot,
+                false,
+                currentLocale()
+        );
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public SpotResponse getSpot(Long spotId) {
-        Spot spot = findSpotById(spotId);
-        return SpotConverter.toResponse(spot);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SpotListResponse> getSpots(SpotCategory category, Long regionId) {
-        return spotRepository.search(category, regionId)
-                .stream()
-                .map(SpotConverter::toListResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SpotListResponse> getSpotsByMapBounds(BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng) {
-        validateMapBounds(minLat, maxLat, minLng, maxLng);
-        return spotRepository.findMapBounds(minLat, maxLat, minLng, maxLng)
-                .stream()
-                .map(SpotConverter::toListResponse)
-                .toList();
-    }
-
-    @Override
-    public SpotResponse updateSpot(Long spotId, SpotUpdateRequest request) {
-        Spot spot = findSpotById(spotId);
-        SpotConverter.updateEntity(spot, request);
-        return SpotConverter.toResponse(spot);
-    }
-
-    @Override
+    @Transactional
     public void deleteSpot(Long spotId) {
-        Spot spot = findSpotById(spotId);
-        spotRepository.delete(spot);
+        spotRepository.delete(
+                findSpot(spotId)
+        );
     }
 
-    private boolean existsExternalSpot(SpotSourceType sourceType, String externalContentId) {
-        if (!StringUtils.hasText(externalContentId)) {
-            return false;
-        }
-        return spotRepository.existsExternal(sourceType, externalContentId.trim());
-    }
-
-    private Spot findSpotById(Long spotId) {
+    private Spot findSpot(Long spotId) {
         return spotRepository.findById(spotId)
-                .orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
-    }
-
-    private void validateMapBounds(BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng) {
-        if (minLat.compareTo(maxLat) > 0 || minLng.compareTo(maxLng) > 0) {
-            throw new CustomException(ErrorCode.SPOT_INVALID_MAP_BOUNDS);
-        }
+                .orElseThrow(
+                        () ->
+                                new CustomException(
+                                        ErrorCode.SPOT_NOT_FOUND
+                                )
+                );
     }
 
     private void validateRegion(Long regionId) {
         if (!regionRepository.existsById(regionId)) {
-            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
+            throw new CustomException(
+                    ErrorCode.REGION_NOT_FOUND
+            );
         }
+    }
+
+    private Locale currentLocale() {
+        return LocaleContextHolder.getLocale();
     }
 }

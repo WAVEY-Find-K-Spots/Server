@@ -1,27 +1,47 @@
 package com.Wavey.WaveyService.domain.content.dto;
 
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(
+        requiredProperties = {"titleKo", "category"},
+        example = """
+                {
+                  "titleKo": "콘텐츠 한글 제목 (필수)",
+                  "titleEn": "콘텐츠 영문 제목 (선택)",
+                  "category": "ARTIST | DRAMA | MOVIE (필수)"
+                }
+                """
+)
 public class ContentRequest {
 
-    @Schema(description = "콘텐츠 제목. 비우면 유튜브/스포티파이 API 제목을 사용합니다.", example = "BTS - Dynamite")
-    private String title;
+    @NotBlank
+    @Schema(
+            description = "한글 제목",
+            example = "콘텐츠 한글 제목 (필수)",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private String titleKo;
 
-    @NotBlank(message = "URL은 필수입니다.")
-    @Schema(description = "유튜브 또는 스포티파이 URL", example = "https://www.youtube.com/watch?v=GIAnKeKXzGU")
-    private String url;
+    @Schema(
+            description = "영문 제목",
+            example = "콘텐츠 영문 제목 (선택)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+            nullable = true
+    )
+    private String titleEn;
 
-    @Schema(description = "콘텐츠 설명", example = "플레이리스트에 저장하고 싶은 콘텐츠")
-    private String description;
+    @NotNull
+    @Schema(description = "콘텐츠 종류. ARTIST | DRAMA | MOVIE", requiredMode = Schema.RequiredMode.REQUIRED)
+    private ContentCategory category;
 }
