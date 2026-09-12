@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.spot.enums;
 
 public enum PlaceType {
+
     RESTAURANT,
     PLAYGROUND,
     CAFE,
@@ -15,10 +16,14 @@ public enum PlaceType {
         if (value == null || value.isBlank()) {
             return OTHER;
         }
+
         try {
-            return value.trim().toUpperCase().replace('-', '_').replace(' ', '_')
+            return value.trim()
+                    .toUpperCase()
+                    .replace('-', '_')
+                    .replace(' ', '_')
                     .transform(PlaceType::valueOf);
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException e) {
             return OTHER;
         }
     }

@@ -1,45 +1,53 @@
 package com.Wavey.WaveyService.domain.spot.dto.request;
 
-import jakarta.validation.constraints.*;
+import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
+import com.Wavey.WaveyService.domain.spot.enums.SortBy;
+import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 
-import lombok.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
-@Getter
-@Setter
-public class SpotSearchRequest {
-    @Size(max = 200)
-    private String keyword;
+import java.math.BigDecimal;
 
-    private Long regionId;
-    private String category;
+public record SpotSearchRequest(
 
-    @DecimalMin("0")
-    @DecimalMax("5")
-    private Double minRating;
+        @Size(max = 200)
+        String keyword,
 
-    private Double latitude;
-    private Double longitude;
+        @Positive
+        Long regionId,
 
-    @DecimalMin("1")
-    @DecimalMax("100000")
-    private Double radiusMeters;
+        SpotCategory category,
 
-    private SortBy sort = SortBy.POPULAR;
+        PlaceType placeType,
 
-    @Min(0)
-    @Max(10000)
-    private int page = 0;
+        @DecimalMin("0.0")
+        @DecimalMax("5.0")
+        Double minRating,
 
-    @Min(1)
-    @Max(100)
-    private int size = 20;
+        @DecimalMin("33.0")
+        @DecimalMax("38.7")
+        BigDecimal latitude,
 
-    private String language;
+        @DecimalMin("124.5")
+        @DecimalMax("132.0")
+        BigDecimal longitude,
 
-    public enum SortBy {
-        POPULAR,
-        RATING,
-        LATEST,
-        DISTANCE
+        @DecimalMin("1.0")
+        @DecimalMax("100000.0")
+        Double radiusMeters,
+
+        SortBy sort,
+
+        @Min(0)
+        Integer page
+) {
+
+    public SpotSearchRequest {
+        sort = sort == null ? SortBy.POPULAR : sort;
+        page = page == null ? 0 : page;
     }
 }
