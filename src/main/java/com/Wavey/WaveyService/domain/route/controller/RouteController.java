@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.route.controller;
 
-import static com.Wavey.WaveyService.global.response.ApiResponse.success;
+import static com.Wavey.WaveyService.global.response.CommonResponse.success;
 
 import com.Wavey.WaveyService.domain.route.dto.request.RouteCreateRequest;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteUpdateRequest;
@@ -9,6 +9,7 @@ import com.Wavey.WaveyService.domain.route.dto.response.RouteSummaryResponse;
 import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.service.RouteService;
 import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -47,7 +48,7 @@ public class RouteController {
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @GetMapping
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<List<RouteSummaryResponse>>> getMyRoutes(
+    public ResponseEntity<CommonResponse<List<RouteSummaryResponse>>> getMyRoutes(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "공개 여부 필터 (PUBLIC / PRIVATE)") @RequestParam(required = false) Visibility visibility
     ) {
@@ -60,7 +61,7 @@ public class RouteController {
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
     @GetMapping("/public")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<Page<RouteSummaryResponse>>> getPublicRoutes(
+    public ResponseEntity<CommonResponse<Page<RouteSummaryResponse>>> getPublicRoutes(
             @PageableDefault(size = 20) Pageable pageable
     ) {
         return ResponseEntity.ok(success("공개 루트 조회 성공", routeService.getPublicRoutes(pageable)));
@@ -73,7 +74,7 @@ public class RouteController {
             @ApiResponse(responseCode = "404", description = "루트를 찾을 수 없음")
     })
     @GetMapping("/{routeId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> getRoute(
+    public ResponseEntity<CommonResponse<RouteResponse>> getRoute(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {
@@ -88,7 +89,7 @@ public class RouteController {
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @PostMapping
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> createRoute(
+    public ResponseEntity<CommonResponse<RouteResponse>> createRoute(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @RequestBody @Valid RouteCreateRequest request
     ) {
@@ -104,7 +105,7 @@ public class RouteController {
             @ApiResponse(responseCode = "404", description = "루트를 찾을 수 없음")
     })
     @PatchMapping("/{routeId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<RouteResponse>> updateRoute(
+    public ResponseEntity<CommonResponse<RouteResponse>> updateRoute(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId,
             @RequestBody @Valid RouteUpdateRequest request
@@ -120,7 +121,7 @@ public class RouteController {
             @ApiResponse(responseCode = "404", description = "루트를 찾을 수 없음")
     })
     @DeleteMapping("/{routeId}")
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<Void>> deleteRoute(
+    public ResponseEntity<CommonResponse<Void>> deleteRoute(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(description = "루트 ID") @PathVariable Long routeId
     ) {

@@ -36,6 +36,13 @@ public class Content extends BaseEntity {
         return getId();
     }
 
-    public String getTitle() { return titleKo; }
-    public ContentCategory getCategory() { return category; }
+    public String getTitle() {
+        return titleKo;
+    }
+
+    public void update(String titleKo, String titleEn, ContentCategory category) {
+        this.titleKo = titleKo;
+        this.titleEn = titleEn;
+        this.category = category;
+    }
 }

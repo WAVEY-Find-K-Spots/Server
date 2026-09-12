@@ -4,7 +4,7 @@ import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -91,12 +91,12 @@ public class SecurityConfig {
                 .message(errorCode.getMessage())
                 .build();
 
-        ApiResponse<Void> apiResponse = ApiResponse.error(
+        CommonResponse<Void> commonResponse = CommonResponse.error(
                 errorCode.getHttpStatus().value(),
                 errorDetail
         );
 
-        String json = objectMapper.writeValueAsString(apiResponse);
+        String json = objectMapper.writeValueAsString(commonResponse);
         response.getWriter().write(json);
     }
 

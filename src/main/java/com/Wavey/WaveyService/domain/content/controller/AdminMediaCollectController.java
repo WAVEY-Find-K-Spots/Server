@@ -6,11 +6,11 @@ import com.Wavey.WaveyService.domain.content.dto.ContentMediaCollectResponse;
 import com.Wavey.WaveyService.domain.content.dto.ContentTrackResponse;
 import com.Wavey.WaveyService.domain.content.dto.ContentVideoResponse;
 import com.Wavey.WaveyService.domain.content.service.MediaCollectService;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import com.Wavey.WaveyService.domain.content.service.ContentMediaQueryService;
 import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.service.ContentService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,12 +36,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminMediaCollectController {
 
     private final MediaCollectService mediaCollectService;
-    private final ContentMediaQueryService workMediaQueryService;
-    private final ContentService workService;
+    private final ContentMediaQueryService contentMediaQueryService;
+    private final ContentService contentService;
 
     @Operation(summary = "작품 등록")
     @PostMapping("/contents")
-    public ResponseEntity<ApiResponse<ContentResponse>> createContent(
+    public ResponseEntity<CommonResponse<ContentResponse>> createContent(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
                             schema = @Schema(implementation = ContentRequest.class),
@@ -57,34 +57,34 @@ public class AdminMediaCollectController {
             @Valid @RequestBody ContentRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(HttpStatus.CREATED.value(), "작품 등록 성공", workService.create(request)));
+                .body(CommonResponse.success(HttpStatus.CREATED.value(), "콘텐츠 등록 성공", contentService.create(request)));
     }
 
     @Operation(summary = "유튜브·스포티파이 수집")
     @PostMapping("/contents/{contentId}/collect")
-    public ResponseEntity<ApiResponse<ContentMediaCollectResponse>> collect(@PathVariable Long contentId) {
-        return ResponseEntity.ok(ApiResponse.success("작품 미디어 수집 성공", mediaCollectService.collectAll(contentId)));
+    public ResponseEntity<CommonResponse<ContentMediaCollectResponse>> collect(@PathVariable Long contentId) {
+        return ResponseEntity.ok(CommonResponse.success("작품 미디어 수집 성공", mediaCollectService.collectAll(contentId)));
     }
 
     @Operation(summary = "유튜브만 재수집")
     @PostMapping("/videos/refresh")
-    public ResponseEntity<ApiResponse<MediaCollectResponse>> refreshVideos(
+    public ResponseEntity<CommonResponse<MediaCollectResponse>> refreshVideos(
             @Parameter(description = "작품 ID") @RequestParam Long contentId
     ) {
-        return ResponseEntity.ok(ApiResponse.success("유튜브 수집 성공", mediaCollectService.refreshVideos(contentId)));
+        return ResponseEntity.ok(CommonResponse.success("유튜브 수집 성공", mediaCollectService.refreshVideos(contentId)));
     }
 
     @Operation(summary = "스포티파이만 재수집")
     @PostMapping("/tracks/refresh")
-    public ResponseEntity<ApiResponse<MediaCollectResponse>> refreshTracks(
+    public ResponseEntity<CommonResponse<MediaCollectResponse>> refreshTracks(
             @Parameter(description = "작품 ID") @RequestParam Long contentId
     ) {
-        return ResponseEntity.ok(ApiResponse.success("스포티파이 수집 성공", mediaCollectService.refreshTracks(contentId)));
+        return ResponseEntity.ok(CommonResponse.success("스포티파이 수집 성공", mediaCollectService.refreshTracks(contentId)));
     }
 
     @Operation(summary = "영상 숨김")
     @PatchMapping("/videos/{videoId}")
-    public ResponseEntity<ApiResponse<ContentVideoResponse>> hideVideo(
+    public ResponseEntity<CommonResponse<ContentVideoResponse>> hideVideo(
             @Parameter(description = "DB 영상 ID") @PathVariable Long videoId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
@@ -98,15 +98,15 @@ public class AdminMediaCollectController {
             )
             @Valid @RequestBody MediaVisibilityRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.ok(CommonResponse.success(
                 "영상 공개 상태 변경 성공",
-                workMediaQueryService.updateVideoHidden(videoId, request.getHidden())
+                contentMediaQueryService.updateVideoHidden(videoId, request.getHidden())
         ));
     }
 
     @Operation(summary = "트랙 숨김")
     @PatchMapping("/tracks/{trackId}")
-    public ResponseEntity<ApiResponse<ContentTrackResponse>> hideTrack(
+    public ResponseEntity<CommonResponse<ContentTrackResponse>> hideTrack(
             @Parameter(description = "DB 트랙 ID") @PathVariable Long trackId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
@@ -120,9 +120,9 @@ public class AdminMediaCollectController {
             )
             @Valid @RequestBody MediaVisibilityRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.ok(CommonResponse.success(
                 "트랙 공개 상태 변경 성공",
-                workMediaQueryService.updateTrackHidden(trackId, request.getHidden())
+                contentMediaQueryService.updateTrackHidden(trackId, request.getHidden())
         ));
     }
 }

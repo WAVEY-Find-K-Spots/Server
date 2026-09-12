@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.global.exception;
 
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.Wavey.WaveyService.global.response.FieldErrorDetail;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    protected ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+    protected ResponseEntity<CommonResponse<Void>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
         ErrorDetail errorDetail = ErrorDetail.builder()
                 .code(errorCode.getCode())
@@ -24,11 +24,11 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(ApiResponse.error(errorCode.getHttpStatus().value(), errorDetail));
+                .body(CommonResponse.error(errorCode.getHttpStatus().value(), errorDetail));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    protected ResponseEntity<CommonResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         List<FieldErrorDetail> fieldErrors = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> new FieldErrorDetail(
                         error.getField(),
@@ -44,6 +44,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus())
-                .body(ApiResponse.error(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus().value(), errorDetail));
+                .body(CommonResponse.error(ErrorCode.COMMON_INVALID_PARAMETER.getHttpStatus().value(), errorDetail));
     }
 }
