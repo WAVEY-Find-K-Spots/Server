@@ -7,13 +7,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "contents")
+@Table(name = "contents", uniqueConstraints = @UniqueConstraint(name = "uk_contents_title_category", columnNames = {"title_ko", "category"}))
 @AttributeOverride(name = "id", column = @Column(name = "content_id"))
 @Getter
 @Builder
@@ -21,30 +22,27 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Content extends BaseEntity {
 
+    @Column(name = "title_ko", nullable = false, length = 255)
+    private String titleKo;
+
+    @Column(name = "title_en", length = 255)
+    private String titleEn;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ContentPlatform platform;
-
-    @Column(nullable = false, length = 255)
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(nullable = false, length = 255)
-    private String externalId;
-
-    @Column(nullable = false, length = 500)
-    private String thumbnailUrl;
+    private ContentCategory category;
 
     public Long getContentId() {
         return getId();
     }
 
-    public void update(String title, String description, String externalId, String thumbnailUrl) {
-        this.title = title;
-        this.description = description;
-        this.externalId = externalId;
-        this.thumbnailUrl = thumbnailUrl;
+    public String getTitle() {
+        return titleKo;
+    }
+
+    public void update(String titleKo, String titleEn, ContentCategory category) {
+        this.titleKo = titleKo;
+        this.titleEn = titleEn;
+        this.category = category;
     }
 }
