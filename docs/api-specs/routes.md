@@ -301,7 +301,8 @@
 ### 3.1 `POST /api/v1/routes/{routeId}/spots` — 스팟 추가
 
 - 같은 스팟이 이미 루트에 있으면 `409 ROUTE_SPOT_ALREADY_EXISTS`
-- 현재 구현은 전달된 `sequenceOrder` 를 그대로 저장하며 뒤 스팟을 자동으로 밀지 않음
+- 삽입 위치(`sequenceOrder`) 이후의 기존 스팟들은 순서가 자동으로 1씩 밀림
+- `sequenceOrder` 가 현재 스팟 개수+1 을 초과하면 마지막 위치로 보정됨
 
 요청 바디:
 
@@ -578,7 +579,7 @@
 - [x] `GET /api/v1/routes` 페이징
 - [ ] `GET /api/v1/routes/public` `regionId` 지역 필터
 - [ ] 루트 상세 `spots[].kContentTitle` (content 도메인 대표 K-콘텐츠 연계)
-- [ ] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
+- [x] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
 - [ ] `GET /api/v1/spots` `excludeRouteId` 쿼리 파라미터
 - [ ] 루트 공유 정책 확정 (공개 전환 후 링크 vs 별도 공유 토큰)
