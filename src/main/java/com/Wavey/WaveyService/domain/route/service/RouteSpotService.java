@@ -32,10 +32,17 @@ public class RouteSpotService {
             throw new CustomException(ErrorCode.ROUTE_SPOT_ALREADY_EXISTS);
         }
 
+        List<RouteSpot> existingSpots = routeSpotRepository.findByRouteIdOrderBySequenceOrderAsc(routeId);
+        int insertOrder = Math.min(request.getSequenceOrder(), existingSpots.size() + 1);
+
+        existingSpots.stream()
+                .filter(spot -> spot.getSequenceOrder() >= insertOrder)
+                .forEach(spot -> spot.updateSequence(spot.getSequenceOrder() + 1));
+
         RouteSpot routeSpot = RouteSpot.builder()
                 .route(route)
                 .spotId(request.getSpotId())
-                .sequenceOrder(request.getSequenceOrder())
+                .sequenceOrder(insertOrder)
                 .build();
 
         return RouteSpotResponse.from(routeSpotRepository.save(routeSpot));
