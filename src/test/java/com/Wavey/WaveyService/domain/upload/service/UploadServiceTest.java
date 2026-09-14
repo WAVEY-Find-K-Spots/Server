@@ -1,10 +1,11 @@
-package com.Wavey.WaveyService.domain.user.service;
+package com.Wavey.WaveyService.domain.upload.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import com.Wavey.WaveyService.domain.user.dto.PhotoUploadUrlResponse;
+import com.Wavey.WaveyService.domain.upload.dto.PresignedUploadResponse;
+import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import java.net.URL;
@@ -18,7 +19,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 @ExtendWith(MockitoExtension.class)
-class ProfilePhotoStorageServiceTest {
+class UploadServiceTest {
 
     @Mock
     private S3Presigner s3Presigner;
@@ -26,14 +27,14 @@ class ProfilePhotoStorageServiceTest {
     @Mock
     private PresignedPutObjectRequest presignedPutObjectRequest;
 
-    private ProfilePhotoStorageService storageService;
+    private UploadService uploadService;
 
     @BeforeEach
     void setUp() {
-        storageService = new ProfilePhotoStorageService(s3Presigner);
-        ReflectionTestUtils.setField(storageService, "bucket", "test-bucket");
-        ReflectionTestUtils.setField(storageService, "publicBaseUrl", "https://test.storageapi.dev/test-bucket");
-        ReflectionTestUtils.setField(storageService, "presignedUrlTtlSeconds", 600L);
+        uploadService = new UploadService(s3Presigner);
+        ReflectionTestUtils.setField(uploadService, "bucket", "test-bucket");
+        ReflectionTestUtils.setField(uploadService, "publicBaseUrl", "https://test.storageapi.dev/test-bucket");
+        ReflectionTestUtils.setField(uploadService, "presignedUrlTtlSeconds", 600L);
     }
 
     @Test
@@ -42,31 +43,31 @@ class ProfilePhotoStorageServiceTest {
                 .thenReturn(presignedPutObjectRequest);
         when(presignedPutObjectRequest.url()).thenReturn(new URL("https://test.storageapi.dev/test-bucket/profile/1/abc.jpg?signed=1"));
 
-        PhotoUploadUrlResponse response = storageService.createUploadUrl(1L, "image/jpeg");
+        PresignedUploadResponse response = uploadService.createUploadUrl(UploadCategory.PROFILE, 1L, "image/jpeg");
 
         assertThat(response.uploadUrl()).contains("signed=1");
-        assertThat(response.photoUrl()).startsWith("https://test.storageapi.dev/test-bucket/profile/1/");
-        assertThat(response.photoUrl()).endsWith(".jpg");
+        assertThat(response.fileUrl()).startsWith("https://test.storageapi.dev/test-bucket/profile/1/");
+        assertThat(response.fileUrl()).endsWith(".jpg");
     }
 
     @Test
     void 허용되지_않은_타입이면_예외가_발생한다() {
-        assertThatThrownBy(() -> storageService.createUploadUrl(1L, "application/pdf"))
+        assertThatThrownBy(() -> uploadService.createUploadUrl(UploadCategory.PROFILE, 1L, "application/pdf"))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMON_INVALID_FILE_TYPE);
     }
 
     @Test
     void 본인_소유_경로가_아니면_예외가_발생한다() {
-        assertThatThrownBy(() -> storageService.validateOwnedPhotoUrl(1L,
+        assertThatThrownBy(() -> uploadService.validateOwnedUrl(UploadCategory.PROFILE, 1L,
                 "https://test.storageapi.dev/test-bucket/profile/2/abc.jpg"))
                 .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_INVALID_PHOTO_URL);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.UPLOAD_INVALID_FILE_URL);
     }
 
     @Test
     void 본인_소유_경로면_통과한다() {
-        storageService.validateOwnedPhotoUrl(1L,
+        uploadService.validateOwnedUrl(UploadCategory.PROFILE, 1L,
                 "https://test.storageapi.dev/test-bucket/profile/1/abc.jpg");
     }
 }
