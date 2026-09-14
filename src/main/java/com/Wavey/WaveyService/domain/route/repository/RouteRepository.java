@@ -15,5 +15,5 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
 
     Page<Route> findByVisibility(Visibility visibility, Pageable pageable);
 
-    Page<Route> findByVisibilityAndRouteSpots_SpotIdIn(Visibility visibility, List<Long> spotIds, Pageable pageable);
+    Page<Route> findDistinctByVisibilityAndRouteSpots_SpotIdIn(Visibility visibility, List<Long> spotIds, Pageable pageable);
 }
