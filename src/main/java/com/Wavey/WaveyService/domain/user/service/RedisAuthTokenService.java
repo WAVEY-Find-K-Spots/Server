@@ -49,45 +49,57 @@ public class RedisAuthTokenService {
     @Value("${auth.login-code-ttl:3m}")
     private Duration loginCodeTtl;
 
-    public String issueLoginCode(Long userId) {
+    public String issueLoginCode(Long userId, boolean isNewUser) {
         byte[] randomBytes = new byte[32];
         secureRandom.nextBytes(randomBytes);
         String rawCode = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
 
         execute("issue login code", () -> {
-            redisTemplate.opsForValue().set(loginCodeKey(rawCode), userId.toString(), loginCodeTtl);
+            redisTemplate.opsForValue().set(loginCodeKey(rawCode), loginCodeValue(userId, isNewUser), loginCodeTtl);
             return null;
         });
         return rawCode;
     }
 
-    public Long getLoginCodeUserId(String rawCode) {
+    public LoginCodeInfo getLoginCodeInfo(String rawCode) {
         if (!StringUtils.hasText(rawCode)) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
         }
 
-        String userId = execute("read login code", () -> redisTemplate.opsForValue().get(loginCodeKey(rawCode)));
-        if (!StringUtils.hasText(userId)) {
+        String stored = execute("read login code", () -> redisTemplate.opsForValue().get(loginCodeKey(rawCode)));
+        if (!StringUtils.hasText(stored)) {
+            throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
+        }
+
+        String[] parts = stored.split(":", 2);
+        if (parts.length != 2) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
         }
 
         try {
-            return Long.parseLong(userId);
+            return new LoginCodeInfo(Long.parseLong(parts[0]), "1".equals(parts[1]));
         } catch (NumberFormatException e) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
         }
     }
 
-    public boolean exchangeLoginCode(String rawCode, Long userId, String refreshToken, Duration ttl) {
+    public boolean exchangeLoginCode(String rawCode, LoginCodeInfo loginCodeInfo, String refreshToken, Duration ttl) {
         validateTtl(ttl);
         Long result = execute("exchange login code", () -> redisTemplate.execute(
                 EXCHANGE_LOGIN_CODE_SCRIPT,
-                List.of(loginCodeKey(rawCode), refreshTokenKey(userId)),
-                userId.toString(),
+                List.of(loginCodeKey(rawCode), refreshTokenKey(loginCodeInfo.userId())),
+                loginCodeValue(loginCodeInfo.userId(), loginCodeInfo.isNewUser()),
                 hash(refreshToken),
                 Long.toString(ttl.toMillis())
         ));
         return Long.valueOf(1L).equals(result);
+    }
+
+    private String loginCodeValue(Long userId, boolean isNewUser) {
+        return userId + ":" + (isNewUser ? "1" : "0");
+    }
+
+    public record LoginCodeInfo(Long userId, boolean isNewUser) {
     }
 
     public boolean rotateRefreshToken(

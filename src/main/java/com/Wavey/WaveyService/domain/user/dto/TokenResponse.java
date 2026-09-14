@@ -3,9 +3,14 @@ package com.Wavey.WaveyService.domain.user.dto;
 public record TokenResponse(
         String accessToken,
         String refreshToken,
-        String tokenType
+        String tokenType,
+        boolean isNewUser
 ) {
     public static TokenResponse bearer(String accessToken, String refreshToken) {
-        return new TokenResponse(accessToken, refreshToken, "Bearer");
+        return new TokenResponse(accessToken, refreshToken, "Bearer", false);
+    }
+
+    public TokenResponse withNewUser(boolean isNewUser) {
+        return new TokenResponse(accessToken, refreshToken, tokenType, isNewUser);
     }
 }

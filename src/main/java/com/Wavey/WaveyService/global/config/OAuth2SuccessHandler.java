@@ -50,7 +50,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             User user = userRepository.findByProviderAndProviderId(provider, providerId)
                     .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-            String loginCode = authTokenService.issueLoginCode(user.getId());
+            boolean isNewUser = Boolean.TRUE.equals(oAuth2User.getAttribute("isNewUser"));
+            String loginCode = authTokenService.issueLoginCode(user.getId(), isNewUser);
 
             redirectUrl = buildRedirectUrl("code", loginCode);
         } catch (CustomException e) {

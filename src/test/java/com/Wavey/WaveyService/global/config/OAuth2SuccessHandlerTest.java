@@ -54,7 +54,7 @@ class OAuth2SuccessHandlerTest {
         when(oAuth2User.getAttribute("provider")).thenReturn("google");
         when(userRepository.findByProviderAndProviderId("google", "provider-id"))
                 .thenReturn(Optional.of(user));
-        when(authTokenService.issueLoginCode(1L)).thenReturn("login-code");
+        when(authTokenService.issueLoginCode(1L, false)).thenReturn("login-code");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -66,8 +66,38 @@ class OAuth2SuccessHandlerTest {
         );
         assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
         assertThat(response.getHeader(HttpHeaders.PRAGMA)).isEqualTo("no-cache");
-        verify(authTokenService).issueLoginCode(1L);
+        verify(authTokenService).issueLoginCode(1L, false);
         verify(userRepository).findByProviderAndProviderId("google", "provider-id");
+    }
+
+    @Test
+    void 신규_가입자면_isNewUser_true로_로그인_코드를_발급한다() throws Exception {
+        OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
+                authTokenService,
+                userRepository,
+                "http://localhost:3000/oauth/callback"
+        );
+        User user = User.builder()
+                .id(2L)
+                .provider("google")
+                .providerId("new-provider-id")
+                .email("new-user@example.com")
+                .name("신규유저")
+                .role(Role.USER)
+                .build();
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("providerId")).thenReturn("new-provider-id");
+        when(oAuth2User.getAttribute("provider")).thenReturn("google");
+        when(oAuth2User.getAttribute("isNewUser")).thenReturn(true);
+        when(userRepository.findByProviderAndProviderId("google", "new-provider-id"))
+                .thenReturn(Optional.of(user));
+        when(authTokenService.issueLoginCode(2L, true)).thenReturn("login-code");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        verify(authTokenService).issueLoginCode(2L, true);
     }
 
     @Test
@@ -90,7 +120,7 @@ class OAuth2SuccessHandlerTest {
         when(oAuth2User.getAttribute("provider")).thenReturn("google");
         when(userRepository.findByProviderAndProviderId("google", "provider-id"))
                 .thenReturn(Optional.of(user));
-        when(authTokenService.issueLoginCode(1L))
+        when(authTokenService.issueLoginCode(1L, false))
                 .thenThrow(new CustomException(ErrorCode.AUTH_STORAGE_UNAVAILABLE));
         MockHttpServletResponse response = new MockHttpServletResponse();
 
