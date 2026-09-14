@@ -28,13 +28,15 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private RedisAuthTokenService authTokenService;
     @Mock
+    private ProfilePhotoStorageService profilePhotoStorageService;
+    @Mock
     private OAuth2UserInfo userInfo;
 
     private CustomOAuth2UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new CustomOAuth2UserService(userRepository, tokenProvider, authTokenService);
+        userService = new CustomOAuth2UserService(userRepository, tokenProvider, authTokenService, profilePhotoStorageService);
     }
 
     @Test
