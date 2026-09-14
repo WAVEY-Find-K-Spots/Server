@@ -1,8 +1,9 @@
 package com.Wavey.WaveyService.domain.user.service;
 
+import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
+import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
-import com.Wavey.WaveyService.domain.user.dto.PhotoUploadUrlResponse;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
@@ -35,7 +36,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
     private final RedisAuthTokenService authTokenService;
-    private final ProfilePhotoStorageService profilePhotoStorageService;
+    private final UploadService uploadService;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -178,13 +179,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.updateRole(role);
     }
 
-    public PhotoUploadUrlResponse createPhotoUploadUrl(Long userId, String contentType) {
-        return profilePhotoStorageService.createUploadUrl(userId, contentType);
-    }
-
     @Transactional
     public UserResponse confirmPhoto(Long userId, String photoUrl) {
-        profilePhotoStorageService.validateOwnedPhotoUrl(userId, photoUrl);
+        uploadService.validateOwnedUrl(UploadCategory.PROFILE, userId, photoUrl);
         User user = findEntityById(userId);
         user.updateProfileImageUrl(photoUrl);
         return UserResponse.from(user);
