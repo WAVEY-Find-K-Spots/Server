@@ -62,10 +62,6 @@ public class Spot extends BaseEntity {
     @Builder.Default @Column(name = "review_count", nullable = false) private long reviewCount = 0L;
     @Builder.Default @Column(name = "saved_count", nullable = false) private long savedCount = 0L;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private long reviewCount = 0;
-
     public Long getSpotId() {
         return getId();
     }
