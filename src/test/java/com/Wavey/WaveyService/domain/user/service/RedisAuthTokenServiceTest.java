@@ -42,22 +42,25 @@ class RedisAuthTokenServiceTest {
     @Test
     void 로그인_코드는_해시된_키와_TTL로_저장한다() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        String code = authTokenService.issueLoginCode(7L);
+        String code = authTokenService.issueLoginCode(7L, false);
 
         assertThat(code).isNotBlank();
         verify(valueOperations).set(
                 org.mockito.ArgumentMatchers.argThat(key -> key.startsWith("auth:login-code:") && !key.contains(code)),
-                eq("7"),
+                eq("7:0"),
                 eq(Duration.ofMinutes(3))
         );
     }
 
     @Test
-    void 로그인_코드에서_사용자_ID를_조회한다() {
+    void 로그인_코드에서_사용자_ID와_신규가입_여부를_조회한다() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(anyString())).thenReturn("7");
+        when(valueOperations.get(anyString())).thenReturn("7:1");
 
-        assertThat(authTokenService.getLoginCodeUserId("one-time-code")).isEqualTo(7L);
+        RedisAuthTokenService.LoginCodeInfo info = authTokenService.getLoginCodeInfo("one-time-code");
+
+        assertThat(info.userId()).isEqualTo(7L);
+        assertThat(info.isNewUser()).isTrue();
         verify(valueOperations).get(anyString());
     }
 
@@ -69,12 +72,15 @@ class RedisAuthTokenServiceTest {
         )).thenReturn(1L);
 
         boolean exchanged = authTokenService.exchangeLoginCode(
-                "one-time-code", 7L, "refresh-token", Duration.ofMinutes(10)
+                "one-time-code",
+                new RedisAuthTokenService.LoginCodeInfo(7L, false),
+                "refresh-token",
+                Duration.ofMinutes(10)
         );
 
         assertThat(exchanged).isTrue();
         verify(redisTemplate).execute(
-                any(DefaultRedisScript.class), anyList(), eq("7"), anyString(), eq("600000")
+                any(DefaultRedisScript.class), anyList(), eq("7:0"), anyString(), eq("600000")
         );
     }
 
@@ -98,7 +104,7 @@ class RedisAuthTokenServiceTest {
         when(valueOperations.get(anyString()))
                 .thenThrow(new RedisConnectionFailureException("down"));
 
-        assertThatThrownBy(() -> authTokenService.getLoginCodeUserId("code"))
+        assertThatThrownBy(() -> authTokenService.getLoginCodeInfo("code"))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AUTH_STORAGE_UNAVAILABLE);
