@@ -105,8 +105,8 @@
 
 모든 사용자의 공개(`PUBLIC`) 루트를 조회합니다. **인증 없이 접근 가능** (#28).
 
-- 쿼리 파라미터: `page`(기본 0), `size`(기본 20)
-- `regionId` 필터는 **미구현** (10장)
+- 쿼리 파라미터: `page`(기본 0), `size`(기본 20), `regionId`(선택 — 해당 지역에 속한 스팟을 하나 이상 포함하는 루트만 조회)
+- `regionId` 에 해당하는 스팟이 하나도 없으면 빈 페이지 반환
 - 응답 `data` 는 Spring `Page` 직렬화 원형
 
 응답:
@@ -577,7 +577,6 @@
 ## 10. 미구현 / 후속 과제
 
 - [x] `GET /api/v1/routes` 페이징
-- [ ] `GET /api/v1/routes/public` `regionId` 지역 필터
 - [ ] 루트 상세 `spots[].kContentTitle` (content 도메인 대표 K-콘텐츠 연계)
 - [x] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
