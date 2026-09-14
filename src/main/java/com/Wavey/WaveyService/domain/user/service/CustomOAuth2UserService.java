@@ -3,28 +3,27 @@ package com.Wavey.WaveyService.domain.user.service;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
+import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
+import com.Wavey.WaveyService.global.common.TokenType;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.*;
 
 @Service
@@ -34,6 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final RedisAuthTokenService authTokenService;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -46,11 +46,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private String googlePath;
     @Value("${auth.apple-path}")
     private String applePath;
+    @Value("${auth.kakao-path}")
+    private String kakaoPath;
 
     public Map<String, String> getLoginUrls() {
         Map<String, String> loginUrls = new HashMap<>();
         loginUrls.put("google", serverUrl + baseUrl + googlePath);
         loginUrls.put("apple", serverUrl + baseUrl + applePath);
+        loginUrls.put("kakao", serverUrl + baseUrl + kakaoPath);
         return loginUrls;
     }
 
@@ -59,49 +62,38 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
      * 피드백 반영: 만료된 리프레시 토큰 시 TOKEN_402(EXPIRED_TOKEN) 반환
      */
     @Transactional
-    public Map<String, String> refreshToken(String refreshToken) {
-        // 1. 기본 유효성 검증
-        if (refreshToken == null) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        try {
-            // 토큰 만료 여부 및 구조 검증
-            tokenProvider.validateToken(refreshToken);
-        } catch (ExpiredJwtException e) {
-            // 리프레시 토큰이 만료된 경우 -> 프론트엔드에서 재로그인 유도 가능
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
-        } catch (JwtException | IllegalArgumentException e) {
-            // 그 외 유효하지 않은 토큰 처리
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        // 2. 유저 정보 추출
-        Claims claims = tokenProvider.getClaims(refreshToken);
+    public TokenResponse refreshToken(String refreshToken) {
+        Claims claims = tokenProvider.getValidatedClaims(refreshToken, TokenType.REFRESH);
         String provider = (String) claims.get("provider");
         String providerId = claims.getSubject();
 
         User user = findByProviderAndProviderId(provider, providerId);
 
-        // 3. DB 토큰 일치 확인 (Timing Attack 방지를 위한 MessageDigest 사용)
-        String storedToken = user.getRefreshToken();
-        if (storedToken == null || !MessageDigest.isEqual(
-                refreshToken.getBytes(StandardCharsets.UTF_8),
-                storedToken.getBytes(StandardCharsets.UTF_8))) {
+        IssuedTokenPair issuedTokenPair = createTokenPair(user);
+        if (!authTokenService.rotateRefreshToken(
+                user.getId(),
+                refreshToken,
+                issuedTokenPair.response().refreshToken(),
+                issuedTokenPair.refreshTokenTtl()
+        )) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        // 4. 새로운 토큰 생성 및 로테이션 (RTR)
-        String newAccessToken = tokenProvider.createAccessToken(provider, providerId);
-        String newRefreshToken = tokenProvider.createRefreshToken(provider, providerId);
+        return issuedTokenPair.response();
+    }
 
-        user.updateRefreshToken(newRefreshToken);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("accessToken", newAccessToken);
-        response.put("refreshToken", newRefreshToken);
-
-        return response;
+    public TokenResponse exchangeLoginCode(String loginCode) {
+        Long userId = authTokenService.getLoginCodeUserId(loginCode);
+        IssuedTokenPair issuedTokenPair = createTokenPair(findEntityById(userId));
+        if (!authTokenService.exchangeLoginCode(
+                loginCode,
+                userId,
+                issuedTokenPair.response().refreshToken(),
+                issuedTokenPair.refreshTokenTtl()
+        )) {
+            throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
+        }
+        return issuedTokenPair.response();
     }
 
     @Override
@@ -115,20 +107,31 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Map<String, Object> customAttributes = new HashMap<>(oAuth2User.getAttributes());
         customAttributes.put("provider", registrationId);
+        customAttributes.put("providerId", userInfo.getProviderId());
         customAttributes.put("role", user.getRole().getKey());
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority(user.getRole().getKey())),
                 customAttributes,
-                "sub"
+                "providerId"
         );
     }
 
     @Transactional
     public User saveOrUpdate(OAuth2UserInfo userInfo) {
+        if (!hasText(userInfo.getProviderId())) {
+            throw oauth2Exception(ErrorCode.OAUTH_INVALID_USER_INFO);
+        }
+
         return userRepository.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId())
                 .map(entity -> entity.update(userInfo.getName(), userInfo.getEmail()))
                 .orElseGet(() -> {
+                    if (!hasText(userInfo.getEmail())) {
+                        throw oauth2Exception(ErrorCode.OAUTH_EMAIL_REQUIRED);
+                    }
+                    if (!hasText(userInfo.getName())) {
+                        throw oauth2Exception(ErrorCode.OAUTH_PROFILE_REQUIRED);
+                    }
                     Role initialRole = Role.USER;
                     if (adminWhiteList != null && adminWhiteList.contains(userInfo.getEmail())) {
                         initialRole = Role.ADMIN;
@@ -141,6 +144,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             .role(initialRole)
                             .build());
                 });
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     public UserResponse findById(Long id) {
@@ -165,21 +172,53 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.updateRole(role);
     }
 
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponse> findAllUsers() {
+        return userRepository.findAll().stream()
+                .map(UserResponse::from)
+                .toList();
     }
 
     @Transactional
-    public void withdraw(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    public void withdraw(User user, String accessToken) {
+        revokeTokens(user, accessToken);
+        userRepository.deleteById(user.getId());
+    }
+
+    public void logout(User user, String accessToken) {
+        revokeTokens(user, accessToken);
+    }
+
+    private OAuth2AuthenticationException oauth2Exception(ErrorCode errorCode) {
+        return new OAuth2AuthenticationException(
+                new OAuth2Error(errorCode.getCode()),
+                errorCode.getMessage()
+        );
+    }
+
+    private IssuedTokenPair createTokenPair(User user) {
+        String accessToken = tokenProvider.createAccessToken(user.getProvider(), user.getProviderId());
+        String refreshToken = tokenProvider.createRefreshToken(user.getProvider(), user.getProviderId());
+        Claims refreshClaims = tokenProvider.getValidatedClaims(refreshToken, TokenType.REFRESH);
+        return new IssuedTokenPair(
+                TokenResponse.bearer(accessToken, refreshToken),
+                tokenProvider.getRemainingValidity(refreshClaims)
+        );
+    }
+
+    private void revokeTokens(User user, String accessToken) {
+        Claims claims = tokenProvider.getValidatedClaims(accessToken, TokenType.ACCESS);
+        String provider = claims.get("provider", String.class);
+        if (!user.getProviderId().equals(claims.getSubject()) || !user.getProvider().equals(provider)) {
+            throw new CustomException(ErrorCode.USER_ACCESS_DENIED);
         }
-        userRepository.deleteById(id);
+
+        authTokenService.blacklistAccessToken(
+                claims.getId(),
+                tokenProvider.getRemainingValidity(claims)
+        );
+        authTokenService.deleteRefreshToken(user.getId());
     }
 
-    @Transactional
-    public void logout(Long id) {
-        User user = findEntityById(id);
-        user.updateRefreshToken(null);
+    private record IssuedTokenPair(TokenResponse response, java.time.Duration refreshTokenTtl) {
     }
 }
