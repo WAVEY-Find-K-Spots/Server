@@ -6,14 +6,9 @@ import com.Wavey.WaveyService.domain.region.dto.response.RegionResponse;
 import java.util.List;
 
 public interface RegionService {
-
     RegionResponse createRegion(RegionCreateRequest request);
-
     RegionResponse getRegion(Long regionId);
-
     List<RegionResponse> getRegions();
-
     RegionResponse updateRegion(Long regionId, RegionUpdateRequest request);
-
     void deleteRegion(Long regionId);
 }

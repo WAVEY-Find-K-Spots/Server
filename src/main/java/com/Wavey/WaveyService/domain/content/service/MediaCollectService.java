@@ -1,10 +1,14 @@
 package com.Wavey.WaveyService.domain.content.service;
 
 import com.Wavey.WaveyService.domain.content.config.MediaCollectProperties;
-import com.Wavey.WaveyService.domain.content.dto.MediaCollectResponse;
+import com.Wavey.WaveyService.domain.content.dto.ContentAlbumResponse;
 import com.Wavey.WaveyService.domain.content.dto.ContentMediaCollectResponse;
 import com.Wavey.WaveyService.domain.content.dto.ContentTrackResponse;
 import com.Wavey.WaveyService.domain.content.dto.ContentVideoResponse;
+import com.Wavey.WaveyService.domain.content.dto.MediaCollectResponse;
+import com.Wavey.WaveyService.domain.content.entity.Content;
+import com.Wavey.WaveyService.domain.content.entity.ContentAlbum;
+import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
 import com.Wavey.WaveyService.domain.content.entity.ContentTrack;
 import com.Wavey.WaveyService.domain.content.entity.ContentVideo;
 import com.Wavey.WaveyService.domain.content.external.client.SpotifyApiClient;
@@ -14,11 +18,9 @@ import com.Wavey.WaveyService.domain.content.external.dto.SpotifySearchTrack;
 import com.Wavey.WaveyService.domain.content.external.dto.YoutubeVideoDetails;
 import com.Wavey.WaveyService.domain.content.policy.SpotifyOstPolicy;
 import com.Wavey.WaveyService.domain.content.policy.YoutubePromoPolicy;
+import com.Wavey.WaveyService.domain.content.repository.ContentAlbumRepository;
 import com.Wavey.WaveyService.domain.content.repository.ContentTrackRepository;
 import com.Wavey.WaveyService.domain.content.repository.ContentVideoRepository;
-import com.Wavey.WaveyService.domain.content.entity.Content;
-import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
-import com.Wavey.WaveyService.domain.content.service.ContentService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,6 +40,7 @@ public class MediaCollectService {
 
     private static final String YOUTUBE_THUMBNAIL_TEMPLATE = "https://i.ytimg.com/vi/%s/hqdefault.jpg";
     private static final String SPOTIFY_TRACK_URL_TEMPLATE = "https://open.spotify.com/track/%s";
+    private static final String SPOTIFY_ALBUM_URL_TEMPLATE = "https://open.spotify.com/album/%s";
 
     private final ContentService workService;
     private final YoutubeDataClient youtubeDataClient;
@@ -45,6 +48,7 @@ public class MediaCollectService {
     private final YoutubePromoPolicy youtubePromoPolicy;
     private final SpotifyOstPolicy spotifyOstPolicy;
     private final ContentVideoRepository workVideoRepository;
+    private final ContentAlbumRepository contentAlbumRepository;
     private final ContentTrackRepository workTrackRepository;
     private final MediaCollectProperties properties;
 
@@ -103,26 +107,48 @@ public class MediaCollectService {
         Content work = workService.getContent(contentId);
         Set<String> hiddenIds = hiddenSpotifyIds(contentId);
 
-        TrackCollectResult collected = work.getCategory() == ContentCategory.ARTIST
-                ? collectArtistTracks(work, hiddenIds)
-                : collectOstTracks(work, hiddenIds);
+        if (work.getCategory() == ContentCategory.ARTIST) {
+            TrackCollectResult collected = collectArtistTracks(work, hiddenIds);
+            contentAlbumRepository.deleteByContentIdAndHiddenFalse(contentId);
+            List<ContentTrack> saved = persistStandaloneTracks(contentId, collected.kept());
+            return MediaCollectResponse.builder()
+                    .contentId(contentId)
+                    .saved(saved.size())
+                    .dropped(collected.dropped())
+                    .albums(List.of())
+                    .tracks(saved.stream().map(ContentTrackResponse::from).toList())
+                    .build();
+        }
 
-        List<ContentTrack> saved = persistTracks(contentId, collected.kept());
+        OstCollectResult collected = collectOstAlbums(work, hiddenIds);
+        PersistOstResult saved = persistOstAlbums(contentId, collected.albums());
+        Map<Long, List<ContentTrackResponse>> tracksByAlbumId = saved.tracks().stream()
+                .map(ContentTrackResponse::from)
+                .filter(track -> track.getContentAlbumId() != null)
+                .collect(Collectors.groupingBy(ContentTrackResponse::getContentAlbumId, LinkedHashMap::new, Collectors.toList()));
+        List<ContentAlbumResponse> albumResponses = saved.albums().stream()
+                .map(album -> ContentAlbumResponse.from(
+                        album,
+                        tracksByAlbumId.getOrDefault(album.getContentAlbumId(), List.of())
+                ))
+                .toList();
         return MediaCollectResponse.builder()
                 .contentId(contentId)
-                .saved(saved.size())
+                .saved(saved.tracks().size())
                 .dropped(collected.dropped())
-                .tracks(saved.stream().map(ContentTrackResponse::from).toList())
+                .albums(albumResponses)
+                .tracks(saved.tracks().stream().map(ContentTrackResponse::from).toList())
                 .build();
     }
 
-    private TrackCollectResult collectOstTracks(Content work, Set<String> hiddenIds) {
-        Map<String, SpotifySearchTrack> kept = new LinkedHashMap<>();
+    private OstCollectResult collectOstAlbums(Content work, Set<String> hiddenIds) {
+        Map<String, SpotifyAlbumTracks> albums = new LinkedHashMap<>();
         int dropped = 0;
+        int trackCount = 0;
+        int maxKeep = properties.getSpotify().getMaxKeep();
 
-        List<SpotifySearchTrack> searched = spotifyApiClient.searchTracks(work.getTitle().trim() + " OST", 10);
         Set<String> albumIds = new LinkedHashSet<>();
-        for (SpotifySearchTrack track : searched) {
+        for (SpotifySearchTrack track : spotifyApiClient.searchTracks(work.getTitle().trim() + " OST", 10)) {
             if (StringUtils.hasText(track.albumId()) && spotifyOstPolicy.shouldKeepAlbum(
                     track.albumName(), work.getTitle(), work.getTitleEn())) {
                 albumIds.add(track.albumId());
@@ -147,22 +173,33 @@ public class MediaCollectService {
             if (album == null || album.tracks() == null) {
                 continue;
             }
+            List<SpotifySearchTrack> keptTracks = new ArrayList<>();
             for (SpotifySearchTrack track : album.tracks()) {
                 if (hiddenIds.contains(track.trackId())
                         || !spotifyOstPolicy.shouldKeepAlbumTrack(track.title(), track.durationMs())) {
                     dropped++;
                     continue;
                 }
-                kept.putIfAbsent(track.trackId(), track);
-                if (kept.size() >= properties.getSpotify().getMaxKeep()) {
-                    return new TrackCollectResult(new ArrayList<>(kept.values()), dropped);
+                keptTracks.add(track);
+            }
+            if (keptTracks.isEmpty()) {
+                continue;
+            }
+            if (trackCount + keptTracks.size() > maxKeep) {
+                int remain = maxKeep - trackCount;
+                if (remain <= 0) {
+                    break;
                 }
+                dropped += keptTracks.size() - remain;
+                keptTracks = keptTracks.subList(0, remain);
+            }
+            albums.put(albumId, new SpotifyAlbumTracks(album.albumId(), album.name(), album.imageUrl(), keptTracks));
+            trackCount += keptTracks.size();
+            if (trackCount >= maxKeep) {
+                break;
             }
         }
-        return new TrackCollectResult(new ArrayList<>(kept.values()), dropped);
-    }
-
-    private record TrackCollectResult(List<SpotifySearchTrack> kept, int dropped) {
+        return new OstCollectResult(new ArrayList<>(albums.values()), dropped);
     }
 
     private TrackCollectResult collectArtistTracks(Content work, Set<String> hiddenIds) {
@@ -208,12 +245,85 @@ public class MediaCollectService {
         return saved;
     }
 
-    private List<ContentTrack> persistTracks(Long contentId, List<SpotifySearchTrack> kept) {
+    private PersistOstResult persistOstAlbums(Long contentId, List<SpotifyAlbumTracks> albums) {
+        List<String> keepAlbumIds = albums.stream().map(SpotifyAlbumTracks::albumId).toList();
+        if (keepAlbumIds.isEmpty()) {
+            contentAlbumRepository.deleteByContentIdAndHiddenFalse(contentId);
+            workTrackRepository.deleteByContentIdAndHiddenFalse(contentId);
+            return new PersistOstResult(List.of(), List.of());
+        }
+        contentAlbumRepository.deleteByContentIdAndHiddenFalseAndSpotifyAlbumIdNotIn(contentId, keepAlbumIds);
+
+        LocalDateTime now = LocalDateTime.now();
+        Map<String, ContentAlbum> albumBySpotifyId = new LinkedHashMap<>();
+        List<ContentAlbum> savedAlbums = new ArrayList<>();
+        for (SpotifyAlbumTracks album : albums) {
+            String spotifyUrl = SPOTIFY_ALBUM_URL_TEMPLATE.formatted(album.albumId());
+            ContentAlbum entity = contentAlbumRepository.findByContentIdAndSpotifyAlbumId(contentId, album.albumId())
+                    .orElseGet(() -> ContentAlbum.builder()
+                            .contentId(contentId)
+                            .spotifyAlbumId(album.albumId())
+                            .title(album.name())
+                            .imageUrl(album.imageUrl())
+                            .spotifyUrl(spotifyUrl)
+                            .hidden(false)
+                            .fetchedAt(now)
+                            .build());
+            if (entity.getContentAlbumId() != null) {
+                entity.updateFetched(album.name(), album.imageUrl(), spotifyUrl);
+            }
+            ContentAlbum saved = contentAlbumRepository.save(entity);
+            albumBySpotifyId.put(album.albumId(), saved);
+            savedAlbums.add(saved);
+        }
+
+        List<SpotifySearchTrack> allTracks = albums.stream()
+                .flatMap(album -> album.tracks().stream())
+                .toList();
+        List<String> keepTrackIds = allTracks.stream().map(SpotifySearchTrack::trackId).toList();
+        workTrackRepository.deleteByContentIdAndHiddenFalseAndSpotifyTrackIdNotIn(contentId, keepTrackIds);
+
+        List<ContentTrack> savedTracks = new ArrayList<>();
+        for (SpotifySearchTrack track : allTracks) {
+            ContentAlbum album = albumBySpotifyId.get(track.albumId());
+            Long contentAlbumId = album == null ? null : album.getContentAlbumId();
+            String spotifyUrl = StringUtils.hasText(track.spotifyUrl())
+                    ? track.spotifyUrl()
+                    : SPOTIFY_TRACK_URL_TEMPLATE.formatted(track.trackId());
+            ContentTrack entity = workTrackRepository.findByContentIdAndSpotifyTrackId(contentId, track.trackId())
+                    .orElseGet(() -> ContentTrack.builder()
+                            .contentId(contentId)
+                            .contentAlbumId(contentAlbumId)
+                            .spotifyTrackId(track.trackId())
+                            .title(track.title())
+                            .artistName(track.artistName())
+                            .imageUrl(track.thumbnailUrl())
+                            .spotifyUrl(spotifyUrl)
+                            .durationMs(track.durationMs())
+                            .hidden(false)
+                            .fetchedAt(now)
+                            .build());
+            if (entity.getContentTrackId() != null) {
+                entity.updateFetched(
+                        contentAlbumId,
+                        track.title(),
+                        track.artistName(),
+                        track.thumbnailUrl(),
+                        spotifyUrl,
+                        track.durationMs()
+                );
+            }
+            savedTracks.add(workTrackRepository.save(entity));
+        }
+        return new PersistOstResult(savedAlbums, savedTracks);
+    }
+
+    private List<ContentTrack> persistStandaloneTracks(Long contentId, List<SpotifySearchTrack> kept) {
         List<String> keepIds = kept.stream().map(SpotifySearchTrack::trackId).toList();
         if (keepIds.isEmpty()) {
             workTrackRepository.deleteByContentIdAndHiddenFalse(contentId);
         } else {
-            workTrackRepository.deleteByContentIdAndHiddenFalseAndSpotifyIdNotIn(contentId, keepIds);
+            workTrackRepository.deleteByContentIdAndHiddenFalseAndSpotifyTrackIdNotIn(contentId, keepIds);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -222,14 +332,14 @@ public class MediaCollectService {
             String spotifyUrl = StringUtils.hasText(track.spotifyUrl())
                     ? track.spotifyUrl()
                     : SPOTIFY_TRACK_URL_TEMPLATE.formatted(track.trackId());
-            ContentTrack entity = workTrackRepository.findByContentIdAndSpotifyId(contentId, track.trackId())
+            ContentTrack entity = workTrackRepository.findByContentIdAndSpotifyTrackId(contentId, track.trackId())
                     .orElseGet(() -> ContentTrack.builder()
                             .contentId(contentId)
-                            .spotifyId(track.trackId())
-                            .name(track.title())
+                            .contentAlbumId(null)
+                            .spotifyTrackId(track.trackId())
+                            .title(track.title())
                             .artistName(track.artistName())
                             .imageUrl(track.thumbnailUrl())
-                            .previewUrl(track.previewUrl())
                             .spotifyUrl(spotifyUrl)
                             .durationMs(track.durationMs())
                             .hidden(false)
@@ -237,10 +347,10 @@ public class MediaCollectService {
                             .build());
             if (entity.getContentTrackId() != null) {
                 entity.updateFetched(
+                        null,
                         track.title(),
                         track.artistName(),
                         track.thumbnailUrl(),
-                        track.previewUrl(),
                         spotifyUrl,
                         track.durationMs()
                 );
@@ -268,7 +378,16 @@ public class MediaCollectService {
     private Set<String> hiddenSpotifyIds(Long contentId) {
         return workTrackRepository.findByContentId(contentId).stream()
                 .filter(ContentTrack::isHidden)
-                .map(ContentTrack::getSpotifyId)
+                .map(ContentTrack::getSpotifyTrackId)
                 .collect(Collectors.toSet());
+    }
+
+    private record TrackCollectResult(List<SpotifySearchTrack> kept, int dropped) {
+    }
+
+    private record OstCollectResult(List<SpotifyAlbumTracks> albums, int dropped) {
+    }
+
+    private record PersistOstResult(List<ContentAlbum> albums, List<ContentTrack> tracks) {
     }
 }

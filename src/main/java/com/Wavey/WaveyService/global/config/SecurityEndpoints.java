@@ -27,6 +27,11 @@ final class SecurityEndpoints {
     static final String[] PUBLIC = {"/", "/error"};
     static final String VISION_ANALYZE = "/api/v1/vision/analyze";
     static final String PUBLIC_ROUTE = "/api/v1/routes/public";
+    static final String[] PUBLIC_GET = {
+            "/api/v1/contents/**",
+            "/api/v1/albums/**",
+            "/api/v1/spots/*/media"
+    };
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -41,7 +46,10 @@ final class SecurityEndpoints {
         if (pathIsPublic) {
             return true;
         }
-        return (HttpMethod.POST.matches(request.getMethod()) && VISION_ANALYZE.equals(path))
-                || (HttpMethod.GET.matches(request.getMethod()) && PUBLIC_ROUTE.equals(path));
+        if (!HttpMethod.GET.matches(request.getMethod())) {
+            return HttpMethod.POST.matches(request.getMethod()) && VISION_ANALYZE.equals(path);
+        }
+        return PUBLIC_ROUTE.equals(path)
+                || Stream.of(PUBLIC_GET).anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
     }
 }

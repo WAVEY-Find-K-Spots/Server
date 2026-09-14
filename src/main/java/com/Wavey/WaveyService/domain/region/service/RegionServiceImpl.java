@@ -8,71 +8,56 @@ import com.Wavey.WaveyService.domain.region.entity.Region;
 import com.Wavey.WaveyService.domain.region.repository.RegionRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import java.util.List;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
 
     @Override
+    @Transactional
     public RegionResponse createRegion(RegionCreateRequest request) {
-        validateDuplicatedCode(request.getCode().trim());
-
-        Region region = RegionConverter.toEntity(request);
-        Region savedRegion = regionRepository.save(region);
-        return RegionConverter.toResponse(savedRegion);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public RegionResponse getRegion(Long regionId) {
-        Region region = findRegionById(regionId);
+        Region region = regionRepository.save(RegionConverter.toEntity(request));
         return RegionConverter.toResponse(region);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    public RegionResponse getRegion(Long regionId) {
+        return RegionConverter.toResponse(findRegion(regionId));
+    }
+
+    @Override
     public List<RegionResponse> getRegions() {
-        return regionRepository.findAllOrderByName()
-                .stream()
+        return regionRepository.findAllByOrderByIdAsc().stream()
                 .map(RegionConverter::toResponse)
                 .toList();
     }
 
     @Override
+    @Transactional
     public RegionResponse updateRegion(Long regionId, RegionUpdateRequest request) {
-        Region region = findRegionById(regionId);
-
-        if (StringUtils.hasText(request.getCode())
-                && regionRepository.existsCodeExceptId(request.getCode().trim(), regionId)) {
-            throw new CustomException(ErrorCode.REGION_ALREADY_EXISTS);
-        }
-
+        Region region = findRegion(regionId);
         RegionConverter.updateEntity(region, request);
         return RegionConverter.toResponse(region);
     }
 
     @Override
+    @Transactional
     public void deleteRegion(Long regionId) {
-        Region region = findRegionById(regionId);
-        regionRepository.delete(region);
+        regionRepository.delete(findRegion(regionId));
     }
 
-    private Region findRegionById(Long regionId) {
+    private Region findRegion(Long regionId) {
         return regionRepository.findById(regionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
-    }
-
-    private void validateDuplicatedCode(String code) {
-        if (regionRepository.existsCode(code)) {
-            throw new CustomException(ErrorCode.REGION_ALREADY_EXISTS);
-        }
     }
 }

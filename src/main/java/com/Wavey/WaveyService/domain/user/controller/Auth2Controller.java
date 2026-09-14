@@ -7,7 +7,7 @@ import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.entity.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import jakarta.validation.Valid;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auth", description = "인증 및 회원 관리 API")
+@Tag(name = "User Auth", description = "인증 및 회원 관리 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -41,16 +41,16 @@ public class Auth2Controller {
 
     @Operation(summary = "소셜 로그인 진입 URL 조회")
     @GetMapping("/login-urls")
-    public ResponseEntity<ApiResponse<Map<String, String>>> getLoginUrls() {
-        return ResponseEntity.ok(ApiResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls()));
+    public ResponseEntity<CommonResponse<Map<String, String>>> getLoginUrls() {
+        return ResponseEntity.ok(CommonResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls()));
     }
 
     @Operation(summary = "일회성 로그인 코드 교환")
     @PostMapping("/exchange")
-    public ResponseEntity<ApiResponse<TokenResponse>> exchange(
+    public ResponseEntity<CommonResponse<TokenResponse>> exchange(
             @Valid @RequestBody LoginCodeExchangeRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.ok(CommonResponse.success(
                 "로그인 토큰 발급 성공",
                 userService.exchangeLoginCode(request.code())
         ));
@@ -58,10 +58,10 @@ public class Auth2Controller {
 
     @Operation(summary = "토큰 재발급")
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<TokenResponse>> refresh(
+    public ResponseEntity<CommonResponse<TokenResponse>> refresh(
             @Valid @RequestBody RefreshTokenRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.ok(CommonResponse.success(
                 "토큰 재발급 및 로테이션 성공",
                 userService.refreshToken(request.refreshToken())
         ));
@@ -69,30 +69,30 @@ public class Auth2Controller {
 
     @Operation(summary = "현재 로그인 유저 정보 조회")
     @GetMapping("/user")
-    public ResponseEntity<ApiResponse<UserResponse>> getLoginUserInfo(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(ApiResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user)));
+    public ResponseEntity<CommonResponse<UserResponse>> getLoginUserInfo(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(CommonResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user)));
     }
 
     @Operation(summary = "특정 회원 조회")
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("회원 정보 조회 성공", userService.findById(id)));
+    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.principal.id)")
+    public ResponseEntity<CommonResponse<UserResponse>> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(CommonResponse.success("회원 정보 조회 성공", userService.findById(id)));
     }
 
     @Operation(summary = "유저 권한 수정")
     @PatchMapping("/role/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> updateRole(@PathVariable Long id, @RequestParam Role role) {
+    public ResponseEntity<CommonResponse<Void>> updateRole(@PathVariable Long id, @RequestParam Role role) {
         userService.updateUserRole(id, role);
-        return ResponseEntity.ok(ApiResponse.success("유저 권한 수정 성공", null));
+        return ResponseEntity.ok(CommonResponse.success("유저 권한 수정 성공", null));
     }
 
     @Operation(summary = "전체 회원 목록 조회")
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
-        return ResponseEntity.ok(ApiResponse.success("전체 회원 목록 조회 성공", userService.findAllUsers()));
+    public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers() {
+        return ResponseEntity.ok(CommonResponse.success("전체 회원 목록 조회 성공", userService.findAllUsers()));
     }
 
     @Operation(summary = "회원 탈퇴")
@@ -107,12 +107,12 @@ public class Auth2Controller {
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
+    public ResponseEntity<CommonResponse<Void>> logout(
             @AuthenticationPrincipal User user,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization
     ) {
         userService.logout(user, resolveBearerToken(authorization));
-        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null));
+        return ResponseEntity.ok(CommonResponse.success("로그아웃 성공. 모든 토큰이 무효화되었습니다.", null));
     }
 
     private String resolveBearerToken(String authorization) {

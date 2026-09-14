@@ -14,13 +14,15 @@ import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +41,18 @@ public class RouteDirectionsService {
     private final SpotRepository spotRepository;
     private final TmapDirectionsClient tmapDirectionsClient;
 
-    private final Map<String, CachedDirections> cache = new ConcurrentHashMap<>();
-
     @Value("${tmap.directions-cache-ttl-seconds:300}")
     private long cacheTtlSeconds;
+
+    private Cache<String, RouteDirectionsResponse> cache;
+
+    @PostConstruct
+    void initCache() {
+        cache = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(cacheTtlSeconds))
+                .maximumSize(1000)
+                .build();
+    }
 
     public RouteDirectionsResponse getDirections(Long routeId, RouteDirectionsRequest request, Long userId) {
         TransportMode mode = request.getTransportMode();
@@ -63,9 +73,9 @@ public class RouteDirectionsService {
         }
 
         String cacheKey = cacheKey(routeId, mode, orderedSpots);
-        CachedDirections cached = cache.get(cacheKey);
-        if (cached != null && !cached.isExpired(cacheTtlSeconds)) {
-            return cached.response();
+        RouteDirectionsResponse cached = cache.getIfPresent(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
         Map<Long, Spot> spotMap = spotRepository.findAllById(
@@ -73,7 +83,7 @@ public class RouteDirectionsService {
                 .collect(Collectors.toMap(Spot::getId, Function.identity()));
 
         RouteDirectionsResponse response = calculate(routeId, mode, orderedSpots, spotMap);
-        cache.put(cacheKey, new CachedDirections(response, LocalDateTime.now()));
+        cache.put(cacheKey, response);
         return response;
     }
 
@@ -196,10 +206,4 @@ public class RouteDirectionsService {
         return mode.getLabel() + " " + minutes + "분";
     }
 
-    private record CachedDirections(RouteDirectionsResponse response, LocalDateTime cachedAt) {
-
-        boolean isExpired(long ttlSeconds) {
-            return cachedAt.plusSeconds(ttlSeconds).isBefore(LocalDateTime.now());
-        }
-    }
 }

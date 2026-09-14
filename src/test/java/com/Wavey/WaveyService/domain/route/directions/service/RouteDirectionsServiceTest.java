@@ -19,7 +19,6 @@ import com.Wavey.WaveyService.domain.route.entity.Visibility;
 import com.Wavey.WaveyService.domain.route.repository.RouteRepository;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
-import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
@@ -54,6 +53,7 @@ class RouteDirectionsServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(routeDirectionsService, "cacheTtlSeconds", 300L);
+        ReflectionTestUtils.invokeMethod(routeDirectionsService, "initCache");
     }
 
     private Route routeWithSpots(Visibility visibility, RouteSpot... spots) {
@@ -71,11 +71,10 @@ class RouteDirectionsServiceTest {
 
     private Spot spot(Long id, double lat, double lng) {
         Spot spot = Spot.builder()
-                .name("spot" + id)
+                .nameKo("spot" + id)
                 .category(SpotCategory.K_HERITAGE)
                 .latitude(BigDecimal.valueOf(lat))
                 .longitude(BigDecimal.valueOf(lng))
-                .sourceType(SpotSourceType.TOUR_API)
                 .build();
         ReflectionTestUtils.setField(spot, "id", id);
         return spot;
@@ -147,5 +146,28 @@ class RouteDirectionsServiceTest {
                 .route(TransportMode.CAR, 127.0, 37.5, 127.1, 37.6);
         verify(tmapDirectionsClient, never())
                 .route(org.mockito.ArgumentMatchers.eq(TransportMode.WALK), anyDouble(), anyDouble(), anyDouble(), anyDouble());
+    }
+
+    @Test
+    void 캐시_TTL이_지나면_외부_엔진을_다시_호출한다() throws InterruptedException {
+        ReflectionTestUtils.setField(routeDirectionsService, "cacheTtlSeconds", 0L);
+        ReflectionTestUtils.invokeMethod(routeDirectionsService, "initCache");
+
+        Route route = routeWithSpots(Visibility.PUBLIC,
+                routeSpot(10L, 101L, 1), routeSpot(15L, 105L, 2));
+        given(routeRepository.findById(routeId)).willReturn(java.util.Optional.of(route));
+        given(spotRepository.findAllById(List.of(101L, 105L)))
+                .willReturn(List.of(spot(101L, 37.5, 127.0), spot(105L, 37.6, 127.1)));
+        given(tmapDirectionsClient.route(TransportMode.WALK, 127.0, 37.5, 127.1, 37.6))
+                .willReturn(new RouteLeg(500, 300, List.of(
+                        new double[] {127.0, 37.5}, new double[] {127.1, 37.6})));
+
+        RouteDirectionsRequest request = new RouteDirectionsRequest(TransportMode.WALK);
+        routeDirectionsService.getDirections(routeId, request, ownerId);
+        Thread.sleep(10);
+        routeDirectionsService.getDirections(routeId, request, ownerId);
+
+        verify(tmapDirectionsClient, times(2))
+                .route(TransportMode.WALK, 127.0, 37.5, 127.1, 37.6);
     }
 }

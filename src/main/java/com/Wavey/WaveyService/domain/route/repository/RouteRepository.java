@@ -9,11 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RouteRepository extends JpaRepository<Route, Long> {
 
-    List<Route> findByUserId(Long userId);
+    Page<Route> findByUserId(Long userId, Pageable pageable);
 
-    List<Route> findByUserIdAndVisibility(Long userId, Visibility visibility);
+    Page<Route> findByUserIdAndVisibility(Long userId, Visibility visibility, Pageable pageable);
 
     Page<Route> findByVisibility(Visibility visibility, Pageable pageable);
 
-    Page<Route> findByVisibilityAndRouteSpots_SpotIdIn(Visibility visibility, List<Long> spotIds, Pageable pageable);
+    Page<Route> findDistinctByVisibilityAndRouteSpots_SpotIdIn(Visibility visibility, List<Long> spotIds, Pageable pageable);
 }

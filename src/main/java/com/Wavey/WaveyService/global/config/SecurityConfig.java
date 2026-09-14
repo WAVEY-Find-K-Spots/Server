@@ -5,7 +5,7 @@ import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
-import com.Wavey.WaveyService.global.response.ApiResponse;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import com.Wavey.WaveyService.global.response.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers(SecurityEndpoints.PUBLIC).permitAll()
                         .requestMatchers(HttpMethod.POST, SecurityEndpoints.VISION_ANALYZE).permitAll()
                         .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_ROUTE).permitAll()
+                        // 콘텐츠·미디어 조회는 비로그인 허용 (등록/수정/삭제/수집은 인증 필요)
+                        .requestMatchers(HttpMethod.GET, SecurityEndpoints.PUBLIC_GET).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
@@ -96,12 +98,12 @@ public class SecurityConfig {
                 .message(errorCode.getMessage())
                 .build();
 
-        ApiResponse<Void> apiResponse = ApiResponse.error(
+        CommonResponse<Void> commonResponse = CommonResponse.error(
                 errorCode.getHttpStatus().value(),
                 errorDetail
         );
 
-        String json = objectMapper.writeValueAsString(apiResponse);
+        String json = objectMapper.writeValueAsString(commonResponse);
         response.getWriter().write(json);
     }
 

@@ -30,18 +30,26 @@ public class RouteService {
     private final RouteRepository routeRepository;
     private final SpotRepository spotRepository;
 
-    public List<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility) {
-        List<Route> routes = visibility != null
-                ? routeRepository.findByUserIdAndVisibility(userId, visibility)
-                : routeRepository.findByUserId(userId);
+    public Page<RouteSummaryResponse> getMyRoutes(Long userId, Visibility visibility, Pageable pageable) {
+        Page<Route> routes = visibility != null
+                ? routeRepository.findByUserIdAndVisibility(userId, visibility, pageable)
+                : routeRepository.findByUserId(userId, pageable);
 
-        return routes.stream()
-                .map(RouteSummaryResponse::from)
-                .toList();
+        return routes.map(RouteSummaryResponse::from);
     }
 
-    public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable) {
-        return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+    public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable, Long regionId) {
+        if (regionId == null) {
+            return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+                    .map(RouteSummaryResponse::from);
+        }
+
+        List<Long> spotIds = spotRepository.findIdsByRegionId(regionId);
+        if (spotIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return routeRepository.findDistinctByVisibilityAndRouteSpots_SpotIdIn(Visibility.PUBLIC, spotIds, pageable)
                 .map(RouteSummaryResponse::from);
     }
 
