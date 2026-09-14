@@ -1,89 +1,23 @@
 package com.Wavey.WaveyService.domain.review.service;
 
-import com.Wavey.WaveyService.domain.review.dto.*;
-import com.Wavey.WaveyService.domain.review.entity.*;
-import com.Wavey.WaveyService.domain.review.repository.*;
-import com.Wavey.WaveyService.domain.spot.repository.*;
-import com.Wavey.WaveyService.domain.user.repository.*;
-import com.Wavey.WaveyService.global.exception.*;
+import com.Wavey.WaveyService.domain.review.dto.request.ReviewCreateRequest;
+import com.Wavey.WaveyService.domain.review.dto.request.ReviewUpdateRequest;
 
-import lombok.RequiredArgsConstructor;
+import com.Wavey.WaveyService.domain.review.dto.response.MyReviewListResponse;
+import com.Wavey.WaveyService.domain.review.dto.response.ReviewListResponse;
+import com.Wavey.WaveyService.domain.review.dto.response.ReviewResponse;
 
-import org.springframework.data.domain.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+public interface ReviewService {
 
-import java.util.Set;
+    ReviewResponse create(Long spotId, Long userId, ReviewCreateRequest request);
 
-@Service
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class ReviewService {
-    private final ReviewRepository reviews;
-    private final SpotRepository spots;
-    private final UserRepository users;
-    private final UserSettingsRepository settings;
+    ReviewListResponse getReviews(Long spotId, int page, int size);
 
-    @Transactional
-    public ReviewResponse create(Long spotId, Long userId, ReviewRequest request) {
-        var spot =
-                spots.findLockedById(spotId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
-        var review =
-                reviews.saveAndFlush(
-                        Review.builder()
-                                .spotId(spotId)
-                                .userId(userId)
-                                .rating(request.rating())
-                                .body(request.body().trim())
-                                .countryCode(request.countryCode())
-                                .language(language(request.language()))
-                                .build());
-        spot.updateRating(reviews.average(spotId), reviews.countBySpotId(spotId));
-        return response(review);
-    }
+    ReviewResponse getReview(Long reviewId);
 
-    public Page<ReviewResponse> list(Long spotId, int page, int size) {
-        spots.findById(spotId).orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
-        return reviews.findBySpotId(
-                        spotId,
-                        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id")))
-                .map(this::response);
-    }
+    MyReviewListResponse getMyReviews(Long userId, int page, int size);
 
-    public Page<ReviewResponse> mine(Long userId, int page, int size) {
-        return reviews.findByUserId(
-                        userId,
-                        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "id")))
-                .map(this::response);
-    }
+    ReviewResponse update(Long reviewId, Long userId, ReviewUpdateRequest request);
 
-    private ReviewResponse response(Review r) {
-        var user = users.findById(r.getUserId());
-        var spot = spots.findById(r.getSpotId());
-        var profile = settings.findByUserId(r.getUserId());
-        return new ReviewResponse(
-                r.getId(),
-                r.getSpotId(),
-                spot.map(s -> s.getName()).orElse(null),
-                spot.map(s -> s.getThumbnailUrl()).orElse(null),
-                r.getUserId(),
-                user.map(u -> u.getName()).orElse("탈퇴한 사용자"),
-                profile.map(s -> s.getProfileImageUrl()).orElse(null),
-                r.getCountryCode(),
-                r.getRating(),
-                r.getBody(),
-                r.getLanguage(),
-                r.getCreatedAt());
-    }
-
-    private String language(String value) {
-        if (value == null) {
-            return "ko";
-        }
-        if (!Set.of("ko", "en").contains(value)) {
-            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
-        }
-        return value;
-    }
+    void delete(Long reviewId, Long userId);
 }
