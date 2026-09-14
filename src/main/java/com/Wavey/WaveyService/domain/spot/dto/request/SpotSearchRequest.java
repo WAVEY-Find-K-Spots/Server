@@ -43,7 +43,10 @@ public record SpotSearchRequest(
         SortBy sort,
 
         @Min(0)
-        Integer page
+        Integer page,
+
+        @Positive
+        Long excludeRouteId
 ) {
 
     public SpotSearchRequest {

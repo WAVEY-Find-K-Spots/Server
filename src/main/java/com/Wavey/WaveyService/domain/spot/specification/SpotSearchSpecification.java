@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.spot.specification;
 
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.SpotContent;
+import com.Wavey.WaveyService.domain.route.entity.RouteSpot;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotSearchRequest;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SortBy;
@@ -62,6 +63,14 @@ public final class SpotSearchSpecification {
             );
 
             addKeyword(
+                    request,
+                    root,
+                    query,
+                    cb,
+                    predicates
+            );
+
+            addExcludeRouteId(
                     request,
                     root,
                     query,
@@ -255,6 +264,39 @@ public final class SpotSearchSpecification {
                         cb.exists(exists)
                 )
         );
+    }
+
+    private static void addExcludeRouteId(
+            SpotSearchRequest request,
+            Root<Spot> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb,
+            List<Predicate> predicates
+    ) {
+        if (request.excludeRouteId() == null) {
+            return;
+        }
+
+        Subquery<Integer> exists =
+                query.subquery(Integer.class);
+
+        Root<RouteSpot> routeSpot =
+                exists.from(RouteSpot.class);
+
+        exists.select(cb.literal(1));
+
+        exists.where(
+                cb.equal(
+                        routeSpot.get("route").get("id"),
+                        request.excludeRouteId()
+                ),
+                cb.equal(
+                        routeSpot.get("spotId"),
+                        root.get("id")
+                )
+        );
+
+        predicates.add(cb.not(cb.exists(exists)));
     }
 
     private static void addBoundingBox(
