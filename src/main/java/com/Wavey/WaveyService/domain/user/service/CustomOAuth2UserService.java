@@ -1,5 +1,7 @@
 package com.Wavey.WaveyService.domain.user.service;
 
+import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
+import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
@@ -34,6 +36,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
     private final RedisAuthTokenService authTokenService;
+    private final UploadService uploadService;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -174,6 +177,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public void updateUserRole(Long id, Role role) {
         User user = findEntityById(id);
         user.updateRole(role);
+    }
+
+    @Transactional
+    public UserResponse confirmPhoto(Long userId, String photoUrl) {
+        uploadService.validateOwnedUrl(UploadCategory.PROFILE, userId, photoUrl);
+        User user = findEntityById(userId);
+        user.updateProfileImageUrl(photoUrl);
+        return UserResponse.from(user);
     }
 
     public List<UserResponse> findAllUsers() {

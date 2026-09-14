@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.user.controller;
 
 import com.Wavey.WaveyService.domain.user.dto.LoginCodeExchangeRequest;
+import com.Wavey.WaveyService.domain.user.dto.PhotoConfirmRequest;
 import com.Wavey.WaveyService.domain.user.dto.RefreshTokenRequest;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
@@ -71,6 +72,18 @@ public class Auth2Controller {
     @GetMapping("/user")
     public ResponseEntity<CommonResponse<UserResponse>> getLoginUserInfo(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(CommonResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user)));
+    }
+
+    @Operation(summary = "프로필 사진 반영", description = "업로드가 끝난 사진 URL을 프로필에 반영합니다. 업로드 URL은 POST /api/v1/uploads/presigned-url(category=PROFILE)로 발급받습니다.")
+    @PatchMapping("/user/photo")
+    public ResponseEntity<CommonResponse<UserResponse>> confirmPhoto(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody PhotoConfirmRequest request
+    ) {
+        return ResponseEntity.ok(CommonResponse.success(
+                "프로필 사진 반영 성공",
+                userService.confirmPhoto(user.getId(), request.photoUrl())
+        ));
     }
 
     @Operation(summary = "특정 회원 조회")

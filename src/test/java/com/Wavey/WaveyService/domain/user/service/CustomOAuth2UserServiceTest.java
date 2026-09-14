@@ -28,13 +28,15 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private RedisAuthTokenService authTokenService;
     @Mock
+    private com.Wavey.WaveyService.domain.upload.service.UploadService uploadService;
+    @Mock
     private OAuth2UserInfo userInfo;
 
     private CustomOAuth2UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new CustomOAuth2UserService(userRepository, tokenProvider, authTokenService);
+        userService = new CustomOAuth2UserService(userRepository, tokenProvider, authTokenService, uploadService);
     }
 
     @Test

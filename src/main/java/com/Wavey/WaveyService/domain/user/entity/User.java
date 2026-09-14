@@ -37,6 +37,13 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     public User update(String name, String email) {
         if (name != null && !name.isEmpty()) {
             this.name = name;
