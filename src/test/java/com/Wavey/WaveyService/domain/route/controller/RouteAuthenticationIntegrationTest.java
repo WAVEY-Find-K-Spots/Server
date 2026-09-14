@@ -98,8 +98,8 @@ class RouteAuthenticationIntegrationTest {
         mockMvc.perform(get("/api/v1/routes")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].name").value("인증 확인용 루트"));
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].name").value("인증 확인용 루트"));
     }
 
     @Test
