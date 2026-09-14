@@ -38,8 +38,18 @@ public class RouteService {
         return routes.map(RouteSummaryResponse::from);
     }
 
-    public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable) {
-        return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+    public Page<RouteSummaryResponse> getPublicRoutes(Pageable pageable, Long regionId) {
+        if (regionId == null) {
+            return routeRepository.findByVisibility(Visibility.PUBLIC, pageable)
+                    .map(RouteSummaryResponse::from);
+        }
+
+        List<Long> spotIds = spotRepository.findIdsByRegionId(regionId);
+        if (spotIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return routeRepository.findDistinctByVisibilityAndRouteSpots_SpotIdIn(Visibility.PUBLIC, spotIds, pageable)
                 .map(RouteSummaryResponse::from);
     }
 
