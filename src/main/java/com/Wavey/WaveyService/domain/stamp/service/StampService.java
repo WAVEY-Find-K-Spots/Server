@@ -1,156 +1,151 @@
 package com.Wavey.WaveyService.domain.stamp.service;
 
+import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.domain.stamp.dto.StampClaimRequest;
-import com.Wavey.WaveyService.domain.stamp.entity.*;
-import com.Wavey.WaveyService.domain.stamp.repository.*;
-import com.Wavey.WaveyService.domain.user.repository.*;
+import com.Wavey.WaveyService.domain.stamp.entity.Stamp;
+import com.Wavey.WaveyService.domain.stamp.entity.UserStamp;
+import com.Wavey.WaveyService.domain.stamp.repository.BadgeSpotRepository;
+import com.Wavey.WaveyService.domain.stamp.repository.StampRepository;
+import com.Wavey.WaveyService.domain.stamp.repository.UserStampRepository;
+import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.UiSupport;
-import com.Wavey.WaveyService.global.exception.*;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class StampService {
+
+    private static final int DEFAULT_RADIUS_METERS = 150;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final StampRepository stamps;
     private final UserStampRepository collected;
-    private final BadgeRepository badges;
-    private final UserBadgeRepository awards;
+    private final BadgeSpotRepository badgeSpots;
     private final UserRepository users;
     private final SpotRepository spots;
+    private final UserBadgeService userBadges;
 
+    @Schema(description = "스탬프 항목 (이름/이미지는 Spot에서 조회)")
     public record StampItem(
-            Long stampId,
-            Long spotId,
-            Long regionId,
-            String name,
-            String description,
-            String imageUrl,
-            boolean acquired,
-            LocalDateTime acquiredAt) {}
+            @Schema(description = "스탬프 ID (미획득·미생성 시 null)", example = "1", nullable = true)
+                    Long stampId,
+            @Schema(description = "스팟 ID", example = "10") Long spotId,
+            @Schema(description = "지역 ID", example = "1") Long regionId,
+            @Schema(description = "이름 (language 적용)", example = "경복궁") String name,
+            @Schema(description = "이미지 URL", example = "https://example.com/spots/10.png")
+                    String imageUrl,
+            @Schema(description = "획득 여부", example = "true") boolean acquired,
+            @Schema(description = "획득 시각", example = "2026-09-14T12:00:00", nullable = true)
+                    LocalDateTime acquiredAt) {}
 
-    public record BadgeItem(
-            Long badgeId,
-            String name,
-            String description,
-            String imageUrl,
-            int requiredStamps,
-            long progress,
-            long remaining,
-            boolean acquired,
-            LocalDateTime acquiredAt) {}
-
+    @Schema(description = "스탬프북 페이지")
     public record Book(
-            long collectedCount,
-            long visitedRegionCount,
-            long badgeCount,
-            Long remainingToNextBadge,
-            List<StampItem> stamps) {}
+            @Schema(description = "내가 획득한 스탬프 수(전체)", example = "3") long collectedCount,
+            @Schema(description = "이번 페이지 스탬프 목록") List<StampItem> stamps,
+            @Schema(description = "현재 페이지(0부터)", example = "0") int page,
+            @Schema(description = "전체 Spot(스탬프 후보) 수", example = "57") long totalElements,
+            @Schema(description = "전체 페이지 수", example = "3") int totalPages,
+            @Schema(description = "다음 페이지 여부", example = "true") boolean hasNext) {}
 
-    public record Claim(StampItem stamp, boolean newlyAcquired, List<BadgeItem> badges) {}
+    @Schema(description = "스탬프 획득 결과")
+    public record Claim(
+            @Schema(description = "획득(또는 이미 보유)한 스탬프") StampItem stamp,
+            @Schema(description = "이번 요청에서 새로 획득했는지", example = "true")
+                    boolean newlyAcquired,
+            @Schema(description = "갱신된 배지함 (수령은 별도 POST)")
+                    UserBadgeService.BadgeCollection badges) {}
 
-    private StampItem item(Stamp s, UserStamp owned, String lang) {
-        var spot = spots.findById(s.getSpotId());
-        return new StampItem(
-                s.getId(),
-                s.getSpotId(),
-                spot.map(p -> p.getRegionId()).orElse(null),
-                UiSupport.localized(s.getName(), s.getNameEn(), lang),
-                UiSupport.localized(s.getDescription(), s.getDescriptionEn(), lang),
-                s.getImageUrl(),
-                owned != null,
-                owned == null ? null : owned.getAcquiredAt());
-    }
+    public Book book(Long userId, Long regionId, String language, Integer page, Integer size) {
+        String lang = language(language);
+        int pageNo = page == null || page < 0 ? 0 : page;
+        int pageSize = normalizeSize(size);
 
-    public Book book(Long userId, Long regionId, String language) {
-        String lang = language(userId, language);
-        var owned = collected.findByUserId(userId);
-        Map<Long, UserStamp> index = new HashMap<>();
-        owned.forEach(s -> index.put(s.getStampId(), s));
-        var items =
-                stamps.findAll().stream()
-                        .map(s -> item(s, index.get(s.getId()), lang))
-                        .filter(s -> regionId == null || regionId.equals(s.regionId()))
+        PageRequest pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Spot> spotPage =
+                regionId == null
+                        ? spots.findAll(pageable)
+                        : spots.findByRegionId(regionId, pageable);
+
+        Map<Long, UserStamp> ownedBySpotId = new HashMap<>();
+        collected.findByUserId(userId).forEach(us -> ownedBySpotId.put(us.getSpotId(), us));
+
+        List<Long> spotIds = spotPage.getContent().stream().map(Spot::getId).toList();
+        Map<Long, Stamp> stampBySpotId = new HashMap<>();
+        if (!spotIds.isEmpty()) {
+            stamps.findBySpotIdIn(spotIds).forEach(s -> stampBySpotId.put(s.getSpotId(), s));
+        }
+
+        List<StampItem> items =
+                spotPage.getContent().stream()
+                        .map(
+                                spot ->
+                                        toItem(
+                                                spot,
+                                                stampBySpotId.get(spot.getId()),
+                                                ownedBySpotId.get(spot.getId()),
+                                                lang))
                         .toList();
-        Long next =
-                badgeList(userId, lang).stream()
-                        .filter(b -> !b.acquired())
-                        .map(BadgeItem::remaining)
-                        .min(Long::compareTo)
-                        .orElse(null);
+
         return new Book(
-                owned.size(),
-                owned.stream().map(UserStamp::getRegionId).distinct().count(),
-                awards.countByUserId(userId),
-                next,
-                items);
-    }
-
-    public List<BadgeItem> badgeList(Long userId, String language) {
-        String lang = language(userId, language);
-        var owned = collected.findByUserId(userId);
-        Map<Long, UserBadge> awarded = new HashMap<>();
-        awards.findByUserId(userId).forEach(b -> awarded.put(b.getBadgeId(), b));
-        return badges.findAll().stream()
-                .map(
-                        b -> {
-                            long progress = progress(b, owned);
-                            var a = awarded.get(b.getId());
-                            return new BadgeItem(
-                                    b.getId(),
-                                    UiSupport.localized(b.getName(), b.getNameEn(), lang),
-                                    UiSupport.localized(
-                                            b.getDescription(), b.getDescriptionEn(), lang),
-                                    b.getImageUrl(),
-                                    b.getRequiredStamps(),
-                                    Math.min(progress, b.getRequiredStamps()),
-                                    Math.max(0, b.getRequiredStamps() - progress),
-                                    a != null,
-                                    a == null ? null : a.getAcquiredAt());
-                        })
-                .toList();
-    }
-
-    private long progress(Badge b, List<UserStamp> owned) {
-        return owned.stream()
-                .filter(s -> b.getRegionId() == null || b.getRegionId().equals(s.getRegionId()))
-                .filter(
-                        s ->
-                                b.getCategory() == null
-                                        || spots.findById(s.getSpotId())
-                                                .map(p -> p.getCategory() == b.getCategory())
-                                                .orElse(false))
-                .count();
+                collected.countByUserId(userId),
+                items,
+                spotPage.getNumber(),
+                spotPage.getTotalElements(),
+                spotPage.getTotalPages(),
+                spotPage.hasNext());
     }
 
     @Transactional
     public Claim claim(Long spotId, Long userId, StampClaimRequest request, String language) {
-        // Serialize claims for this user: unique constraints also protect duplicate stamps/badges.
         users.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        var spot = spots.findById(spotId).orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
-        var stamp =
-                stamps.findBySpotId(spotId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
-        String lang = language(userId, language);
-        var existing = collected.findByUserIdAndStampId(userId, stamp.getId());
-        if (existing.isPresent())
-            return new Claim(item(stamp, existing.get(), lang), false, badgeList(userId, lang));
+        Spot spot =
+                spots.findById(spotId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
+        String lang = language(language);
+
+        var existing = collected.findByUserIdAndSpotId(userId, spotId);
+        if (existing.isPresent()) {
+            Stamp stamp =
+                    stamps.findBySpotId(spotId)
+                            .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+            return new Claim(
+                    toItem(spot, stamp, existing.get(), lang),
+                    false,
+                    userBadges.collection(userId, lang));
+        }
+
         UiSupport.coordinates(request.latitude(), request.longitude());
+        Stamp stamp = getOrCreateStamp(spotId);
         if (UiSupport.meters(
                         request.latitude(),
                         request.longitude(),
                         spot.getLatitude().doubleValue(),
                         spot.getLongitude().doubleValue())
-                > stamp.getRadiusMeters()) throw new CustomException(ErrorCode.STAMP_TOO_FAR);
-        var entry =
+                > stamp.getRadiusMeters()) {
+            throw new CustomException(ErrorCode.STAMP_TOO_FAR);
+        }
+
+        UserStamp entry =
                 collected.saveAndFlush(
                         UserStamp.builder()
                                 .userId(userId)
@@ -159,31 +154,71 @@ public class StampService {
                                 .regionId(spot.getRegionId())
                                 .acquiredAt(LocalDateTime.now())
                                 .build());
-        var owned = collected.findByUserId(userId);
-        for (var badge : badges.findAll()) {
-            if (progress(badge, owned) >= badge.getRequiredStamps()
-                    && !awards.existsByUserIdAndBadgeId(userId, badge.getId()))
-                awards.save(
-                        UserBadge.builder()
-                                .userId(userId)
-                                .badgeId(badge.getId())
-                                .acquiredAt(LocalDateTime.now())
-                                .build());
-        }
-        return new Claim(item(stamp, entry, lang), true, badgeList(userId, lang));
+
+        return new Claim(
+                toItem(spot, stamp, entry, lang), true, userBadges.collection(userId, lang));
     }
 
     public StampItem detail(Long stampId, Long userId, String language) {
-        var stamp =
+        Stamp stamp =
                 stamps.findById(stampId)
                         .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
-        return item(
+        Spot spot =
+                spots.findById(stamp.getSpotId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.SPOT_NOT_FOUND));
+        return toItem(
+                spot,
                 stamp,
                 collected.findByUserIdAndStampId(userId, stampId).orElse(null),
-                language(userId, language));
+                language(language));
     }
 
-    private String language(Long userId, String requested) {
+    @Transactional
+    public void deleteBySpotId(Long spotId) {
+        collected.deleteBySpotId(spotId);
+        stamps.deleteBySpotId(spotId);
+        badgeSpots.deleteBySpotId(spotId);
+    }
+
+    private Stamp getOrCreateStamp(Long spotId) {
+        return stamps.findBySpotId(spotId)
+                .orElseGet(
+                        () -> {
+                            try {
+                                return stamps.saveAndFlush(
+                                        Stamp.builder()
+                                                .spotId(spotId)
+                                                .radiusMeters(DEFAULT_RADIUS_METERS)
+                                                .build());
+                            } catch (DataIntegrityViolationException e) {
+                                return stamps.findBySpotId(spotId)
+                                        .orElseThrow(
+                                                () ->
+                                                        new CustomException(
+                                                                ErrorCode.RESOURCE_NOT_FOUND));
+                            }
+                        });
+    }
+
+    private StampItem toItem(Spot spot, Stamp stamp, UserStamp owned, String lang) {
+        return new StampItem(
+                stamp == null ? null : stamp.getId(),
+                spot.getId(),
+                spot.getRegionId(),
+                UiSupport.localized(spot.getNameKo(), spot.getNameEn(), lang),
+                spot.getImageUrl(),
+                owned != null,
+                owned == null ? null : owned.getAcquiredAt());
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size < 1) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(size, MAX_PAGE_SIZE);
+    }
+
+    private String language(String requested) {
         return UiSupport.language(requested);
     }
 }

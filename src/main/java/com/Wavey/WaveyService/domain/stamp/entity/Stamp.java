@@ -6,8 +6,6 @@ import jakarta.persistence.*;
 
 import lombok.*;
 
-import java.time.*;
-
 @Entity
 @Table(name = "stamps")
 @Getter
@@ -20,16 +18,7 @@ public class Stamp extends BaseEntity {
     @Column(nullable = false, unique = true)
     private Long spotId;
 
-    @Column(nullable = false)
-    private String name;
-
-    private String nameEn;
-
-    @Column(length = 1000)
-    private String imageUrl;
-
-    private String description;
-    private String descriptionEn;
+    /** 획득 가능 반경(m). 현재는 전체 150 고정. */
     @Builder.Default
     private int radiusMeters = 150;
 }

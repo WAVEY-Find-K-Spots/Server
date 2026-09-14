@@ -7,6 +7,7 @@ import com.Wavey.WaveyService.domain.spot.dto.request.SpotUpdateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
+import com.Wavey.WaveyService.domain.stamp.service.StampService;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 
@@ -26,6 +27,7 @@ public class SpotServiceImpl implements SpotService {
     private final SpotRepository spotRepository;
     private final RegionRepository regionRepository;
     private final SpotConverter spotConverter;
+    private final StampService stampService;
 
     @Override
     @Transactional
@@ -87,9 +89,9 @@ public class SpotServiceImpl implements SpotService {
     @Override
     @Transactional
     public void deleteSpot(Long spotId) {
-        spotRepository.delete(
-                findSpot(spotId)
-        );
+        Spot spot = findSpot(spotId);
+        stampService.deleteBySpotId(spotId);
+        spotRepository.delete(spot);
     }
 
     private Spot findSpot(Long spotId) {

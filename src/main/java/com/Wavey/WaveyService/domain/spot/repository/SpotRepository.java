@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.spot.entity.Spot;
 
 import jakarta.persistence.LockModeType;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -14,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificationExecutor<Spot> {
+
+    Page<Spot> findByRegionId(Long regionId, Pageable pageable);
 
     @Query("select s.id from Spot s where s.regionId = :regionId")
     List<Long> findIdsByRegionId(@Param("regionId") Long regionId);
