@@ -3,7 +3,7 @@ package com.Wavey.WaveyService.domain.user.service;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;

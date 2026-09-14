@@ -1,7 +1,7 @@
 package com.Wavey.WaveyService.domain.user.controller;
 
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import com.Wavey.WaveyService.global.response.CommonResponse;

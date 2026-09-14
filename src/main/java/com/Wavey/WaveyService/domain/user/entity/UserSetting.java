@@ -2,11 +2,15 @@ package com.Wavey.WaveyService.domain.user.entity;
 
 import com.Wavey.WaveyService.global.common.BaseEntity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
-import lombok.*;
-
-import java.time.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "user_settings")
@@ -15,7 +19,7 @@ import java.time.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserSettings extends BaseEntity {
+public class UserSetting extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private Long userId;
@@ -38,11 +42,9 @@ public class UserSettings extends BaseEntity {
 
     @Builder.Default
     private boolean locationEnabled = true;
+
     private boolean marketingEnabled;
 
     @Column(length = 1000)
     private String profileImageUrl;
-
-    @Column(length = 2)
-    private String countryCode;
 }

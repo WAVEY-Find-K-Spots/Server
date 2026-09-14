@@ -1,5 +1,7 @@
 package com.Wavey.WaveyService.domain.user.entity;
 
+import com.Wavey.WaveyService.domain.user.enums.CountryCode;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +33,10 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private CountryCode countryCode;
+
     @Column(length = 500)
     private String refreshToken;
 
@@ -47,7 +53,7 @@ public class User {
     public void updateRole(Role role) {
         this.role = role;
     }
-
+    public void updateCountryCode(CountryCode countryCode) { this.countryCode = countryCode; }
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
