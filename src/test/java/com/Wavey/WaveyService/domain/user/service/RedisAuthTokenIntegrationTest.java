@@ -39,14 +39,16 @@ class RedisAuthTokenIntegrationTest {
 
     @Test
     void 실제_Redis에서_로그인코드_교환과_refresh_회전을_원자적으로_처리한다() {
-        String loginCode = authTokenService.issueLoginCode(99L);
-        assertThat(authTokenService.getLoginCodeUserId(loginCode)).isEqualTo(99L);
+        String loginCode = authTokenService.issueLoginCode(99L, true);
+        RedisAuthTokenService.LoginCodeInfo info = authTokenService.getLoginCodeInfo(loginCode);
+        assertThat(info.userId()).isEqualTo(99L);
+        assertThat(info.isNewUser()).isTrue();
 
         String refreshToken = "refresh-" + UUID.randomUUID();
         assertThat(authTokenService.exchangeLoginCode(
-                loginCode, 99L, refreshToken, Duration.ofMinutes(1)
+                loginCode, info, refreshToken, Duration.ofMinutes(1)
         )).isTrue();
-        assertThatThrownBy(() -> authTokenService.getLoginCodeUserId(loginCode))
+        assertThatThrownBy(() -> authTokenService.getLoginCodeInfo(loginCode))
                 .isInstanceOf(CustomException.class);
 
         String replacementToken = "refresh-" + UUID.randomUUID();
