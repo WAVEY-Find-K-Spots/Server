@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.global.config;
 
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
