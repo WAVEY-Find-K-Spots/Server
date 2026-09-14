@@ -44,10 +44,10 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        String jwt = "JWT";
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList(jwt);
-        Components components = new Components().addSecuritySchemes(jwt, new SecurityScheme()
-                .name(jwt)
+        String bearerAuth = "bearerAuth";
+        SecurityRequirement securityRequirement = new SecurityRequirement().addList(bearerAuth);
+        Components components = new Components().addSecuritySchemes(bearerAuth, new SecurityScheme()
+                .name(bearerAuth)
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT"));
