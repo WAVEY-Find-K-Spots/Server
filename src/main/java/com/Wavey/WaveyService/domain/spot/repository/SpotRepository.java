@@ -2,16 +2,18 @@ package com.Wavey.WaveyService.domain.spot.repository;
 
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface SpotRepository
-        extends JpaRepository<Spot, Long>,
-        JpaSpecificationExecutor<Spot> {
+public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificationExecutor<Spot> {
 
     @Query("select s.id from Spot s where s.regionId = :regionId")
     List<Long> findIdsByRegionId(@Param("regionId") Long regionId);
@@ -33,28 +35,18 @@ public interface SpotRepository
                                           0.0,
                                           POWER(
                                               SIN(
-                                                  RADIANS(
-                                                      CAST(s.latitude AS double precision)
-                                                      - :latitude
-                                                  ) / 2.0
+                                                  RADIANS(CAST(s.latitude AS double precision) - :latitude) / 2.0
                                               ),
                                               2
                                           )
                                           +
                                           COS(RADIANS(:latitude))
                                           *
-                                          COS(
-                                              RADIANS(
-                                                  CAST(s.latitude AS double precision)
-                                              )
-                                          )
+                                          COS(RADIANS(CAST(s.latitude AS double precision)))
                                           *
                                           POWER(
                                               SIN(
-                                                  RADIANS(
-                                                      CAST(s.longitude AS double precision)
-                                                      - :longitude
-                                                  ) / 2.0
+                                                  RADIANS(CAST(s.longitude AS double precision) - :longitude) / 2.0
                                               ),
                                               2
                                           )
@@ -73,28 +65,18 @@ public interface SpotRepository
                                         0.0,
                                         POWER(
                                             SIN(
-                                                RADIANS(
-                                                    CAST(s.latitude AS double precision)
-                                                    - :latitude
-                                                ) / 2.0
+                                                RADIANS(CAST(s.latitude AS double precision) - :latitude) / 2.0
                                             ),
                                             2
                                         )
                                         +
                                         COS(RADIANS(:latitude))
                                         *
-                                        COS(
-                                            RADIANS(
-                                                CAST(s.latitude AS double precision)
-                                            )
-                                        )
+                                        COS(RADIANS(CAST(s.latitude AS double precision)))
                                         *
                                         POWER(
                                             SIN(
-                                                RADIANS(
-                                                    CAST(s.longitude AS double precision)
-                                                    - :longitude
-                                                ) / 2.0
+                                                RADIANS(CAST(s.longitude AS double precision) - :longitude) / 2.0
                                             ),
                                             2
                                         )
@@ -118,4 +100,8 @@ public interface SpotRepository
             @Param("radiusMeters") double radiusMeters,
             @Param("limit") int limit
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Spot s WHERE s.id = :spotId")
+    Optional<Spot> findLockedById(@Param("spotId") Long spotId);
 }

@@ -1,6 +1,6 @@
 package com.Wavey.WaveyService.domain.user.dto;
 
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 
 public record UserResponse(Long id, String name, String email, String provider, Role role, String profileImageUrl) {

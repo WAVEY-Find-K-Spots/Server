@@ -1,5 +1,7 @@
 package com.Wavey.WaveyService.domain.user.entity;
 
+import com.Wavey.WaveyService.domain.user.enums.CountryCode;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +23,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "provider_id", nullable = false)
+    @Column(nullable = false)
     private String providerId;
 
     @Column(nullable = false)
@@ -31,7 +33,7 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private String provider; // "google", "apple", "kakao"
+    private String provider; // "google", "kakao"
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,9 +42,12 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    public void updateProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private CountryCode countryCode;
+
+    @Column(length = 500)
+    private String refreshToken;
 
     public User update(String name, String email) {
         if (name != null && !name.isEmpty()) {
@@ -56,6 +61,15 @@ public class User {
 
     public void updateRole(Role role) {
         this.role = role;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updateCountryCode(CountryCode countryCode) { this.countryCode = countryCode; }
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
 }

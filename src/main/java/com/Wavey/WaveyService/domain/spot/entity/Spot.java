@@ -108,6 +108,11 @@ public class Spot extends BaseEntity {
         this.imageUrl = imageUrl;
     }
 
+    public void updateRating(Double average, long count) {
+        this.avgRating = average == null ? 0.0 : average;
+        this.reviewCount = count;
+    }
+
     public boolean updateFromExternal(
             Long regionId,
             String nameKo,

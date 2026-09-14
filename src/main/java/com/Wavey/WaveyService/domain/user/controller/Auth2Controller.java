@@ -5,7 +5,7 @@ import com.Wavey.WaveyService.domain.user.dto.PhotoConfirmRequest;
 import com.Wavey.WaveyService.domain.user.dto.RefreshTokenRequest;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.service.CustomOAuth2UserService;
 import com.Wavey.WaveyService.global.response.CommonResponse;

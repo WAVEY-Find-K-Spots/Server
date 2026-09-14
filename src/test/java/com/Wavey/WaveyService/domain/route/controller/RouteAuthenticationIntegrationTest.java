@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.Wavey.WaveyService.domain.user.entity.Role;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
