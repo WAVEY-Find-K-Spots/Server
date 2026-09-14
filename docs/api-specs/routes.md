@@ -386,7 +386,7 @@
 저장된 루트의 스팟 순서를 기준으로 이동수단별 경로(총 거리·시간, 구간별 소요시간, 폴리라인)를 계산합니다.
 
 - 인접 스팟 쌍마다 Tmap 길찾기를 호출해 조립 (N개 스팟 → N-1 구간)
-- `routeId + transportMode + 스팟구성 해시` 기준 **인메모리 캐시** (기본 300s TTL, `tmap.directions-cache-ttl-seconds`)
+- `routeId + transportMode + 스팟구성 해시` 기준 **Caffeine 인메모리 캐시** (기본 300s TTL, `tmap.directions-cache-ttl-seconds`, 최대 1000 엔트리)
 - `PRIVATE` 루트는 본인만, 타인은 `403 ROUTE_FORBIDDEN`
 - 스팟 2개 미만이면 `400 DIRECTIONS_NOT_ENOUGH_SPOTS`
 - Tmap 호출 실패 / `TMAP_APP_KEY` 미설정 시 `502 DIRECTIONS_PROVIDER_ERROR`
@@ -582,4 +582,3 @@
 - [x] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
 - [ ] 루트 공유 정책 확정 (공개 전환 후 링크 vs 별도 공유 토큰)
-- [ ] Directions 캐시 — 규모에 따라 Caffeine / `@Cacheable` 전환 검토
