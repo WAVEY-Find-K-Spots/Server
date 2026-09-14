@@ -498,7 +498,7 @@
 | 1 | 탭 진입 시 루트 상세 불러오기 | `GET /api/v1/routes/{routeId}` (2.3) |
 | 2 | 내 루트 목록에서 선택 | `GET /api/v1/routes` (2.1) |
 | 3 | 빈 상태에서 새 루트 만들기 | `POST /api/v1/routes` (2.4, `spots` 생략) |
-| 4 | 스팟 추가 시트 — 후보 목록 | `GET /api/v1/spots` (`category`, `regionId` 필터) |
+| 4 | 스팟 추가 시트 — 후보 목록 | `GET /api/v1/spots` (`category`, `regionId`, `excludeRouteId` 필터) |
 | 5 | 루트에 스팟 추가 | `POST /api/v1/routes/{routeId}/spots` (3.1) |
 | 6 | 스팟 개별 삭제 | `DELETE /api/v1/routes/{routeId}/spots/{routeSpotId}` (3.3) |
 | 7 | 드래그 순서 변경 / 출발·도착 바꾸기 | `PATCH /api/v1/routes/{routeId}/spots/reorder` (3.2) |
@@ -518,7 +518,7 @@
 | `travelData` 하드코딩("도보 42분" 등) | 4.1 `segments[].durationText` |
 | 요약 카드 `약 2시간 30분`, `12.4km` | 4.1 `total.durationText`, `total.distanceText` |
 | `RouteMap` 데코용 경로선 | 4.1 `geometry` (GeoJSON LineString) |
-| `SpotPicker` 후보 목록 | `GET /api/v1/spots` (+ `existingIds` 는 클라 필터) |
+| `SpotPicker` 후보 목록 | `GET /api/v1/spots?excludeRouteId={routeId}` — 이미 담긴 스팟은 서버에서 제외 |
 
 ---
 
@@ -581,6 +581,5 @@
 - [ ] 루트 상세 `spots[].kContentTitle` (content 도메인 대표 K-콘텐츠 연계)
 - [x] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
-- [ ] `GET /api/v1/spots` `excludeRouteId` 쿼리 파라미터
 - [ ] 루트 공유 정책 확정 (공개 전환 후 링크 vs 별도 공유 토큰)
 - [ ] Directions 캐시 — 규모에 따라 Caffeine / `@Cacheable` 전환 검토
