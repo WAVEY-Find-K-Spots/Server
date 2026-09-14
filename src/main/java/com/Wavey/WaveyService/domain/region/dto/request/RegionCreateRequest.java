@@ -1,31 +1,23 @@
 package com.Wavey.WaveyService.domain.region.dto.request;
 
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Schema(description = "지역 생성 요청")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegionCreateRequest {
+    @Schema(description = "지역 한글명", example = "서울", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "지역 한글명은 필수입니다.")
+    private String nameKo;
 
-    @NotBlank(message = "지역명은 필수입니다.")
-    private String name;
-
-    @NotBlank(message = "지역 코드는 필수입니다.")
-    private String code;
-
-    @DecimalMin(value = "-90.0", message = "위도는 -90 이상이어야 합니다.")
-    @DecimalMax(value = "90.0", message = "위도는 90 이하여야 합니다.")
-    private BigDecimal latitude;
-
-    @DecimalMin(value = "-180.0", message = "경도는 -180 이상이어야 합니다.")
-    @DecimalMax(value = "180.0", message = "경도는 180 이하여야 합니다.")
-    private BigDecimal longitude;
+    @Schema(description = "지역 영문명", example = "Seoul", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "지역 영문명은 필수입니다.")
+    private String nameEn;
 }

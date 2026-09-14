@@ -7,6 +7,7 @@ import com.Wavey.WaveyService.domain.docent.service.VisionService;
 import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
+import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +17,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,9 +64,8 @@ public class VisionController {
             @ApiResponse(responseCode = "429", description = "Google Vision API 할당량 초과"),
             @ApiResponse(responseCode = "500", description = "이미지 분석 실패")
     })
-    @PreAuthorize("permitAll()")
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<com.Wavey.WaveyService.global.response.ApiResponse<VisionAnalysisResponse>> analyze(
+    public ResponseEntity<CommonResponse<VisionAnalysisResponse>> analyze(
             @Parameter(hidden = true) @AuthenticationPrincipal User user,
             @Parameter(hidden = true) HttpServletRequest request,
             @RequestPart("file") MultipartFile file,
@@ -87,7 +86,7 @@ public class VisionController {
                 lat,
                 lng
         );
-        return ResponseEntity.ok(com.Wavey.WaveyService.global.response.ApiResponse.success("이미지 분석 성공", result));
+        return ResponseEntity.ok(CommonResponse.success("이미지 분석 성공", result));
     }
 
     private void validateFile(MultipartFile file) {

@@ -1,10 +1,18 @@
 package com.Wavey.WaveyService.domain.user.entity;
 
+import com.Wavey.WaveyService.domain.user.enums.CountryCode;
+import com.Wavey.WaveyService.domain.user.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_users_provider_provider_id",
+                columnNames = {"provider", "provider_id"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -15,7 +23,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String providerId;
 
     @Column(nullable = false)
@@ -25,11 +33,18 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private String provider; // "google", "apple"
+    private String provider; // "google", "kakao"
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private CountryCode countryCode;
 
     @Column(length = 500)
     private String refreshToken;
@@ -48,7 +63,13 @@ public class User {
         this.role = role;
     }
 
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updateCountryCode(CountryCode countryCode) { this.countryCode = countryCode; }
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
 }

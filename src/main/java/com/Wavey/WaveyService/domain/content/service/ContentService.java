@@ -4,7 +4,11 @@ import com.Wavey.WaveyService.domain.content.dto.ContentRequest;
 import com.Wavey.WaveyService.domain.content.dto.ContentResponse;
 import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.ContentCategory;
+import com.Wavey.WaveyService.domain.content.repository.ContentAlbumRepository;
 import com.Wavey.WaveyService.domain.content.repository.ContentRepository;
+import com.Wavey.WaveyService.domain.content.repository.ContentTrackRepository;
+import com.Wavey.WaveyService.domain.content.repository.ContentVideoRepository;
+import com.Wavey.WaveyService.domain.content.repository.SpotContentRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import java.util.List;
@@ -18,6 +22,10 @@ import org.springframework.util.StringUtils;
 public class ContentService {
 
     private final ContentRepository contentRepository;
+    private final ContentVideoRepository contentVideoRepository;
+    private final ContentAlbumRepository contentAlbumRepository;
+    private final ContentTrackRepository contentTrackRepository;
+    private final SpotContentRepository spotContentRepository;
 
     @Transactional
     public ContentResponse create(ContentRequest request) {
@@ -33,6 +41,31 @@ public class ContentService {
                 .build();
 
         return ContentResponse.from(contentRepository.save(content));
+    }
+
+    @Transactional
+    public ContentResponse update(Long contentId, ContentRequest request) {
+        Content content = getContent(contentId);
+        String title = request.getTitleKo().trim();
+        contentRepository.findByTitleKoAndCategory(title, request.getCategory())
+                .filter(existing -> !existing.getContentId().equals(contentId))
+                .ifPresent(existing -> {
+                    throw new CustomException(ErrorCode.WORK_ALREADY_EXISTS);
+                });
+
+        content.update(title, trimToNull(request.getTitleEn()), request.getCategory());
+        return ContentResponse.from(content);
+    }
+
+    @Transactional
+    public void delete(Long contentId) {
+        getContent(contentId);
+        // tracks → albums (FK), videos, spot links, then content
+        contentTrackRepository.deleteByContentId(contentId);
+        contentAlbumRepository.deleteByContentId(contentId);
+        contentVideoRepository.deleteByContentId(contentId);
+        spotContentRepository.deleteByContentId(contentId);
+        contentRepository.deleteById(contentId);
     }
 
     @Transactional(readOnly = true)

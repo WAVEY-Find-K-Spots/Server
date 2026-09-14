@@ -26,5 +26,8 @@ public class MediaCollectResponse {
     private List<ContentVideoResponse> videos;
 
     @Schema(nullable = true)
+    private List<ContentAlbumResponse> albums;
+
+    @Schema(nullable = true)
     private List<ContentTrackResponse> tracks;
 }

@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "content_tracks",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_work_tracks_work_spotify",
-                columnNames = {"content_id", "spotify_id"}
+                name = "uk_content_tracks_content_spotify_track",
+                columnNames = {"content_id", "spotify_track_id"}
         )
 )
 @AttributeOverride(name = "id", column = @Column(name = "content_track_id"))
@@ -30,23 +30,20 @@ public class ContentTrack extends BaseEntity {
     @Column(name = "content_id", nullable = false)
     private Long contentId;
 
-    @Column(name = "spotify_id", nullable = false, length = 64)
-    private String spotifyId;
+    @Column(name = "content_album_id")
+    private Long contentAlbumId;
+
+    @Column(name = "spotify_track_id", nullable = false, length = 64)
+    private String spotifyTrackId;
 
     @Column(nullable = false, length = 255)
-    private String name;
+    private String title;
 
     @Column(name = "artist_name", length = 255)
     private String artistName;
 
-    @Column(name = "album_name", length = 255)
-    private String albumName;
-
     @Column(name = "image_url", length = 500)
     private String imageUrl;
-
-    @Column(name = "preview_url", length = 1000)
-    private String previewUrl;
 
     @Column(name = "spotify_url", length = 500)
     private String spotifyUrl;
@@ -66,17 +63,17 @@ public class ContentTrack extends BaseEntity {
     }
 
     public void updateFetched(
-            String name,
+            Long contentAlbumId,
+            String title,
             String artistName,
             String imageUrl,
-            String previewUrl,
             String spotifyUrl,
             Long durationMs
     ) {
-        this.name = name;
+        this.contentAlbumId = contentAlbumId;
+        this.title = title;
         this.artistName = artistName;
         this.imageUrl = imageUrl;
-        this.previewUrl = previewUrl;
         this.spotifyUrl = spotifyUrl;
         this.durationMs = durationMs;
         this.fetchedAt = LocalDateTime.now();
@@ -84,9 +81,5 @@ public class ContentTrack extends BaseEntity {
 
     public void updateHidden(boolean hidden) {
         this.hidden = hidden;
-    }
-
-    public boolean isPreviewAvailable() {
-        return previewUrl != null && !previewUrl.isBlank();
     }
 }

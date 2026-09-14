@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 
+import com.Wavey.WaveyService.domain.route.dto.request.RouteSpotAddRequest;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteSpotOrderItem;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteSpotReorderRequest;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteSpotResponse;
@@ -53,6 +54,60 @@ class RouteSpotServiceTest {
                 .build();
         ReflectionTestUtils.setField(routeSpot, "id", id);
         return routeSpot;
+    }
+
+    @Test
+    void 스팟_추가시_삽입_위치_이후_스팟들의_순서가_밀린다() {
+        List<RouteSpot> existingSpots = List.of(
+                routeSpot(10L, 101L, 1),
+                routeSpot(11L, 102L, 2)
+        );
+        RouteSpotAddRequest request = new RouteSpotAddRequest(103L, 1);
+
+        given(routeService.findRouteById(routeId)).willReturn(route);
+        given(routeSpotRepository.existsByRouteIdAndSpotId(routeId, 103L)).willReturn(false);
+        given(routeSpotRepository.findByRouteIdOrderBySequenceOrderAsc(routeId)).willReturn(existingSpots);
+        given(routeSpotRepository.save(org.mockito.ArgumentMatchers.any(RouteSpot.class)))
+                .willAnswer(invocation -> {
+                    RouteSpot saved = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(saved, "id", 12L);
+                    return saved;
+                });
+
+        RouteSpotResponse result = routeSpotService.addSpot(routeId, request, ownerId);
+
+        assertThat(result.getSequenceOrder()).isEqualTo(1);
+        assertThat(existingSpots.get(0).getSequenceOrder()).isEqualTo(2);
+        assertThat(existingSpots.get(1).getSequenceOrder()).isEqualTo(3);
+    }
+
+    @Test
+    void 스팟_추가시_범위를_벗어난_순서는_마지막_위치로_보정된다() {
+        List<RouteSpot> existingSpots = List.of(routeSpot(10L, 101L, 1));
+        RouteSpotAddRequest request = new RouteSpotAddRequest(103L, 99);
+
+        given(routeService.findRouteById(routeId)).willReturn(route);
+        given(routeSpotRepository.existsByRouteIdAndSpotId(routeId, 103L)).willReturn(false);
+        given(routeSpotRepository.findByRouteIdOrderBySequenceOrderAsc(routeId)).willReturn(existingSpots);
+        given(routeSpotRepository.save(org.mockito.ArgumentMatchers.any(RouteSpot.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        RouteSpotResponse result = routeSpotService.addSpot(routeId, request, ownerId);
+
+        assertThat(result.getSequenceOrder()).isEqualTo(2);
+        assertThat(existingSpots.get(0).getSequenceOrder()).isEqualTo(1);
+    }
+
+    @Test
+    void 이미_추가된_스팟이면_예외가_발생한다() {
+        RouteSpotAddRequest request = new RouteSpotAddRequest(101L, 1);
+
+        given(routeService.findRouteById(routeId)).willReturn(route);
+        given(routeSpotRepository.existsByRouteIdAndSpotId(routeId, 101L)).willReturn(true);
+
+        assertThatThrownBy(() -> routeSpotService.addSpot(routeId, request, ownerId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROUTE_SPOT_ALREADY_EXISTS);
     }
 
     @Test

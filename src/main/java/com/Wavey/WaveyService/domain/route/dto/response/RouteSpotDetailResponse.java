@@ -47,12 +47,12 @@ public class RouteSpotDetailResponse {
                 .sequenceOrder(routeSpot.getSequenceOrder());
 
         if (spot != null) {
-            builder.name(spot.getName())
+            builder.name(spot.getNameKo())
                     .category(spot.getCategory())
-                    .address(spot.getAddress())
+                    .address(spot.getAddressKo())
                     .latitude(spot.getLatitude())
                     .longitude(spot.getLongitude())
-                    .thumbnailUrl(spot.getThumbnailUrl());
+                    .thumbnailUrl(spot.getImageUrl());
         }
 
         return builder.build();

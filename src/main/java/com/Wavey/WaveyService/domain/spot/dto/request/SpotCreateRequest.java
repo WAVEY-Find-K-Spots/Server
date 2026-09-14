@@ -1,57 +1,56 @@
 package com.Wavey.WaveyService.domain.spot.dto.request;
 
+import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
-import com.Wavey.WaveyService.domain.spot.enums.SpotSourceType;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class SpotCreateRequest {
+public record SpotCreateRequest(
 
-    @NotNull
-    private Long regionId;
+        @NotNull @Positive Long regionId,
 
-    @NotBlank
-    private String name;
+        @NotBlank @Size(max = 255) String nameKo,
 
-    @NotNull
-    private SpotCategory category;
+        @Size(max = 255) String nameEn,
 
-    private String address;
+        @NotNull SpotCategory category,
 
-    @NotNull
-    @DecimalMin(value = "-90.0")
-    @DecimalMax(value = "90.0")
-    private BigDecimal latitude;
+        @NotNull PlaceType placeType,
 
-    @NotNull
-    @DecimalMin(value = "-180.0")
-    @DecimalMax(value = "180.0")
-    private BigDecimal longitude;
+        String descriptionKo,
 
-    private String description;
+        String descriptionEn,
 
-    private String openingHours;
+        @Size(max = 500) String openingHours,
 
-    private String closedDays;
+        @Size(max = 100) String breakTime,
 
-    private String tel;
+        @Size(max = 255) String closedDaysKo,
 
-    private String thumbnailUrl;
+        @Size(max = 255) String closedDaysEn,
 
-    @NotNull
-    private SpotSourceType sourceType;
+        @Size(max = 50) String tel,
 
-    private String externalContentId;
-}
+        @NotBlank @Size(max = 500) String addressKo,
+
+        @Size(max = 500) String addressEn,
+
+        @Size(max = 500) String transportInfoKo,
+
+        @Size(max = 500) String transportInfoEn,
+
+        @NotNull @DecimalMin("33.0") @DecimalMax("38.7")
+        BigDecimal latitude,
+
+        @NotNull @DecimalMin("124.5") @DecimalMax("132.0")
+        BigDecimal longitude,
+
+        @Size(max = 500) String imageUrl
+) {}

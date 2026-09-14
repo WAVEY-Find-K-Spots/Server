@@ -61,8 +61,8 @@
 
 로그인 사용자 본인의 루트 목록을 반환합니다.
 
-- 쿼리 파라미터: `visibility` (`PUBLIC` / `PRIVATE`, 선택 — 미입력 시 전체)
-- **페이징 없음** (`data` 가 곧 배열)
+- 쿼리 파라미터: `visibility` (`PUBLIC` / `PRIVATE`, 선택 — 미입력 시 전체), `page`(기본 0), `size`(기본 20)
+- 응답 `data` 는 Spring `Page` 직렬화 원형 (2.2 공개 루트 조회와 동일한 형태)
 
 요청 헤더: `Authorization: Bearer {accessToken}`
 
@@ -72,19 +72,32 @@
 {
   "statusCode": 200,
   "message": "내 루트 목록 조회 성공",
-  "data": [
-    {
-      "routeId": 1,
-      "name": "경복궁 궁궐 투어",
-      "description": null,
-      "visibility": "PRIVATE",
-      "spotCount": 3,
-      "createdAt": "2025-04-01T10:00:00",
-      "updatedAt": "2025-04-10T15:30:00"
-    }
-  ]
+  "data": {
+    "content": [
+      {
+        "routeId": 1,
+        "name": "경복궁 궁궐 투어",
+        "description": null,
+        "visibility": "PRIVATE",
+        "spotCount": 3,
+        "createdAt": "2025-04-01T10:00:00",
+        "updatedAt": "2025-04-10T15:30:00"
+      }
+    ],
+    "pageable": { "pageNumber": 0, "pageSize": 20, "offset": 0, "paged": true, "unpaged": false },
+    "totalElements": 12,
+    "totalPages": 1,
+    "number": 0,
+    "size": 20,
+    "first": true,
+    "last": true,
+    "numberOfElements": 1,
+    "empty": false
+  }
 }
 ```
+
+> 클라이언트는 `data.content`, `data.totalElements`, `data.number` 사용.
 
 ---
 
@@ -92,8 +105,8 @@
 
 모든 사용자의 공개(`PUBLIC`) 루트를 조회합니다. **인증 없이 접근 가능** (#28).
 
-- 쿼리 파라미터: `page`(기본 0), `size`(기본 20)
-- `regionId` 필터는 **미구현** (10장)
+- 쿼리 파라미터: `page`(기본 0), `size`(기본 20), `regionId`(선택 — 해당 지역에 속한 스팟을 하나 이상 포함하는 루트만 조회)
+- `regionId` 에 해당하는 스팟이 하나도 없으면 빈 페이지 반환
 - 응답 `data` 는 Spring `Page` 직렬화 원형
 
 응답:
@@ -288,7 +301,8 @@
 ### 3.1 `POST /api/v1/routes/{routeId}/spots` — 스팟 추가
 
 - 같은 스팟이 이미 루트에 있으면 `409 ROUTE_SPOT_ALREADY_EXISTS`
-- 현재 구현은 전달된 `sequenceOrder` 를 그대로 저장하며 뒤 스팟을 자동으로 밀지 않음
+- 삽입 위치(`sequenceOrder`) 이후의 기존 스팟들은 순서가 자동으로 1씩 밀림
+- `sequenceOrder` 가 현재 스팟 개수+1 을 초과하면 마지막 위치로 보정됨
 
 요청 바디:
 
@@ -372,7 +386,7 @@
 저장된 루트의 스팟 순서를 기준으로 이동수단별 경로(총 거리·시간, 구간별 소요시간, 폴리라인)를 계산합니다.
 
 - 인접 스팟 쌍마다 Tmap 길찾기를 호출해 조립 (N개 스팟 → N-1 구간)
-- `routeId + transportMode + 스팟구성 해시` 기준 **인메모리 캐시** (기본 300s TTL, `tmap.directions-cache-ttl-seconds`)
+- `routeId + transportMode + 스팟구성 해시` 기준 **Caffeine 인메모리 캐시** (기본 300s TTL, `tmap.directions-cache-ttl-seconds`, 최대 1000 엔트리)
 - `PRIVATE` 루트는 본인만, 타인은 `403 ROUTE_FORBIDDEN`
 - 스팟 2개 미만이면 `400 DIRECTIONS_NOT_ENOUGH_SPOTS`
 - Tmap 호출 실패 / `TMAP_APP_KEY` 미설정 시 `502 DIRECTIONS_PROVIDER_ERROR`
@@ -452,7 +466,7 @@
 | 값 | 라벨 | 비고 |
 |----|------|------|
 | `WALK` | 도보 | |
-| `TRANSIT` | 대중교통 | **Tmap 대중교통 API 승인 대기 중** — 승인 전에는 502 |
+| `TRANSIT` | 대중교통 | Tmap 대중교통 API 승인 완료, 정상 동작 |
 | `CAR` | 자동차 | |
 
 클라이언트 `TransportMode`(`"walk" | "transit" | "car"`) ↔ 대문자 enum 매핑.
@@ -484,7 +498,7 @@
 | 1 | 탭 진입 시 루트 상세 불러오기 | `GET /api/v1/routes/{routeId}` (2.3) |
 | 2 | 내 루트 목록에서 선택 | `GET /api/v1/routes` (2.1) |
 | 3 | 빈 상태에서 새 루트 만들기 | `POST /api/v1/routes` (2.4, `spots` 생략) |
-| 4 | 스팟 추가 시트 — 후보 목록 | `GET /api/v1/spots` (`category`, `regionId` 필터) |
+| 4 | 스팟 추가 시트 — 후보 목록 | `GET /api/v1/spots` (`category`, `regionId`, `excludeRouteId` 필터) |
 | 5 | 루트에 스팟 추가 | `POST /api/v1/routes/{routeId}/spots` (3.1) |
 | 6 | 스팟 개별 삭제 | `DELETE /api/v1/routes/{routeId}/spots/{routeSpotId}` (3.3) |
 | 7 | 드래그 순서 변경 / 출발·도착 바꾸기 | `PATCH /api/v1/routes/{routeId}/spots/reorder` (3.2) |
@@ -504,7 +518,7 @@
 | `travelData` 하드코딩("도보 42분" 등) | 4.1 `segments[].durationText` |
 | 요약 카드 `약 2시간 30분`, `12.4km` | 4.1 `total.durationText`, `total.distanceText` |
 | `RouteMap` 데코용 경로선 | 4.1 `geometry` (GeoJSON LineString) |
-| `SpotPicker` 후보 목록 | `GET /api/v1/spots` (+ `existingIds` 는 클라 필터) |
+| `SpotPicker` 후보 목록 | `GET /api/v1/spots?excludeRouteId={routeId}` — 이미 담긴 스팟은 서버에서 제외 |
 
 ---
 
@@ -562,12 +576,8 @@
 
 ## 10. 미구현 / 후속 과제
 
-- [ ] `GET /api/v1/routes` 페이징 (현재 `List` 전체 반환)
-- [ ] `GET /api/v1/routes/public` `regionId` 지역 필터
+- [x] `GET /api/v1/routes` 페이징
 - [ ] 루트 상세 `spots[].kContentTitle` (content 도메인 대표 K-콘텐츠 연계)
-- [ ] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
-- [ ] `TRANSIT` — Tmap 대중교통 API 승인 후 활성화 (승인 시 AppKey 공유 여부 확인)
+- [x] `POST /api/v1/routes/{routeId}/spots` 삽입 시 이후 스팟 `sequenceOrder` 자동 재정렬
 - [ ] `POST /api/v1/routes/directions` — 저장 없이(빈 상태) 즉석 계산 버전
-- [ ] `GET /api/v1/spots` `excludeRouteId` 쿼리 파라미터
 - [ ] 루트 공유 정책 확정 (공개 전환 후 링크 vs 별도 공유 토큰)
-- [ ] Directions 캐시 — 규모에 따라 Caffeine / `@Cacheable` 전환 검토
