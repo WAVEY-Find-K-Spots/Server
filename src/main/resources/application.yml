@@ -141,6 +141,15 @@ tmap:
   app-key: ${TMAP_APP_KEY:}
   directions-cache-ttl-seconds: ${TMAP_DIRECTIONS_CACHE_TTL_SECONDS:300}
 
+storage:
+  endpoint: ${STORAGE_ENDPOINT:}
+  region: ${STORAGE_REGION:auto}
+  bucket: ${STORAGE_BUCKET:}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
+  public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+  presigned-url-ttl-seconds: ${STORAGE_PRESIGNED_TTL_SECONDS:600}
+
 spot:
   sync:
     scheduler:

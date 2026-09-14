@@ -43,6 +43,15 @@ tmap:
   app-key: test-tmap-app-key
   directions-cache-ttl-seconds: 300
 
+storage:
+  endpoint: https://test.storageapi.dev
+  region: auto
+  bucket: test-bucket
+  access-key: test-access-key
+  secret-key: test-secret-key
+  public-base-url: https://test.storageapi.dev/test-bucket
+  presigned-url-ttl-seconds: 600
+
 spot:
   sync:
     scheduler:
