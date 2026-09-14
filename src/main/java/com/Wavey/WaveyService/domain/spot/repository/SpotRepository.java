@@ -13,6 +13,9 @@ public interface SpotRepository
         extends JpaRepository<Spot, Long>,
         JpaSpecificationExecutor<Spot> {
 
+    @Query("select s.id from Spot s where s.regionId = :regionId")
+    List<Long> findIdsByRegionId(@Param("regionId") Long regionId);
+
     @Query(
             value = """
                     SELECT s.*
