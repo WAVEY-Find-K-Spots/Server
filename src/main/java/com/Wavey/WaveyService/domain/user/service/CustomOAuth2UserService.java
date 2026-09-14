@@ -83,17 +83,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     public TokenResponse exchangeLoginCode(String loginCode) {
-        Long userId = authTokenService.getLoginCodeUserId(loginCode);
-        IssuedTokenPair issuedTokenPair = createTokenPair(findEntityById(userId));
+        RedisAuthTokenService.LoginCodeInfo loginCodeInfo = authTokenService.getLoginCodeInfo(loginCode);
+        IssuedTokenPair issuedTokenPair = createTokenPair(findEntityById(loginCodeInfo.userId()));
         if (!authTokenService.exchangeLoginCode(
                 loginCode,
-                userId,
+                loginCodeInfo,
                 issuedTokenPair.response().refreshToken(),
                 issuedTokenPair.refreshTokenTtl()
         )) {
             throw new CustomException(ErrorCode.INVALID_LOGIN_CODE);
         }
-        return issuedTokenPair.response();
+        return issuedTokenPair.response().withNewUser(loginCodeInfo.isNewUser());
     }
 
     @Override
@@ -103,12 +103,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationId, oAuth2User.getAttributes());
 
+        boolean isNewUser = userRepository
+                .findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId())
+                .isEmpty();
         User user = saveOrUpdate(userInfo);
 
         Map<String, Object> customAttributes = new HashMap<>(oAuth2User.getAttributes());
         customAttributes.put("provider", registrationId);
         customAttributes.put("providerId", userInfo.getProviderId());
         customAttributes.put("role", user.getRole().getKey());
+        customAttributes.put("isNewUser", isNewUser);
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority(user.getRole().getKey())),
