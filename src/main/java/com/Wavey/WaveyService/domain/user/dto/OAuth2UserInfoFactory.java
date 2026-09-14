@@ -12,6 +12,8 @@ public class OAuth2UserInfoFactory {
             return new GoogleUserInfo(attributes);
         } else if (registrationId.equalsIgnoreCase("apple")) {
             return new AppleUserInfo(attributes);
+        } else if (registrationId.equalsIgnoreCase("kakao")) {
+            return new KakaoUserInfo(attributes);
         } else {
             throw new OAuth2AuthenticationException("지원하지 않는 공급자입니다: " + registrationId);
         }

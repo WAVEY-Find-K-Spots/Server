@@ -62,9 +62,10 @@ public class RouteController {
     })
     @GetMapping("/public")
     public ResponseEntity<CommonResponse<Page<RouteSummaryResponse>>> getPublicRoutes(
+            @Parameter(description = "지역 ID 필터") @RequestParam(required = false) Long regionId,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(success("공개 루트 조회 성공", routeService.getPublicRoutes(pageable)));
+        return ResponseEntity.ok(success("공개 루트 조회 성공", routeService.getPublicRoutes(pageable, regionId)));
     }
 
     @Operation(summary = "루트 상세 조회", description = "루트 상세 정보와 포함된 스팟 목록을 반환합니다. PRIVATE 루트는 본인만 조회할 수 있습니다.")

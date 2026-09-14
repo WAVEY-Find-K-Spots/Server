@@ -68,7 +68,18 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "해당 유저를 찾을 수 없습니다."),
     USER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "USER_403", "해당 유저 관련 권한이 없습니다."),
 
+    // UPLOAD
+    UPLOAD_INVALID_FILE_URL(HttpStatus.BAD_REQUEST, "UPLOAD_400_FILE_URL", "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C URL\uC774 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."),
+
+    // OAUTH2
+    OAUTH_INVALID_USER_INFO(HttpStatus.BAD_REQUEST, "OAUTH_400_USER_INFO", "소셜 로그인 사용자 정보를 확인할 수 없습니다."),
+    OAUTH_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "OAUTH_400_EMAIL_REQUIRED", "신규 가입을 위해 이메일 제공 동의가 필요합니다."),
+    OAUTH_PROFILE_REQUIRED(HttpStatus.BAD_REQUEST, "OAUTH_400_PROFILE_REQUIRED", "신규 가입을 위해 프로필 이름 제공 동의가 필요합니다."),
+
     // JWT
+    REVOKED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_403", "로그아웃되어 사용할 수 없는 토큰입니다."),
+    INVALID_LOGIN_CODE(HttpStatus.UNAUTHORIZED, "AUTH_401_LOGIN_CODE", "로그인 코드가 만료되었거나 이미 사용되었습니다."),
+    AUTH_STORAGE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AUTH_503_STORAGE", "인증 저장소에 일시적으로 연결할 수 없습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_401", "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN_402", "만료된 토큰입니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_403", "접근 권한이 부족합니다."),
