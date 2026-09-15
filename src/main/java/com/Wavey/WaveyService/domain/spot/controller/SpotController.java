@@ -8,7 +8,9 @@ import com.Wavey.WaveyService.domain.spot.dto.request.SpotUpdateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotNearbyResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotPageResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
+import com.Wavey.WaveyService.domain.spot.dto.response.SpotSaveResponse;
 import com.Wavey.WaveyService.domain.spot.service.SpotNearbyService;
+import com.Wavey.WaveyService.domain.spot.service.SpotSaveService;
 import com.Wavey.WaveyService.domain.spot.service.SpotSearchService;
 import com.Wavey.WaveyService.domain.spot.service.SpotService;
 import com.Wavey.WaveyService.domain.user.entity.User;
@@ -51,6 +53,7 @@ public class SpotController {
     private final SpotService spotService;
     private final SpotSearchService spotSearchService;
     private final SpotNearbyService spotNearbyService;
+    private final SpotSaveService spotSaveService;
 
     @Operation(
             summary = "장소 생성",
@@ -289,6 +292,44 @@ public class SpotController {
                         "장소 삭제 성공",
                         null
                 )
+        );
+    }
+
+    @Operation(
+            summary = "장소 찜(저장)",
+            description = "spotId에 해당하는 장소를 찜합니다. 이미 찜한 경우에도 saved=true로 멱등 반환합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "찜 성공(또는 이미 찜함)"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
+    })
+    @PostMapping("/{spotId}/save")
+    public ResponseEntity<CommonResponse<SpotSaveResponse>> saveSpot(
+            @Parameter(description = "장소 ID", example = "1") @PathVariable Long spotId,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(
+                success("장소 찜 성공", spotSaveService.save(spotId, user.getId()))
+        );
+    }
+
+    @Operation(
+            summary = "장소 찜 해제",
+            description = "spotId에 해당하는 장소의 찜을 해제합니다. 찜하지 않은 경우에도 saved=false로 멱등 반환합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "찜 해제 성공(또는 이미 해제됨)"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
+    })
+    @DeleteMapping("/{spotId}/save")
+    public ResponseEntity<CommonResponse<SpotSaveResponse>> unsaveSpot(
+            @Parameter(description = "장소 ID", example = "1") @PathVariable Long spotId,
+            @Parameter(hidden = true) @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(
+                success("장소 찜 해제 성공", spotSaveService.unsave(spotId, user.getId()))
         );
     }
 
