@@ -431,7 +431,8 @@
         "geometry": {
           "type": "LineString",
           "coordinates": [[126.977041, 37.579617], [126.980, 37.581], [126.983746, 37.582604]]
-        }
+        },
+        "transitLegs": []
       }
     ],
     "geometry": {
@@ -452,14 +453,44 @@
 | `segments[]` | array | i번째 스팟 → i+1번째 스팟 구간 | `NavOverlay`, 구간 뱃지 |
 | `segments[].durationText` | string | `"도보 42분"` / `"대중교통 15분"` / `"자동차 9분"` (이동수단 라벨 + N분) | `travelToNext(index)` 대체 |
 | `segments[].geometry` | GeoJSON `LineString` | 구간 폴리라인 (`[경도, 위도]`) | `RouteMap` 구간 강조 |
+| `segments[].transitLegs[]` | array | 대중교통(`TRANSIT`)일 때만 값이 있는 세부 구간(도보/버스/지하철) 목록. `WALK`/`CAR`는 빈 배열 | 노선 뱃지·환승 안내 |
 | `geometry` | GeoJSON `LineString` | 전체 경로 폴리라인 | `RouteMap` polyline |
 | `calculatedAt` | datetime | 계산 시각 | — |
+
+**`transitLegs[]` 원소 필드** (TRANSIT 전용)
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `mode` | string | 세부 구간 수단 (예: `WALK`, `BUS`, `SUBWAY`) |
+| `routeName` | string \| null | 노선명/버스 번호 (도보 구간은 `null`) |
+| `routeColor` | string \| null | 노선 색상(hex), 없을 수 있음 |
+| `startName` | string \| null | 출발 정류장/역 이름 |
+| `endName` | string \| null | 도착 정류장/역 이름 |
+| `distanceMeters` | number | 세부 구간 거리(m) |
+| `durationSeconds` | number | 세부 구간 소요시간(초) |
+
+TRANSIT 예시:
+
+```json
+{
+  "mode": "TRANSIT",
+  "segments": [
+    {
+      "transitLegs": [
+        { "mode": "WALK", "routeName": null, "routeColor": null, "startName": null, "endName": "강남역", "distanceMeters": 200, "durationSeconds": 180 },
+        { "mode": "BUS", "routeName": "150", "routeColor": "#3399FF", "startName": "강남역", "endName": "역삼역", "distanceMeters": 1200, "durationSeconds": 420 }
+      ]
+    }
+  ]
+}
+```
 
 **설계 메모**
 
 - 좌표 순서는 GeoJSON 규격대로 **`[경도, 위도]`**. 클라이언트에서 `[lat, lng]` 로 뒤집어 사용.
 - `WALK` → Tmap 보행자 경로안내(`/tmap/routes/pedestrian`), `CAR` → 자동차 경로안내(`/tmap/routes`), `TRANSIT` → 대중교통 경로안내(`/transit/routes`).
 - `durationText` 는 서버에서 이동수단 라벨까지 완성해 내려줌 → 클라이언트 분기 불필요.
+- 실시간 도착정보("몇 분 뒤 도착")는 여기 포함되지 않음 — 별도 이슈(#93)로 분리.
 
 ### 4.2 이동수단 Enum (`TransportMode`)
 
