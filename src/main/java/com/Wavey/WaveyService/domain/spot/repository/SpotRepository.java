@@ -1,6 +1,8 @@
 package com.Wavey.WaveyService.domain.spot.repository;
 
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
+import com.Wavey.WaveyService.domain.spot.enums.ExternalSource;
+import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 
 import jakarta.persistence.LockModeType;
 
@@ -18,6 +20,10 @@ import java.util.Optional;
 public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificationExecutor<Spot> {
 
     Page<Spot> findByRegionId(Long regionId, Pageable pageable);
+
+    Optional<Spot> findFirstByNameKoAndAddressKoAndCategory(String nameKo, String addressKo, SpotCategory category);
+
+    Optional<Spot> findByExternalSourceAndExternalId(ExternalSource externalSource, String externalId);
 
     @Query("select s.id from Spot s where s.regionId = :regionId")
     List<Long> findIdsByRegionId(@Param("regionId") Long regionId);
