@@ -59,9 +59,9 @@ class SpotSearchSpecificationTest {
                         .build());
 
         SpotSearchRequest request = new SpotSearchRequest(
-                null, null, null, null, null, null, null, null, null, null, route.getId());
+                null, null, null, null, null, null, null, null, null, null, route.getId(), null);
 
-        var spec = SpotSearchSpecification.from(request);
+        var spec = SpotSearchSpecification.from(request, null);
         CriteriaBuilder cb = testEntityManager.getEntityManager().getCriteriaBuilder();
         CriteriaQuery<Spot> cq = cb.createQuery(Spot.class);
         Root<Spot> root = cq.from(Spot.class);
