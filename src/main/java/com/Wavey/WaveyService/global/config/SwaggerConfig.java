@@ -24,6 +24,9 @@ import org.springframework.context.annotation.Configuration;
                 @Tag(name = "Route", description = "루트 관리 API"),
                 @Tag(name = "RouteSpot", description = "루트 스팟 관리 API"),
                 @Tag(name = "RouteDirections", description = "루트 경로 계산 API"),
+                @Tag(name = "Stamp", description = "스탬프 획득·스탬프북 조회 API"),
+                @Tag(name = "Badge", description = "배지 관리자 CRUD (집계형·세트형) 및 유저 배지 조회"),
+                @Tag(name = "Upload", description = "파일 업로드 공통 API"),
                 @Tag(name = "User Auth", description = "인증 및 회원 관리 API"),
                 @Tag(name = "Vision", description = "Google Cloud Vision 기반 이미지 분석 API")
         }
@@ -38,6 +41,9 @@ public class SwaggerConfig {
             "Route",
             "RouteSpot",
             "RouteDirections",
+            "Stamp",
+            "Badge",
+            "Upload",
             "User Auth",
             "Vision"
     );

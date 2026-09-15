@@ -2,8 +2,12 @@ package com.Wavey.WaveyService.domain.upload.controller;
 
 import com.Wavey.WaveyService.domain.upload.dto.PresignedUploadRequest;
 import com.Wavey.WaveyService.domain.upload.dto.PresignedUploadResponse;
+import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
 import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.enums.Role;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,12 +28,19 @@ public class UploadController {
 
     private final UploadService uploadService;
 
-    @Operation(summary = "업로드 URL 발급", description = "S3 호환 스토리지에 직접 업로드할 수 있는 Presigned URL을 발급합니다.")
+    @Operation(
+            summary = "업로드 URL 발급",
+            description =
+                    "S3 호환 스토리지 Presigned URL을 발급합니다. "
+                            + "category=BADGE는 관리자만 가능하며, 배지 생성/수정의 imageUrl에 fileUrl을 넣습니다.")
     @PostMapping("/presigned-url")
     public ResponseEntity<CommonResponse<PresignedUploadResponse>> createPresignedUrl(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody PresignedUploadRequest request
     ) {
+        if (request.category() == UploadCategory.BADGE && user.getRole() != Role.ADMIN) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
         return ResponseEntity.ok(CommonResponse.success(
                 "업로드 URL 발급 성공",
                 uploadService.createUploadUrl(request.category(), user.getId(), request.contentType())

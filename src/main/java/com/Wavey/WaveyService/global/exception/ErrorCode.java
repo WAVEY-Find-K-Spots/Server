@@ -15,6 +15,8 @@ public enum ErrorCode {
     COMMON_FILE_EMPTY(HttpStatus.BAD_REQUEST, "COMMON_FILE", "파일이 비어있거나 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
     EXTERNAL_API_DISABLED(HttpStatus.SERVICE_UNAVAILABLE, "EXTERNAL_API_DISABLED", "현재 DB 전용 모드입니다."),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "요청한 데이터를 찾을 수 없습니다."),
+    STAMP_TOO_FAR(HttpStatus.BAD_REQUEST, "STAMP_TOO_FAR", "스탬프 획득 가능 거리 밖입니다."),
 
     // ROUTE
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", "해당 루트를 찾을 수 없습니다."),
@@ -63,6 +65,11 @@ public enum ErrorCode {
     // REVIEW
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW404", "리뷰를 찾을 수 없습니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "REVIEW409", "이미 해당 장소에 리뷰를 작성했습니다."),
+
+    // BADGE
+    BADGE_NOT_FOUND(HttpStatus.NOT_FOUND, "BADGE_404", "해당 배지를 찾을 수 없습니다."),
+    BADGE_NOT_CLAIMABLE(
+            HttpStatus.BAD_REQUEST, "BADGE_400_NOT_CLAIMABLE", "아직 배지 수령 조건을 충족하지 않았습니다."),
 
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "해당 유저를 찾을 수 없습니다."),
