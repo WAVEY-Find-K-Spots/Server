@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.user.controller;
 
 import com.Wavey.WaveyService.domain.user.dto.LoginCodeExchangeRequest;
 import com.Wavey.WaveyService.domain.user.dto.PhotoConfirmRequest;
+import com.Wavey.WaveyService.domain.user.dto.UserProfileUpdateRequest;
 import com.Wavey.WaveyService.domain.user.dto.RefreshTokenRequest;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
@@ -83,6 +84,18 @@ public class Auth2Controller {
         return ResponseEntity.ok(CommonResponse.success(
                 "프로필 사진 반영 성공",
                 userService.confirmPhoto(user.getId(), request.photoUrl())
+        ));
+    }
+
+    @Operation(summary = "프로필 수정", description = "닉네임/국적/언어를 부분 수정합니다. 전달한 필드만 반영되며, email/name은 OAuth 값으로만 동기화되어 여기서 수정할 수 없습니다.")
+    @PatchMapping("/user")
+    public ResponseEntity<CommonResponse<UserResponse>> updateProfile(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody UserProfileUpdateRequest request
+    ) {
+        return ResponseEntity.ok(CommonResponse.success(
+                "프로필 수정 성공",
+                userService.updateProfile(user.getId(), request)
         ));
     }
 

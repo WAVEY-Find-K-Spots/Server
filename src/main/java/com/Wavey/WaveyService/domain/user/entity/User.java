@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.user.entity;
 
 import com.Wavey.WaveyService.domain.user.enums.CountryCode;
+import com.Wavey.WaveyService.domain.user.enums.Language;
 import com.Wavey.WaveyService.domain.user.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,6 +47,14 @@ public class User {
     @Column(length = 2)
     private CountryCode countryCode;
 
+    @Column(length = 50)
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(length = 10, nullable = false)
+    private Language language = Language.KO;
+
     @Column(length = 500)
     private String refreshToken;
 
@@ -68,6 +77,15 @@ public class User {
     }
 
     public void updateCountryCode(CountryCode countryCode) { this.countryCode = countryCode; }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void updateLanguage(Language language) {
+        this.language = language;
+    }
+
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
