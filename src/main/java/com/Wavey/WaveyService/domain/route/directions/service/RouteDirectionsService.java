@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.route.directions.service;
 
 import com.Wavey.WaveyService.domain.route.directions.client.RouteLeg;
 import com.Wavey.WaveyService.domain.route.directions.client.TmapDirectionsClient;
+import com.Wavey.WaveyService.domain.route.directions.client.TransitLegDetail;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteDirectionsRequest;
 import com.Wavey.WaveyService.domain.route.dto.response.GeoLineString;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteDirectionsResponse;
@@ -126,6 +127,7 @@ public class RouteDirectionsService {
                     .durationSeconds(leg.durationSeconds())
                     .durationText(durationText(mode, leg.durationSeconds()))
                     .geometry(GeoLineString.of(segmentPath))
+                    .transitLegs(toTransitLegs(leg))
                     .build());
         }
 
@@ -158,6 +160,24 @@ public class RouteDirectionsService {
         if (route.getVisibility() == Visibility.PRIVATE && !route.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.ROUTE_FORBIDDEN);
         }
+    }
+
+    private List<RouteDirectionsResponse.TransitLeg> toTransitLegs(RouteLeg leg) {
+        return leg.transitLegs().stream()
+                .map(this::toTransitLeg)
+                .toList();
+    }
+
+    private RouteDirectionsResponse.TransitLeg toTransitLeg(TransitLegDetail detail) {
+        return RouteDirectionsResponse.TransitLeg.builder()
+                .mode(detail.mode())
+                .routeName(detail.routeName())
+                .routeColor(detail.routeColor())
+                .startName(detail.startName())
+                .endName(detail.endName())
+                .distanceMeters(detail.distanceMeters())
+                .durationSeconds(detail.durationSeconds())
+                .build();
     }
 
     private List<List<Double>> toCoordinateList(RouteLeg leg) {
