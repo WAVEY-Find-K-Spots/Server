@@ -25,7 +25,7 @@ public record BadgeAdminResponse(
         @Schema(description = "생성 시각") LocalDateTime createdAt,
         @Schema(description = "수정 시각") LocalDateTime updatedAt) {
 
-    public static BadgeAdminResponse from(Badge badge, List<Long> spotIds) {
+    public static BadgeAdminResponse from(Badge badge, List<Long> spotIds, String resolvedImageUrl) {
         List<Long> ids = spotIds == null ? List.of() : List.copyOf(spotIds);
         return new BadgeAdminResponse(
                 badge.getId(),
@@ -33,7 +33,7 @@ public record BadgeAdminResponse(
                 badge.getNameEn(),
                 badge.getDescription(),
                 badge.getDescriptionEn(),
-                badge.getImageUrl(),
+                resolvedImageUrl,
                 badge.getRequiredStamps(),
                 badge.getRegionId(),
                 badge.getCategory(),
