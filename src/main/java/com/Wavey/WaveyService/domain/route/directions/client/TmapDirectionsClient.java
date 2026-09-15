@@ -152,17 +152,31 @@ public class TmapDirectionsClient {
         long durationSeconds = best.path("totalTime").asLong(0L);
 
         List<double[]> pathCoords = new ArrayList<>();
+        List<TransitLegDetail> transitLegs = new ArrayList<>();
         for (JsonNode leg : best.path("legs")) {
             String linestring = leg.path("passShape").path("linestring").asText("");
             if (StringUtils.hasText(linestring)) {
                 appendLinestring(pathCoords, linestring);
-                continue;
+            } else {
+                appendPoint(pathCoords, leg.path("start"));
+                appendPoint(pathCoords, leg.path("end"));
             }
-            appendPoint(pathCoords, leg.path("start"));
-            appendPoint(pathCoords, leg.path("end"));
+            transitLegs.add(toTransitLegDetail(leg));
         }
 
-        return new RouteLeg(distanceMeters, durationSeconds, pathCoords);
+        return new RouteLeg(distanceMeters, durationSeconds, pathCoords, transitLegs);
+    }
+
+    private TransitLegDetail toTransitLegDetail(JsonNode leg) {
+        return new TransitLegDetail(
+                leg.path("mode").asText(null),
+                leg.path("route").asText(null),
+                leg.path("routeColor").asText(null),
+                leg.path("start").path("name").asText(null),
+                leg.path("end").path("name").asText(null),
+                leg.path("distance").asLong(0L),
+                leg.path("sectionTime").asLong(0L)
+        );
     }
 
     private void appendLinestring(List<double[]> pathCoords, String linestring) {

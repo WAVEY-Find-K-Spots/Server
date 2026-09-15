@@ -79,5 +79,35 @@ public class RouteDirectionsResponse {
 
         @Schema(description = "구간 폴리라인")
         private GeoLineString geometry;
+
+        @Schema(description = "대중교통 세부 구간 목록 (TRANSIT일 때만 값이 있음, WALK/CAR는 빈 배열)")
+        private List<TransitLeg> transitLegs;
+    }
+
+    @Schema(description = "대중교통 세부 구간(도보/버스/지하철 등) 하나")
+    @Getter
+    @Builder
+    public static class TransitLeg {
+
+        @Schema(description = "구간 수단", example = "BUS")
+        private String mode;
+
+        @Schema(description = "노선명/버스 번호 (도보 구간 등에는 없을 수 있음)", example = "150")
+        private String routeName;
+
+        @Schema(description = "노선 색상 (hex, '#' 없이 옴, 없을 수 있음)", example = "0068B7")
+        private String routeColor;
+
+        @Schema(description = "출발 정류장/역 이름", example = "강남역")
+        private String startName;
+
+        @Schema(description = "도착 정류장/역 이름", example = "역삼역")
+        private String endName;
+
+        @Schema(description = "구간 거리(m)", example = "1200")
+        private long distanceMeters;
+
+        @Schema(description = "구간 소요시간(초)", example = "300")
+        private long durationSeconds;
     }
 }
