@@ -152,6 +152,9 @@ storage:
 
 spot:
   sync:
+    tour-api:
+      daily-call-limit: ${SPOT_SYNC_TOUR_API_DAILY_CALL_LIMIT:1000}
+      safety-reserve: ${SPOT_SYNC_TOUR_API_SAFETY_RESERVE:50}
     scheduler:
       enabled: ${SPOT_SYNC_SCHEDULER_ENABLED:false}
       media-location-cron: ${SPOT_SYNC_MEDIA_LOCATION_CRON:0 0 3 * * *}
