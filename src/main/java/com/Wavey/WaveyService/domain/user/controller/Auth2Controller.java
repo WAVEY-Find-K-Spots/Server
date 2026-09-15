@@ -72,7 +72,7 @@ public class Auth2Controller {
     @Operation(summary = "현재 로그인 유저 정보 조회")
     @GetMapping("/user")
     public ResponseEntity<CommonResponse<UserResponse>> getLoginUserInfo(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(CommonResponse.success("로그인 유저 정보 조회 성공", UserResponse.from(user)));
+        return ResponseEntity.ok(CommonResponse.success("로그인 유저 정보 조회 성공", userService.toResponse(user)));
     }
 
     @Operation(summary = "프로필 사진 반영", description = "업로드가 끝난 사진 URL을 프로필에 반영합니다. 업로드 URL은 POST /api/v1/uploads/presigned-url(category=PROFILE)로 발급받습니다.")

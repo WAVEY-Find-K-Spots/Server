@@ -161,7 +161,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public UserResponse findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        return UserResponse.from(user);
+        return toResponse(user);
+    }
+
+    public UserResponse toResponse(User user) {
+        return UserResponse.from(user, uploadService.resolveAccessUrl(user.getProfileImageUrl()));
     }
 
     public User findEntityById(Long id) {
@@ -185,7 +189,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         uploadService.validateOwnedUrl(UploadCategory.PROFILE, userId, photoUrl);
         User user = findEntityById(userId);
         user.updateProfileImageUrl(photoUrl);
-        return UserResponse.from(user);
+        return toResponse(user);
     }
 
     @Transactional
@@ -200,12 +204,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (request.language() != null) {
             user.updateLanguage(request.language());
         }
-        return UserResponse.from(user);
+        return toResponse(user);
     }
 
     public List<UserResponse> findAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserResponse::from)
+                .map(this::toResponse)
                 .toList();
     }
 

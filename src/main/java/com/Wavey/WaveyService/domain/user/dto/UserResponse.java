@@ -16,14 +16,14 @@ public record UserResponse(
         CountryCode countryCode,
         Language language
 ) {
-    public static UserResponse from(User user) {
+    public static UserResponse from(User user, String resolvedProfileImageUrl) {
         return new UserResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getProvider(),
                 user.getRole(),
-                user.getProfileImageUrl(),
+                resolvedProfileImageUrl,
                 user.getNickname(),
                 user.getCountryCode(),
                 user.getLanguage());

@@ -10,6 +10,7 @@ import com.Wavey.WaveyService.domain.stamp.repository.BadgeRepository;
 import com.Wavey.WaveyService.domain.stamp.repository.BadgeSpotRepository;
 import com.Wavey.WaveyService.domain.stamp.repository.UserBadgeRepository;
 import com.Wavey.WaveyService.domain.stamp.repository.UserStampRepository;
+import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.global.common.UiSupport;
 import com.Wavey.WaveyService.global.exception.CustomException;
@@ -44,6 +45,7 @@ public class UserBadgeService {
     private final UserStampRepository collected;
     private final UserRepository users;
     private final SpotRepository spots;
+    private final UploadService uploadService;
 
     @Schema(description = "배지 항목")
     public record BadgeItem(
@@ -171,7 +173,7 @@ public class UserBadgeService {
                 b.getId(),
                 UiSupport.localized(b.getName(), b.getNameEn(), lang),
                 UiSupport.localized(b.getDescription(), b.getDescriptionEn(), lang),
-                b.getImageUrl(),
+                uploadService.resolveAccessUrl(b.getImageUrl()),
                 b.getRequiredStamps(),
                 progress,
                 award == null ? null : award.getAcquiredAt());

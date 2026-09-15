@@ -149,6 +149,7 @@ storage:
   secret-key: ${STORAGE_SECRET_KEY:}
   public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
   presigned-url-ttl-seconds: ${STORAGE_PRESIGNED_TTL_SECONDS:600}
+  presigned-get-ttl-seconds: ${STORAGE_PRESIGNED_GET_TTL_SECONDS:3600}
 
 spot:
   sync:
