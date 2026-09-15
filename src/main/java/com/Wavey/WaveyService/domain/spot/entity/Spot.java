@@ -21,7 +21,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
-@Table
+@Table(name = "spots")
 @AttributeOverride(name = "id", column = @Column(name = "spot_id"))
 @Getter
 @Builder
