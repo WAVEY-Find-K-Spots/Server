@@ -60,20 +60,24 @@ public class BadgeAdminService {
                                 .build());
 
         replaceBadgeSpots(badge.getId(), spotIds);
-        return BadgeAdminResponse.from(badge, spotIds);
+        return toResponse(badge, spotIds);
     }
 
     public List<BadgeAdminResponse> list() {
         List<Badge> badges = badgeRepository.findAll();
         Map<Long, List<Long>> spotsByBadge = loadSpotIdsByBadge(badges);
         return badges.stream()
-                .map(b -> BadgeAdminResponse.from(b, spotsByBadge.getOrDefault(b.getId(), List.of())))
+                .map(b -> toResponse(b, spotsByBadge.getOrDefault(b.getId(), List.of())))
                 .toList();
     }
 
     public BadgeAdminResponse get(Long badgeId) {
         Badge badge = findBadge(badgeId);
-        return BadgeAdminResponse.from(badge, badgeSpotRepository.findSpotIdsByBadgeId(badgeId));
+        return toResponse(badge, badgeSpotRepository.findSpotIdsByBadgeId(badgeId));
+    }
+
+    private BadgeAdminResponse toResponse(Badge badge, List<Long> spotIds) {
+        return BadgeAdminResponse.from(badge, spotIds, uploadService.resolveAccessUrl(badge.getImageUrl()));
     }
 
     @Transactional
@@ -123,7 +127,7 @@ public class BadgeAdminService {
             }
         }
 
-        return BadgeAdminResponse.from(badge, spotIds);
+        return toResponse(badge, spotIds);
     }
 
     @Transactional
