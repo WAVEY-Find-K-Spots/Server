@@ -46,7 +46,9 @@ public record SpotSearchRequest(
         Integer page,
 
         @Positive
-        Long excludeRouteId
+        Long excludeRouteId,
+
+        Boolean savedOnly
 ) {
 
     public SpotSearchRequest {
