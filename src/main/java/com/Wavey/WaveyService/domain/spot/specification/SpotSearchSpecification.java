@@ -4,6 +4,7 @@ import com.Wavey.WaveyService.domain.content.entity.Content;
 import com.Wavey.WaveyService.domain.content.entity.SpotContent;
 import com.Wavey.WaveyService.domain.route.entity.RouteSpot;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotSearchRequest;
+import com.Wavey.WaveyService.domain.spot.entity.SavedSpot;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SortBy;
 import com.Wavey.WaveyService.domain.spot.support.SpotGeoSupport;
@@ -27,7 +28,8 @@ public final class SpotSearchSpecification {
     private SpotSearchSpecification() {}
 
     public static Specification<Spot> from(
-            SpotSearchRequest request
+            SpotSearchRequest request,
+            Long userId
     ) {
         return (root, query, cb) -> {
 
@@ -37,6 +39,15 @@ public final class SpotSearchSpecification {
             addRegion(
                     request,
                     root,
+                    cb,
+                    predicates
+            );
+
+            addSavedOnly(
+                    request,
+                    userId,
+                    root,
+                    query,
                     cb,
                     predicates
             );
@@ -264,6 +275,39 @@ public final class SpotSearchSpecification {
                         cb.exists(exists)
                 )
         );
+    }
+
+    private static void addSavedOnly(
+            SpotSearchRequest request,
+            Long userId,
+            Root<Spot> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb,
+            List<Predicate> predicates
+    ) {
+        if (!Boolean.TRUE.equals(request.savedOnly())) {
+            return;
+        }
+
+        if (userId == null) {
+            predicates.add(cb.disjunction());
+            return;
+        }
+
+        Subquery<Integer> exists =
+                query.subquery(Integer.class);
+
+        Root<SavedSpot> savedSpot =
+                exists.from(SavedSpot.class);
+
+        exists.select(cb.literal(1));
+
+        exists.where(
+                cb.equal(savedSpot.get("userId"), userId),
+                cb.equal(savedSpot.get("spotId"), root.get("id"))
+        );
+
+        predicates.add(cb.exists(exists));
     }
 
     private static void addExcludeRouteId(
