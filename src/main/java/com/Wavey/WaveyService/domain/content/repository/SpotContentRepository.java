@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SpotContentRepository extends JpaRepository<SpotContent, Long> {
     List<SpotContent> findBySpotIdOrderByIdAsc(Long spotId);
 
+    boolean existsBySpotIdAndContentId(Long spotId, Long contentId);
+
     void deleteByContentId(Long contentId);
 }
