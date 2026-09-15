@@ -6,6 +6,7 @@ import com.Wavey.WaveyService.domain.spot.dto.request.SpotCreateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.request.SpotUpdateRequest;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
+import com.Wavey.WaveyService.domain.spot.repository.SavedSpotRepository;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.domain.stamp.service.StampService;
 import com.Wavey.WaveyService.global.exception.CustomException;
@@ -25,6 +26,7 @@ import java.util.Locale;
 public class SpotServiceImpl implements SpotService {
 
     private final SpotRepository spotRepository;
+    private final SavedSpotRepository savedSpotRepository;
     private final RegionRepository regionRepository;
     private final SpotConverter spotConverter;
     private final StampService stampService;
@@ -57,7 +59,7 @@ public class SpotServiceImpl implements SpotService {
 
         return spotConverter.toResponse(
                 spot,
-                false,
+                userId != null && savedSpotRepository.existsByUserIdAndSpotId(userId, spotId),
                 currentLocale()
         );
     }

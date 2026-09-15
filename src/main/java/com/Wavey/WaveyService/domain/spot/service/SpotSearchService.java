@@ -6,6 +6,7 @@ import com.Wavey.WaveyService.domain.spot.dto.response.SpotListResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotPageResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SortBy;
+import com.Wavey.WaveyService.domain.spot.repository.SavedSpotRepository;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.domain.spot.specification.SpotSearchSpecification;
 import com.Wavey.WaveyService.domain.spot.support.SpotGeoSupport;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class SpotSearchService {
     private static final int PAGE_SIZE = 6;
 
     private final SpotRepository spotRepository;
+    private final SavedSpotRepository savedSpotRepository;
     private final SpotConverter spotConverter;
 
     public SpotPageResponse search(
@@ -43,7 +46,7 @@ public class SpotSearchService {
 
         Page<Spot> page =
                 spotRepository.findAll(
-                        SpotSearchSpecification.from(request),
+                        SpotSearchSpecification.from(request, userId),
                         PageRequest.of(
                                 request.page(),
                                 PAGE_SIZE,
@@ -146,6 +149,10 @@ public class SpotSearchService {
             Long userId,
             List<Spot> spots
     ) {
-        return Set.of();
+        if (userId == null || spots.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> spotIds = spots.stream().map(Spot::getSpotId).collect(Collectors.toSet());
+        return Set.copyOf(savedSpotRepository.findSpotIdsByUserIdAndSpotIdIn(userId, spotIds));
     }
 }
