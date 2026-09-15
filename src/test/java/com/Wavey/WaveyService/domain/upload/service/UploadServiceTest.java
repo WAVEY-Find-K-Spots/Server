@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +28,9 @@ class UploadServiceTest {
     @Mock
     private PresignedPutObjectRequest presignedPutObjectRequest;
 
+    @Mock
+    private PresignedGetObjectRequest presignedGetObjectRequest;
+
     private UploadService uploadService;
 
     @BeforeEach
@@ -35,6 +39,7 @@ class UploadServiceTest {
         ReflectionTestUtils.setField(uploadService, "bucket", "test-bucket");
         ReflectionTestUtils.setField(uploadService, "publicBaseUrl", "https://test.storageapi.dev/test-bucket");
         ReflectionTestUtils.setField(uploadService, "presignedUrlTtlSeconds", 600L);
+        ReflectionTestUtils.setField(uploadService, "presignedGetTtlSeconds", 3600L);
     }
 
     @Test
@@ -69,5 +74,28 @@ class UploadServiceTest {
     void 본인_소유_경로면_통과한다() {
         uploadService.validateOwnedUrl(UploadCategory.PROFILE, 1L,
                 "https://test.storageapi.dev/test-bucket/profile/1/abc.jpg");
+    }
+
+    @Test
+    void 버킷_소속_URL이면_presigned_GET으로_바꿔서_반환한다() throws Exception {
+        when(s3Presigner.presignGetObject(org.mockito.ArgumentMatchers.<java.util.function.Consumer<software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.Builder>>any()))
+                .thenReturn(presignedGetObjectRequest);
+        when(presignedGetObjectRequest.url())
+                .thenReturn(new URL("https://test.storageapi.dev/test-bucket/profile/1/abc.jpg?signed=get"));
+
+        String result = uploadService.resolveAccessUrl("https://test.storageapi.dev/test-bucket/profile/1/abc.jpg");
+
+        assertThat(result).contains("signed=get");
+    }
+
+    @Test
+    void 버킷_소속이_아닌_URL은_그대로_반환한다() {
+        String external = "https://cdn.example.com/some-image.png";
+        assertThat(uploadService.resolveAccessUrl(external)).isEqualTo(external);
+    }
+
+    @Test
+    void null_URL도_그대로_반환한다() {
+        assertThat(uploadService.resolveAccessUrl(null)).isNull();
     }
 }
