@@ -10,8 +10,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 @Service
@@ -28,6 +30,9 @@ public class UploadService {
 
     @Value("${storage.presigned-url-ttl-seconds}")
     private long presignedUrlTtlSeconds;
+
+    @Value("${storage.presigned-get-ttl-seconds}")
+    private long presignedGetTtlSeconds;
 
     public PresignedUploadResponse createUploadUrl(UploadCategory category, Long ownerId, String contentType) {
         String extension = category.extensionFor(contentType);
@@ -61,5 +66,28 @@ public class UploadService {
         if (!fileUrl.startsWith(expectedPrefix)) {
             throw new CustomException(ErrorCode.UPLOAD_INVALID_FILE_URL);
         }
+    }
+
+    /**
+     * 저장된 URL이 이 버킷(publicBaseUrl)에 속한 객체면, 매번 새로 서명한 presigned GET URL로 바꿔서 반환한다.
+     * 버킷은 private이라 고정된 공개 URL로는 접근할 수 없기 때문이다.
+     * 우리 버킷 소속이 아닌 URL(외부 CDN 등)은 그대로 반환한다. {@code null}도 그대로 반환.
+     */
+    public String resolveAccessUrl(String storedUrl) {
+        if (storedUrl == null || !storedUrl.startsWith(publicBaseUrl + "/")) {
+            return storedUrl;
+        }
+        String key = storedUrl.substring(publicBaseUrl.length() + 1);
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(builder -> builder
+                .signatureDuration(Duration.ofSeconds(presignedGetTtlSeconds))
+                .getObjectRequest(getObjectRequest));
+
+        return presigned.url().toString();
     }
 }
