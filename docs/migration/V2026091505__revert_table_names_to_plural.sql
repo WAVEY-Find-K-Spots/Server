@@ -1,25 +1,24 @@
 -- 테이블명 컨벤션을 복수형으로 통일 (regions/spots/reviews).
--- V2026091302, V2026091401에서 단수형으로 rename했던 것을 되돌린다.
--- 컬럼/인덱스/제약조건은 이미 해당 마이그레이션들에서 정리되었으므로 테이블명만 변경한다.
 --
--- ⚠️ Railway 대시보드 Query 탭은 한 번에 하나의 statement만 실행 가능하고
--- DO $$ ... $$ 같은 PL/pgSQL 익명 블록을 지원하지 않을 수 있으므로,
--- 아래 0단계로 먼저 현재 상태를 확인한 뒤, 해당하는 단계만 한 줄씩 실행할 것.
+-- 배경: Region(#47/PR#52), Spot(#48/PR#54), Review(#49/PR#56) 작업 중
+-- @Table(name = "...")이 제거되어 dev 자동배포 이후 앱이 단수형 테이블
+-- (region/spot/review)에 실데이터를 계속 쌓아왔다. 기존 복수형 테이블
+-- (regions/spots/reviews)은 그 이전 시점의 값버림(stale) 데이터다.
+--
+-- 2026-09-15 Railway 확인 결과:
+--   spot   15134 rows, 최신 2026-09-15  (실데이터) / spots   15134 rows, 최신 2026-09-04 (stale)
+--   review    10 rows, 최신 2026-09-14  (실데이터) / reviews    10 rows, 최신 2026-09-08 (stale)
+--   region    19 rows                   (실데이터) / regions    17 rows                  (stale)
+--
+-- ⚠️ Railway 대시보드 Query 탭은 한 번에 하나의 statement만 실행 가능하므로
+-- 아래 문장을 위에서부터 하나씩 순서대로 실행할 것 (DROP 먼저, RENAME은 그다음).
 
--- 0. 현재 상태 확인 (실행 결과에 따라 1~3단계 중 필요한 것만 실행)
-SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'public'
-  AND table_name IN ('spot', 'spots', 'review', 'reviews', 'region', 'regions');
+-- 1. 값버림 복수형 테이블 삭제
+DROP TABLE spots;
+DROP TABLE reviews;
+DROP TABLE regions;
 
--- 1. spot -> spots (결과에 'spots'가 없고 'spot'만 있을 때만 실행)
+-- 2. 실데이터가 있는 단수형 테이블을 복수형으로 rename
 ALTER TABLE spot RENAME TO spots;
-
--- 2. review -> reviews (결과에 'reviews'가 없고 'review'만 있을 때만 실행)
 ALTER TABLE review RENAME TO reviews;
-
--- 3. region 정리 (실제 데이터는 이미 regions에 있음)
--- 3-a. 'regions'와 'region'이 둘 다 있으면 빈 중복 테이블(region)만 삭제
-DROP TABLE region;
-
--- 3-b. 'regions'는 없고 'region'만 있는 경우에는 3-a 대신 아래를 실행
--- ALTER TABLE region RENAME TO regions;
+ALTER TABLE region RENAME TO regions;
