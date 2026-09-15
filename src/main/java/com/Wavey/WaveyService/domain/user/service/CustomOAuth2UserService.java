@@ -5,6 +5,7 @@ import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
+import com.Wavey.WaveyService.domain.user.dto.UserProfileUpdateRequest;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
@@ -184,6 +185,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         uploadService.validateOwnedUrl(UploadCategory.PROFILE, userId, photoUrl);
         User user = findEntityById(userId);
         user.updateProfileImageUrl(photoUrl);
+        return UserResponse.from(user);
+    }
+
+    @Transactional
+    public UserResponse updateProfile(Long userId, UserProfileUpdateRequest request) {
+        User user = findEntityById(userId);
+        if (request.nickname() != null) {
+            user.updateNickname(request.nickname());
+        }
+        if (request.countryCode() != null) {
+            user.updateCountryCode(request.countryCode());
+        }
+        if (request.language() != null) {
+            user.updateLanguage(request.language());
+        }
         return UserResponse.from(user);
     }
 
