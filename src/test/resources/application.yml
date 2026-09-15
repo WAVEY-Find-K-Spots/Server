@@ -51,6 +51,7 @@ storage:
   secret-key: test-secret-key
   public-base-url: https://test.storageapi.dev/test-bucket
   presigned-url-ttl-seconds: 600
+  presigned-get-ttl-seconds: 3600
 
 spot:
   sync:
