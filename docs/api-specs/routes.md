@@ -463,7 +463,7 @@
 |------|------|------|
 | `mode` | string | 세부 구간 수단 (예: `WALK`, `BUS`, `SUBWAY`) |
 | `routeName` | string \| null | 노선명/버스 번호 (도보 구간은 `null`) |
-| `routeColor` | string \| null | 노선 색상(hex), 없을 수 있음 |
+| `routeColor` | string \| null | 노선 색상(hex, `#` 없이 옴. 예: `0068B7`), 없을 수 있음 |
 | `startName` | string \| null | 출발 정류장/역 이름 |
 | `endName` | string \| null | 도착 정류장/역 이름 |
 | `distanceMeters` | number | 세부 구간 거리(m) |
@@ -478,7 +478,7 @@ TRANSIT 예시:
     {
       "transitLegs": [
         { "mode": "WALK", "routeName": null, "routeColor": null, "startName": null, "endName": "강남역", "distanceMeters": 200, "durationSeconds": 180 },
-        { "mode": "BUS", "routeName": "150", "routeColor": "#3399FF", "startName": "강남역", "endName": "역삼역", "distanceMeters": 1200, "durationSeconds": 420 }
+        { "mode": "BUS", "routeName": "간선:400", "routeColor": "0068B7", "startName": "강남역", "endName": "역삼역", "distanceMeters": 1200, "durationSeconds": 420 }
       ]
     }
   ]

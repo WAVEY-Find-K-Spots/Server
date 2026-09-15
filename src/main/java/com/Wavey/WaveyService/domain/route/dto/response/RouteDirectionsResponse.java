@@ -95,7 +95,7 @@ public class RouteDirectionsResponse {
         @Schema(description = "노선명/버스 번호 (도보 구간 등에는 없을 수 있음)", example = "150")
         private String routeName;
 
-        @Schema(description = "노선 색상 (hex, 없을 수 있음)", example = "#3399FF")
+        @Schema(description = "노선 색상 (hex, '#' 없이 옴, 없을 수 있음)", example = "0068B7")
         private String routeColor;
 
         @Schema(description = "출발 정류장/역 이름", example = "강남역")
