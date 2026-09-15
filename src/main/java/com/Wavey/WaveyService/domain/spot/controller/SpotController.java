@@ -55,7 +55,7 @@ public class SpotController {
     @Operation(
             summary = "장소 생성",
             description = "관리자가 장소 정보를 생성합니다. category, placeType은 Swagger에 표시된 enum 값만 사용할 수 있습니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -113,7 +113,7 @@ public class SpotController {
     @Operation(
             summary = "장소 목록 검색",
             description = "키워드, 지역, 카테고리, 장소 타입, 평점, 위치 반경, 정렬 조건으로 장소 목록을 검색합니다. 좌표 기반 검색은 latitude와 longitude를 함께 전달합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -144,7 +144,7 @@ public class SpotController {
     @Operation(
             summary = "장소 단건 조회",
             description = "spotId에 해당하는 장소 상세 정보를 조회합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -175,7 +175,7 @@ public class SpotController {
     @Operation(
             summary = "주변 장소 조회",
             description = "기준 장소와 지정한 반경 안에 있는 주변 장소를 조회합니다. radiusMeters는 1.0 이상 100000.0 이하입니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
@@ -207,7 +207,7 @@ public class SpotController {
     @Operation(
             summary = "장소 수정",
             description = "관리자가 spotId에 해당하는 장소 정보를 수정합니다. 요청한 필드만 수정합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -269,7 +269,7 @@ public class SpotController {
     @Operation(
             summary = "장소 삭제",
             description = "관리자가 spotId에 해당하는 장소를 삭제합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
             @ApiResponse(responseCode = "401", description = "인증 실패"),

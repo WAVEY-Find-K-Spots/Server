@@ -46,7 +46,7 @@ public class RegionController {
     @Operation(
             summary = "지역 생성",
             description = "관리자가 스팟에서 사용할 지역 정보를 생성합니다. 요청 필드는 nameKo, nameEn만 사용합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
                 responseCode = "201",
@@ -71,7 +71,7 @@ public class RegionController {
     @Operation(
             summary = "지역 단건 조회",
             description = "인증된 사용자가 regionId로 지역 1건을 조회합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -90,7 +90,7 @@ public class RegionController {
     @Operation(
             summary = "지역 목록 조회",
             description = "인증된 사용자가 등록된 전체 지역 목록을 조회합니다. 응답 필드는 nameKo, nameEn을 그대로 제공합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -107,7 +107,7 @@ public class RegionController {
     @Operation(
             summary = "지역 수정",
             description = "관리자가 regionId에 해당하는 지역 정보를 수정합니다. 요청 필드는 nameKo, nameEn만 사용합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -131,7 +131,7 @@ public class RegionController {
     @Operation(
             summary = "지역 삭제",
             description = "관리자가 regionId에 해당하는 지역을 삭제합니다.",
-            security = @SecurityRequirement(name = "JWT"))
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "삭제 성공"),
         @ApiResponse(responseCode = "401", description = "인증 실패"),

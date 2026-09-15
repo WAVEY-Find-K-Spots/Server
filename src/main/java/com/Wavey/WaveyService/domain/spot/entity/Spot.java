@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.spot.entity;
 
 import com.Wavey.WaveyService.domain.spot.enums.PlaceType;
+import com.Wavey.WaveyService.domain.spot.enums.ExternalSource;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.global.common.BaseEntity;
 
@@ -57,6 +58,9 @@ public class Spot extends BaseEntity {
     @Column(name = "longitude", nullable = false, precision = 11, scale = 8) private BigDecimal longitude;
 
     @Column(name = "image_url", length = 500) private String imageUrl;
+
+    @Enumerated(EnumType.STRING) @Column(name = "external_source", length = 30) private ExternalSource externalSource;
+    @Column(name = "external_id", length = 255) private String externalId;
 
     @Builder.Default @Column(name = "avg_rating", nullable = false) private Double avgRating = 0.0;
     @Builder.Default @Column(name = "review_count", nullable = false) private long reviewCount = 0L;
@@ -116,17 +120,25 @@ public class Spot extends BaseEntity {
     public boolean updateFromExternal(
             Long regionId,
             String nameKo,
+            String nameEn,
             String placeType,
             SpotCategory category,
             String addressKo,
+            String addressEn,
             BigDecimal latitude,
             BigDecimal longitude,
             String descriptionKo,
+            String descriptionEn,
             String openingHours,
             String breakTime,
             String closedDaysKo,
+            String closedDaysEn,
             String tel,
-            String imageUrl
+            String transportInfoKo,
+            String transportInfoEn,
+            String imageUrl,
+            ExternalSource externalSource,
+            String externalId
     ) {
         boolean changed = false;
 
@@ -135,8 +147,13 @@ public class Spot extends BaseEntity {
             changed = true;
         }
 
-        if (!Objects.equals(this.nameKo, nameKo)) {
+        if (hasText(nameKo) && !Objects.equals(this.nameKo, nameKo)) {
             this.nameKo = nameKo;
+            changed = true;
+        }
+
+        if (hasText(nameEn) && !Objects.equals(this.nameEn, nameEn)) {
+            this.nameEn = nameEn;
             changed = true;
         }
 
@@ -151,48 +168,83 @@ public class Spot extends BaseEntity {
             changed = true;
         }
 
-        if (!Objects.equals(this.addressKo, addressKo)) {
+        if (hasText(addressKo) && !Objects.equals(this.addressKo, addressKo)) {
             this.addressKo = addressKo;
             changed = true;
         }
 
-        if (isDifferentDecimal(this.latitude, latitude)) {
+        if (hasText(addressEn) && !Objects.equals(this.addressEn, addressEn)) {
+            this.addressEn = addressEn;
+            changed = true;
+        }
+
+        if (latitude != null && isDifferentDecimal(this.latitude, latitude)) {
             this.latitude = latitude;
             changed = true;
         }
 
-        if (isDifferentDecimal(this.longitude, longitude)) {
+        if (longitude != null && isDifferentDecimal(this.longitude, longitude)) {
             this.longitude = longitude;
             changed = true;
         }
 
-        if (!Objects.equals(this.descriptionKo, descriptionKo)) {
+        if (hasText(descriptionKo) && !Objects.equals(this.descriptionKo, descriptionKo)) {
             this.descriptionKo = descriptionKo;
             changed = true;
         }
 
-        if (!Objects.equals(this.openingHours, openingHours)) {
+        if (hasText(descriptionEn) && !Objects.equals(this.descriptionEn, descriptionEn)) {
+            this.descriptionEn = descriptionEn;
+            changed = true;
+        }
+
+        if (hasText(openingHours) && !Objects.equals(this.openingHours, openingHours)) {
             this.openingHours = openingHours;
             changed = true;
         }
 
-        if (!Objects.equals(this.breakTime, breakTime)) {
+        if (hasText(breakTime) && !Objects.equals(this.breakTime, breakTime)) {
             this.breakTime = breakTime;
             changed = true;
         }
 
-        if (!Objects.equals(this.closedDaysKo, closedDaysKo)) {
+        if (hasText(closedDaysKo) && !Objects.equals(this.closedDaysKo, closedDaysKo)) {
             this.closedDaysKo = closedDaysKo;
             changed = true;
         }
 
-        if (!Objects.equals(this.tel, tel)) {
+        if (hasText(closedDaysEn) && !Objects.equals(this.closedDaysEn, closedDaysEn)) {
+            this.closedDaysEn = closedDaysEn;
+            changed = true;
+        }
+
+        if (hasText(tel) && !Objects.equals(this.tel, tel)) {
             this.tel = tel;
             changed = true;
         }
 
-        if (imageUrl != null && !Objects.equals(this.imageUrl, imageUrl)) {
+        if (hasText(transportInfoKo) && !Objects.equals(this.transportInfoKo, transportInfoKo)) {
+            this.transportInfoKo = transportInfoKo;
+            changed = true;
+        }
+
+        if (hasText(transportInfoEn) && !Objects.equals(this.transportInfoEn, transportInfoEn)) {
+            this.transportInfoEn = transportInfoEn;
+            changed = true;
+        }
+
+        if (hasText(imageUrl) && !Objects.equals(this.imageUrl, imageUrl)) {
             this.imageUrl = imageUrl;
+            changed = true;
+        }
+
+        if (this.externalSource == null && externalSource != null) {
+            this.externalSource = externalSource;
+            changed = true;
+        }
+
+        if (this.externalId == null && hasText(externalId)) {
+            this.externalId = externalId;
             changed = true;
         }
 
@@ -218,5 +270,9 @@ public class Spot extends BaseEntity {
         }
 
         return current.compareTo(next) != 0;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }
