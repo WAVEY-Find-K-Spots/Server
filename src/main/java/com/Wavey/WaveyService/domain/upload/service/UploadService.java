@@ -10,6 +10,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -21,6 +23,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 public class UploadService {
 
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
 
     @Value("${storage.bucket}")
     private String bucket;
@@ -89,5 +92,28 @@ public class UploadService {
                 .getObjectRequest(getObjectRequest));
 
         return presigned.url().toString();
+    }
+
+    /**
+     * 클라이언트 presigned PUT 없이, 서버가 직접 바이트를 우리 버킷에 올린다.
+     * 외부 API(Google Places 등)에서 받아온 이미지를 재호스팅할 때 사용한다.
+     */
+    public String uploadServerSide(UploadCategory category, Long ownerId, byte[] bytes, String contentType) {
+        String extension = category.extensionFor(contentType);
+        if (extension == null) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_FILE_TYPE);
+        }
+
+        String key = "%s/%d/%s.%s".formatted(category.keyPrefix(), ownerId, UUID.randomUUID(), extension);
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType(contentType)
+                        .build(),
+                RequestBody.fromBytes(bytes));
+
+        return publicBaseUrl + "/" + key;
     }
 }

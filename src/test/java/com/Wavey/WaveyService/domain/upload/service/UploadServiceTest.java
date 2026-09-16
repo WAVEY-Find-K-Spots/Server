@@ -26,6 +26,9 @@ class UploadServiceTest {
     private S3Presigner s3Presigner;
 
     @Mock
+    private software.amazon.awssdk.services.s3.S3Client s3Client;
+
+    @Mock
     private PresignedPutObjectRequest presignedPutObjectRequest;
 
     @Mock
@@ -35,7 +38,7 @@ class UploadServiceTest {
 
     @BeforeEach
     void setUp() {
-        uploadService = new UploadService(s3Presigner);
+        uploadService = new UploadService(s3Presigner, s3Client);
         ReflectionTestUtils.setField(uploadService, "bucket", "test-bucket");
         ReflectionTestUtils.setField(uploadService, "publicBaseUrl", "https://test.storageapi.dev/test-bucket");
         ReflectionTestUtils.setField(uploadService, "presignedUrlTtlSeconds", 600L);
