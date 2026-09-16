@@ -27,9 +27,9 @@ public final class UiSupport {
         if ("en".equals(language)) return categoryCode(c);
         return switch (c) {
             case K_DRAMA -> "드라마";
-            case K_POP -> "아이돌";
+            case K_POP -> "연예인";
             case K_MOVIE -> "영화";
-            case K_HERITAGE -> "관광지";
+            case K_HERITAGE -> "문화재";
         };
     }
 
