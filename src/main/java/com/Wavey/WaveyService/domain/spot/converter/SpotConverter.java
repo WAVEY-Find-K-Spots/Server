@@ -7,6 +7,7 @@ import com.Wavey.WaveyService.domain.spot.dto.response.SpotNearbyResponse;
 import com.Wavey.WaveyService.domain.spot.dto.response.SpotResponse;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.service.SpotLocalizationService;
+import com.Wavey.WaveyService.domain.upload.service.UploadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +20,7 @@ import java.util.Locale;
 public class SpotConverter {
 
     private final SpotLocalizationService localizationService;
+    private final UploadService uploadService;
 
     public Spot toEntity(SpotCreateRequest request) {
         return Spot.builder()
@@ -148,7 +150,7 @@ public class SpotConverter {
                 ),
 
                 spot.getCategory(),
-                spot.getImageUrl(),
+                uploadService.resolveAccessUrl(spot.getImageUrl()),
                 spot.getAvgRating(),
                 spot.getReviewCount(),
                 saved,
@@ -201,7 +203,7 @@ public class SpotConverter {
                 ),
 
                 spot.getCategory(),
-                spot.getImageUrl(),
+                uploadService.resolveAccessUrl(spot.getImageUrl()),
                 spot.getAvgRating(),
                 spot.getReviewCount(),
                 saved,
@@ -235,7 +237,7 @@ public class SpotConverter {
                         locale
                 ),
 
-                spot.getImageUrl(),
+                uploadService.resolveAccessUrl(spot.getImageUrl()),
                 spot.getAvgRating(),
                 distanceMeters
         );
