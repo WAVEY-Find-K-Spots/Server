@@ -154,6 +154,7 @@ Content-Type: application/json
 |---|---|---|---|
 | GET | `/api/v1/auth/login-urls` | 소셜 로그인 URL 목록 | 비인증 |
 | POST | `/api/v1/auth/exchange` | 로그인 코드 교환 → 토큰 발급 | 비인증 |
+| GET | `/oauth2/authorization/{provider}?platform=app` | 네이티브 앱용 로그인 시작 (딥링크 콜백) | 비인증 |
 | POST | `/api/v1/auth/refresh` | 액세스 토큰 갱신 | 비인증(리프레시 토큰 필요) |
 | GET | `/api/v1/auth/{id}` | 특정 유저 조회 | 본인 또는 ADMIN |
 | PATCH | `/api/v1/auth/role/{id}?role={ROLE}` | 유저 role 변경 | ADMIN |
@@ -174,6 +175,19 @@ Content-Type: application/json
 | `UPLOAD_INVALID_FILE_URL` | 400 | 프로필 사진 URL이 본인 업로드 경로가 아님 (사진 확정 시) |
 
 > 참고: 과거 `USER_INVALID_PHOTO_URL`은 리팩터링으로 범용 `UPLOAD_INVALID_FILE_URL`로 대체되어 더 이상 존재하지 않습니다.
+
+---
+
+## 6-1. 네이티브 앱(Capacitor) 로그인 플로우 (#122)
+
+인앱 웹뷰에서는 구글이 로그인을 차단하므로, 앱은 시스템 브라우저(`@capacitor/browser` 등)로 로그인을 열고 딥링크로 콜백을 받아야 한다.
+
+1. 앱이 `GET /api/v1/auth/login-urls`로 받은 URL 뒤에 `?platform=app`을 붙여 시스템 브라우저로 오픈
+   - 예: `{serverUrl}/oauth2/authorization/google?platform=app`
+2. 로그인 완료 후 서버가 `wavey://oauth/callback?code={loginCode}` (실패 시 `?error={code}`)로 리다이렉트
+3. 앱이 해당 딥링크 스킴을 수신하여 `code`를 `POST /api/v1/auth/exchange`로 교환
+
+`platform=app` 파라미터가 없으면 기존과 동일하게 `auth.frontend-redirect-uri`(웹 프론트)로 리다이렉트된다. 리다이렉트 목적지는 서버에 미리 등록된 두 값(`auth.frontend-redirect-uri` / `auth.app-redirect-uri`) 중 하나로만 고정되어 오픈 리다이렉트 위험이 없다.
 
 ---
 
