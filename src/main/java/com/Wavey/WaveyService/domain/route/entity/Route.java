@@ -48,8 +48,14 @@ public class Route extends BaseEntity {
     private List<RouteSpot> routeSpots = new ArrayList<>();
 
     public void update(String name, String description, Visibility visibility) {
-        this.name = name;
-        this.description = description;
-        this.visibility = visibility;
+        if (name != null) {
+            this.name = name;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+        if (visibility != null) {
+            this.visibility = visibility;
+        }
     }
 }
