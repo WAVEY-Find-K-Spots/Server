@@ -13,6 +13,11 @@ public enum UploadCategory {
             "image/jpeg", "jpg",
             "image/png", "png",
             "image/webp", "webp"
+    )),
+    SPOT("spot", Map.of(
+            "image/jpeg", "jpg",
+            "image/png", "png",
+            "image/webp", "webp"
     ));
 
     private final String keyPrefix;
