@@ -69,7 +69,7 @@
 | `minRating` | number | 0.0~5.0 | 최소 평점 |
 | `latitude`, `longitude` | number | 좌표 범위 동일 | 좌표 기반(반경) 검색용 |
 | `radiusMeters` | number | 1.0~100000.0 | 반경(m) |
-| `sort` | `SortBy` | 기본값 `POPULAR` | 정렬 기준 |
+| `sort` | `SortBy` | 기본값 `POPULAR` | 정렬 기준. **어떤 값을 골라도 이미지 있는 스팟이 항상 먼저 나오고, 그 안에서 선택한 기준으로 정렬됨**(#116) |
 | `page` | number | `@Min(0)`, 기본값 `0` | 페이지 번호 |
 | `excludeRouteId` | number | `@Positive` | 특정 루트에 이미 포함된 스팟 제외 (루트 편집 시 "스팟 추가" 피커에서 사용) |
 | `savedOnly` | boolean | | `true`면 로그인 유저가 찜한 스팟만 반환 (마이페이지 "저장한 스팟" 목록용). 비로그인 상태로 `true` 주면 빈 목록. |
