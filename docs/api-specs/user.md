@@ -189,6 +189,8 @@ Content-Type: application/json
 
 `platform=app` 파라미터가 없으면 기존과 동일하게 `auth.frontend-redirect-uri`(웹 프론트)로 리다이렉트된다. 리다이렉트 목적지는 서버에 미리 등록된 두 값(`auth.frontend-redirect-uri` / `auth.app-redirect-uri`) 중 하나로만 고정되어 오픈 리다이렉트 위험이 없다.
 
+> **구현 참고 (#124)**: 힌트는 세션이 아닌 OAuth2 `state` 값에 인코딩된다(`AppAwareOAuth2AuthorizationRequestResolver`). 최초에는 세션에 저장하는 방식으로 구현했으나(`OAuth2PlatformHintFilter`), `SessionCreationPolicy.STATELESS` 환경에서 세션이 콜백까지 유지되지 않아 항상 웹 리다이렉트로 폴백되는 문제가 있어 `state` 기반 방식으로 교체했다. `state`는 세션 저장소 구현체와 무관하게 인가 요청-콜백 간 항상 왕복이 보장되는 값이다.
+
 ---
 
 ## 7. 미구현 / 후속 과제
