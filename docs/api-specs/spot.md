@@ -158,36 +158,13 @@
 
 ---
 
-## 8. 스팟 이미지 백필 (관리자, `/api/v1/spots/sync`)
+## 8. 스팟 이미지 백필 (관리자)
 
-`imageUrl`이 비어있는 스팟에 사진을 채우는 관리자 도구. 두 소스를 순서대로 씀:
+`imageUrl`이 비어있는 스팟에 사진을 채우는 작업.
 
-1. 관광공사 관광사진 갤러리(`galleryList1`) — 무료, 이름 정확 일치 기준 일회성 백필(SQL로 직접 실행, `docs/migration/V2026091601__*`, `V2026091602__*` 참고)
-2. **Google Places API(New)** — 그래도 안 채워진 스팟 대상. 월별 무료 제공량(Photo 1,000장/월, Text Search 5,000건/월)을 넘지 않도록 자동 제한.
-
-```
-POST /api/v1/spots/sync/google-places/enrich-images?limit=50
-Authorization: Bearer {accessToken}  (ADMIN)
-```
-
-- `limit`: 이번 호출에서 처리할 최대 스팟 수 (기본 50). 남은 월 예산보다 크게 줘도 예산만큼만 처리됨.
-- 장소명(`nameKo`) + 주소(`addressKo`)로 Google Places Text Search → 대표 사진 1장 다운로드 → 우리 S3 버킷에 재업로드(구글 API 키가 공개 URL에 노출되지 않도록) → `imageUrl` 갱신.
-- 무료 제공량은 **월 단위 리셋**(매월 1일 태평양시간 자정) — 하루 단위 아님.
-
-응답 (`SpotPlacesEnrichResponse`):
-
-```ts
-{
-  requested: number        // 이번에 시도한 스팟 수
-  filled: number           // 실제로 imageUrl 채운 수
-  skipped: number          // 검색 결과/사진 없음으로 건너뜀
-  budgetBefore: number     // 호출 전 남은 이번 달 Photo 예산
-  budgetAfter: number      // 호출 후 남은 예산
-  stoppedByBudget: boolean // 예산 소진으로 중단됐는지
-}
-```
-
-⚠️ 예산 카운터는 인메모리라 **배포 재시작 시 리셋됨**(기존 TourAPI 동기화 예산 서비스와 동일한 한계). 실제 Google Cloud Console의 사용량과는 별개이니, 정확한 잔여량은 GCP 콘솔에서도 교차 확인 권장.
+- **관광공사 관광사진 갤러리(`galleryList1`)** — 무료, 이름 정확 일치 기준 일회성 백필(SQL로 직접 실행, `docs/migration/V2026091601__*`, `V2026091602__*` 참고). 1,372건 완료.
+- **Google Places API(New)는 사용 불가** — 정책상 사진(Photos) 콘텐츠는 캐싱/저장이 전면 금지되어 있어([공식 정책](https://developers.google.com/maps/documentation/places/web-service/policies): "place_id"만 무기한 캐싱 예외, 좌표는 30일 예외, **사진은 예외 없음**) 시도했던 백필(#106/PR #107)을 되돌렸다(#108). 다운로드해서 우리 S3에 영구 저장하는 방식 자체가 이용약관 위반.
+- 나머지 스팟(대부분 K_DRAMA/K_POP/K_MOVIE 촬영지)의 이미지 수급 방안은 별도 이슈에서 재검토 중.
 
 ---
 
