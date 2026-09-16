@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.review.service;
 
+import com.Wavey.WaveyService.domain.notification.event.NotificationEvent;
 import com.Wavey.WaveyService.domain.review.dto.request.ReviewCreateRequest;
 import com.Wavey.WaveyService.domain.review.dto.request.ReviewUpdateRequest;
 import com.Wavey.WaveyService.domain.review.dto.response.MyReviewListResponse;
@@ -18,6 +19,7 @@ import com.Wavey.WaveyService.domain.user.repository.UserSettingsRepository;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
@@ -46,6 +48,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final SpotRepository spotRepository;
     private final UserRepository userRepository;
     private final UserSettingsRepository userSettingsRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -66,6 +69,13 @@ public class ReviewServiceImpl implements ReviewService {
 
         reviewRepository.saveAndFlush(review);
         updateSpotRating(spot);
+        eventPublisher.publishEvent(
+                new NotificationEvent.ReviewCreated(
+                        userId,
+                        review.getId(),
+                        spotId,
+                        spot.getNameKo(),
+                        spot.getNameEn()));
 
         return buildSingleResponse(review, user, spot);
     }

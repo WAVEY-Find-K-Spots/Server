@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.stamp.service;
 
+import com.Wavey.WaveyService.domain.notification.event.NotificationEvent;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class UserBadgeService {
     private final UserRepository users;
     private final SpotRepository spots;
     private final UploadService uploadService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Schema(description = "배지 항목")
     public record BadgeItem(
@@ -125,6 +128,23 @@ public class UserBadgeService {
                 inProgress);
     }
 
+    public Map<Long, Long> progressByBadgeId(Long userId) {
+        List<UserStamp> owned = collected.findByUserId(userId);
+        Map<Long, SpotCategory> categoryBySpotId = categoryBySpotId(owned);
+        List<Badge> allBadges = badges.findAll();
+        Map<Long, List<Long>> setSpotsByBadgeId = loadSetSpotsByBadgeId(allBadges);
+        Map<Long, Long> result = new HashMap<>();
+
+        for (Badge badge : allBadges) {
+            long current =
+                    Math.min(
+                            progress(badge, owned, categoryBySpotId, setSpotsByBadgeId),
+                            badge.getRequiredStamps());
+            result.put(badge.getId(), current);
+        }
+        return Map.copyOf(result);
+    }
+
     @Transactional
     public BadgeClaim claim(Long userId, Long badgeId, String language) {
         users.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -158,6 +178,9 @@ public class UserBadgeService {
                                     .badgeId(badgeId)
                                     .acquiredAt(LocalDateTime.now())
                                     .build());
+            eventPublisher.publishEvent(
+                    new NotificationEvent.BadgeAcquired(
+                            userId, badgeId, badge.getName(), badge.getNameEn()));
             return new BadgeClaim(toItem(badge, badge.getRequiredStamps(), saved, lang), true);
         } catch (DataIntegrityViolationException e) {
             UserBadge again =

@@ -66,6 +66,10 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW404", "리뷰를 찾을 수 없습니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "REVIEW409", "이미 해당 장소에 리뷰를 작성했습니다."),
 
+    // NOTIFICATION
+    NOTIFICATION_NOT_FOUND(
+            HttpStatus.NOT_FOUND, "NOTIFICATION_404", "해당 알림을 찾을 수 없습니다."),
+
     // BADGE
     BADGE_NOT_FOUND(HttpStatus.NOT_FOUND, "BADGE_404", "해당 배지를 찾을 수 없습니다."),
     BADGE_NOT_CLAIMABLE(

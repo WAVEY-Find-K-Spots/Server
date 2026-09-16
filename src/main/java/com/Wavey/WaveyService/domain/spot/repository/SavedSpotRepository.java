@@ -23,4 +23,10 @@ public interface SavedSpotRepository extends JpaRepository<SavedSpot, Long> {
 
     @Query("select s.spotId from SavedSpot s where s.userId = :userId")
     List<Long> findSpotIdsByUserId(@Param("userId") Long userId);
+
+    @Query(
+            "select distinct s.userId from SavedSpot s "
+                    + "where s.spotId = :spotId and s.userId <> :excludedUserId")
+    List<Long> findUserIdsBySpotIdExcludingUser(
+            @Param("spotId") Long spotId, @Param("excludedUserId") Long excludedUserId);
 }
