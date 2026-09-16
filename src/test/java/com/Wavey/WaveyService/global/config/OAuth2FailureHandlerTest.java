@@ -51,4 +51,22 @@ class OAuth2FailureHandlerTest {
                 "http://localhost:3000/oauth/callback?error=OAUTH_400_EMAIL_REQUIRED"
         );
     }
+
+    @Test
+    void state가_app_힌트를_담고_있으면_세션_없이도_앱_딥링크로_리다이렉트한다() throws Exception {
+        OAuth2FailureHandler handler = new OAuth2FailureHandler(
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("state", "app:random-state-value");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AuthenticationException exception = new AuthenticationException("민감한 내부 오류") { };
+
+        handler.onAuthenticationFailure(request, response, exception);
+
+        assertThat(response.getRedirectedUrl()).isEqualTo(
+                "wavey://oauth/callback?error=oauth2_authentication_failed"
+        );
+    }
 }

@@ -3,7 +3,6 @@ package com.Wavey.WaveyService.global.config;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,11 +54,7 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
     }
 
     private String resolveRedirectBaseUri(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null
-                && OAuth2PlatformHintFilter.APP_PLATFORM.equals(
-                        session.getAttribute(OAuth2PlatformHintFilter.SESSION_ATTRIBUTE))) {
-            session.removeAttribute(OAuth2PlatformHintFilter.SESSION_ATTRIBUTE);
+        if (AppAwareOAuth2AuthorizationRequestResolver.isAppState(request.getParameter("state"))) {
             return appRedirectUri;
         }
         return frontendRedirectUri;

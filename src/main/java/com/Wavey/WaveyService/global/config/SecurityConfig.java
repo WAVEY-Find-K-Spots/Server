@@ -20,6 +20,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -42,6 +43,7 @@ public class SecurityConfig {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
     private final RedisAuthTokenService authTokenService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${auth.allowed-origins:http://localhost:3000}")
@@ -80,14 +82,17 @@ public class SecurityConfig {
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .oauth2Login(oauth -> oauth
+                        .authorizationEndpoint(endpoint -> endpoint.authorizationRequestResolver(
+                                new AppAwareOAuth2AuthorizationRequestResolver(
+                                        clientRegistrationRepository,
+                                        OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI)
+                        ))
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler(oAuth2FailureHandler)
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository, authTokenService),
-                        UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new OAuth2PlatformHintFilter(),
-                        OAuth2AuthorizationRequestRedirectFilter.class);
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
