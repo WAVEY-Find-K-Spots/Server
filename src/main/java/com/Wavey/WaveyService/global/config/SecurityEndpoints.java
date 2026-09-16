@@ -30,6 +30,8 @@ final class SecurityEndpoints {
     static final String[] PUBLIC_GET = {
             "/api/v1/contents/**",
             "/api/v1/albums/**",
+            "/api/v1/pages/home/**",
+            "/api/v1/regions",
             "/api/v1/spots/*/contents",
             "/api/v1/spots/*/media"
     };

@@ -89,16 +89,13 @@ public class RegionController {
 
     @Operation(
             summary = "지역 목록 조회",
-            description = "인증된 사용자가 등록된 전체 지역 목록을 조회합니다. 응답 필드는 nameKo, nameEn을 그대로 제공합니다.",
-            security = @SecurityRequirement(name = "bearerAuth"))
+            description = "등록된 전체 지역 목록을 조회합니다. 응답 필드는 nameKo, nameEn을 그대로 제공합니다.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
                 content = @Content(schema = @Schema(implementation = RegionResponse.class))),
-        @ApiResponse(responseCode = "401", description = "인증 실패")
     })
-    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<CommonResponse<List<RegionResponse>>> getRegions() {
         return ResponseEntity.ok(success("지역 목록 조회 성공", regionService.getRegions()));
