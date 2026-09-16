@@ -162,11 +162,6 @@ spot:
       thumbnail-cron: ${SPOT_SYNC_THUMBNAIL_CRON:0 0 4 * * *}
       media-location-per-page: ${SPOT_SYNC_MEDIA_LOCATION_PER_PAGE:300}
       thumbnail-limit: ${SPOT_SYNC_THUMBNAIL_LIMIT:50}
-    google-places:
-      base-url: ${GOOGLE_PLACES_BASE_URL:https://places.googleapis.com}
-      api-key: ${GOOGLE_PLACES_API_KEY:}
-      monthly-photo-limit: ${SPOT_SYNC_GOOGLE_PLACES_MONTHLY_LIMIT:1000}
-      photo-max-width-px: ${SPOT_SYNC_GOOGLE_PLACES_PHOTO_MAX_WIDTH_PX:800}
 
 # [OCR Translation Configuration]
 translation:
