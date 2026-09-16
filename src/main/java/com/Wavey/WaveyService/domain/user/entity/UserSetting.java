@@ -38,6 +38,10 @@ public class UserSetting extends BaseEntity {
     private boolean routeEnabled = true;
 
     @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean spotEnabled = true;
+
+    @Builder.Default
     private boolean noticeEnabled = true;
 
     @Builder.Default
