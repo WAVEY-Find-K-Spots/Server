@@ -3,6 +3,7 @@ package com.Wavey.WaveyService.global.config;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,12 +25,16 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
     );
 
     private final String frontendRedirectUri;
+    private final String appRedirectUri;
 
     public OAuth2FailureHandler(
             @Value("${auth.frontend-redirect-uri:http://localhost:3000/oauth/callback}")
-            String frontendRedirectUri
+            String frontendRedirectUri,
+            @Value("${auth.app-redirect-uri:wavey://oauth/callback}")
+            String appRedirectUri
     ) {
         this.frontendRedirectUri = frontendRedirectUri;
+        this.appRedirectUri = appRedirectUri;
     }
 
     @Override
@@ -38,7 +43,7 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
             HttpServletResponse response,
             AuthenticationException exception
     ) throws IOException {
-        String redirectUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
+        String redirectUrl = UriComponentsBuilder.fromUriString(resolveRedirectBaseUri(request))
                 .queryParam("error", resolveClientError(exception))
                 .build()
                 .encode()
@@ -47,6 +52,17 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
         response.setHeader(HttpHeaders.PRAGMA, "no-cache");
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+    }
+
+    private String resolveRedirectBaseUri(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null
+                && OAuth2PlatformHintFilter.APP_PLATFORM.equals(
+                        session.getAttribute(OAuth2PlatformHintFilter.SESSION_ATTRIBUTE))) {
+            session.removeAttribute(OAuth2PlatformHintFilter.SESSION_ATTRIBUTE);
+            return appRedirectUri;
+        }
+        return frontendRedirectUri;
     }
 
     private String resolveClientError(AuthenticationException exception) {

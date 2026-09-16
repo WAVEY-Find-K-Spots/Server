@@ -16,7 +16,8 @@ class OAuth2FailureHandlerTest {
     @Test
     void 로그인_실패시_내부_예외를_노출하지_않고_프론트로_리다이렉트한다() throws Exception {
         OAuth2FailureHandler handler = new OAuth2FailureHandler(
-                "http://localhost:3000/oauth/callback"
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
         );
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -36,7 +37,8 @@ class OAuth2FailureHandlerTest {
     @Test
     void 이메일_동의_누락은_프론트가_처리할_수_있는_오류코드로_전달한다() throws Exception {
         OAuth2FailureHandler handler = new OAuth2FailureHandler(
-                "http://localhost:3000/oauth/callback"
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
         );
         MockHttpServletResponse response = new MockHttpServletResponse();
         OAuth2AuthenticationException exception = new OAuth2AuthenticationException(

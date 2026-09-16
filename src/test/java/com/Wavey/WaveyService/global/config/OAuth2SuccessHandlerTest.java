@@ -39,7 +39,8 @@ class OAuth2SuccessHandlerTest {
         OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
                 authTokenService,
                 userRepository,
-                "http://localhost:3000/oauth/callback"
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
         );
         User user = User.builder()
                 .id(1L)
@@ -75,7 +76,8 @@ class OAuth2SuccessHandlerTest {
         OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
                 authTokenService,
                 userRepository,
-                "http://localhost:3000/oauth/callback"
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
         );
         User user = User.builder()
                 .id(2L)
@@ -105,7 +107,8 @@ class OAuth2SuccessHandlerTest {
         OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
                 authTokenService,
                 userRepository,
-                "http://localhost:3000/oauth/callback"
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
         );
         User user = User.builder()
                 .id(1L)

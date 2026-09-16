@@ -96,6 +96,7 @@ auth:
   login-code-ttl: ${AUTH_LOGIN_CODE_TTL:3m}
   server-url: ${SERVER_URL:http://localhost:8080}
   frontend-redirect-uri: ${AUTH_FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/callback}
+  app-redirect-uri: ${AUTH_APP_REDIRECT_URI:wavey://oauth/callback}
   base-url: ${AUTH_BASE_URL:/oauth2/authorization/}
   google-path: ${GOOGLE_AUTH_PATH:google}
   apple-path: ${APPLE_AUTH_PATH:apple}
