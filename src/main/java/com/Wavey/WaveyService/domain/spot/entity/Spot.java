@@ -58,6 +58,7 @@ public class Spot extends BaseEntity {
     @Column(name = "longitude", nullable = false, precision = 11, scale = 8) private BigDecimal longitude;
 
     @Column(name = "image_url", length = 500) private String imageUrl;
+    @Column(name = "image_attribution", length = 500) private String imageAttribution;
 
     @Enumerated(EnumType.STRING) @Column(name = "external_source", length = 30) private ExternalSource externalSource;
     @Column(name = "external_id", length = 255) private String externalId;
@@ -262,6 +263,11 @@ public class Spot extends BaseEntity {
 
     public void updateImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public void updateImage(String imageUrl, String imageAttribution) {
+        this.imageUrl = imageUrl;
+        this.imageAttribution = imageAttribution;
     }
 
     private boolean isDifferentDecimal(BigDecimal current, BigDecimal next) {
