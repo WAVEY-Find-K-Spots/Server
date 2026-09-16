@@ -177,6 +177,7 @@ Authorization: Bearer {accessToken}  (ADMIN)
 - `limit`: 이번 호출에서 처리할 최대 스팟 수 (기본 50).
 - 장소명(`nameKo`)으로 Wikimedia Commons 검색 → 재사용 가능 라이선스 이미지 1장 다운로드 → 우리 S3에 재업로드 → `imageUrl` + `imageAttribution` 갱신.
 - **커버리지는 제한적** — 실제로는 궁궐/문화유산 같은 유명 랜드마크(K_HERITAGE) 위주로만 매칭됨. 무명 드라마 촬영지 카페 등은 대부분 못 채움.
+- `name_ko`가 "임진각평화누리"처럼 여러 단어를 띄어쓰기 없이 붙여놓은 경우 전체 문자열로는 검색이 안 될 수 있어, 전체 검색 실패 시 끝에서부터 한 글자씩 줄여가며 최대 4회 재시도한다(최소 2글자까지, #112).
 - `imageAttribution`이 있으면(예: `"Basile Morin (CC BY-SA 4.0, via Wikimedia Commons)"`) **프론트에서 이미지와 함께 반드시 노출**해야 함 (CC BY-SA 등은 저작자 표시가 라이선스 조건).
 
 응답 (`SpotWikimediaEnrichResponse`):
