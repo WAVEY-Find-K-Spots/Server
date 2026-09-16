@@ -132,6 +132,8 @@ media-collect:
   youtube:
     max-duration-sec: 1200
     max-keep: 8
+    # 최근 수집 후 이 시간 안이면 search/videos API 안 탐. 0=캐시 끔.
+    refresh-cache-hours: 24
   spotify:
     max-keep: 15
     max-kpop-keep: 3
@@ -193,10 +195,10 @@ logging:
 # [Swagger / OpenAPI Documentation]
 springdoc:
   api-docs:
-    enabled: ${SWAGGER_ENABLED:false}
+    enabled: ${SWAGGER_ENABLED:true}
     path: /api-docs
   swagger-ui:
-    enabled: ${SWAGGER_ENABLED:false}
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
   default-consumes-media-type: application/json
   default-produces-media-type: application/json

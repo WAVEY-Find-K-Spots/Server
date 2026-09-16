@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
                 {
                   "titleKo": "콘텐츠 한글 제목 (필수)",
                   "titleEn": "콘텐츠 영문 제목 (선택)",
-                  "category": "ARTIST | DRAMA | MOVIE (필수)"
+                  "category": "ARTIST | DRAMA | MOVIE | HERITAGE (필수)"
                 }
                 """
 )
@@ -42,6 +42,6 @@ public class ContentRequest {
     private String titleEn;
 
     @NotNull
-    @Schema(description = "콘텐츠 종류. ARTIST | DRAMA | MOVIE", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "콘텐츠 종류. ARTIST | DRAMA | MOVIE | HERITAGE", requiredMode = Schema.RequiredMode.REQUIRED)
     private ContentCategory category;
 }

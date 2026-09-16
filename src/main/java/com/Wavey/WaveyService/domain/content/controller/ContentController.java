@@ -38,7 +38,7 @@ public class ContentController {
     @Operation(summary = "콘텐츠 카테고리별 목록")
     @GetMapping
     public ResponseEntity<CommonResponse<List<ContentResponse>>> list(
-            @Parameter(description = "ARTIST | DRAMA | MOVIE") @RequestParam(required = false) ContentCategory category
+            @Parameter(description = "ARTIST | DRAMA | MOVIE | HERITAGE") @RequestParam(required = false) ContentCategory category
     ) {
         return ResponseEntity.ok(CommonResponse.success("카테고리별 목록 조회 성공", contentService.list(category)));
     }
@@ -60,7 +60,7 @@ public class ContentController {
                                     {
                                       "titleKo": "콘텐츠 한글 제목 (필수)",
                                       "titleEn": "콘텐츠 영문 제목 (선택)",
-                                      "category": "ARTIST | DRAMA | MOVIE (필수)"
+                                      "category": "ARTIST | DRAMA | MOVIE | HERITAGE (필수)"
                                     }
                                     """)
                     )
@@ -86,7 +86,7 @@ public class ContentController {
                                     {
                                       "titleKo": "콘텐츠 한글 제목 (필수)",
                                       "titleEn": "콘텐츠 영문 제목 (선택)",
-                                      "category": "ARTIST | DRAMA | MOVIE (필수)"
+                                      "category": "ARTIST | DRAMA | MOVIE | HERITAGE (필수)"
                                     }
                                     """)
                     )

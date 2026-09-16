@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MediaCollectProperties {
 
     private Youtube youtube = new Youtube();
+    private Heritage heritage = new Heritage();
     private Spotify spotify = new Spotify();
 
     @Getter
@@ -22,6 +23,8 @@ public class MediaCollectProperties {
     public static class Youtube {
         private int maxDurationSec = 1200;
         private int maxKeep = 8;
+        /** 같은 content 재수집 시 YouTube search 생략. 0이면 캐시 끔. */
+        private int refreshCacheHours = 24;
         private List<String> allowKeywords = new ArrayList<>(List.of(
                 "예고편", "티저", "trailer", "teaser",
                 "메이킹", "비하인드", "behind", "making",
@@ -30,6 +33,25 @@ public class MediaCollectProperties {
         private List<String> denyKeywords = new ArrayList<>(List.of(
                 "다시보기", "본편", "풀버전", "풀영상",
                 "몰아보기", "전회차", "무료보기", "VOD", "스트리밍"
+        ));
+    }
+
+    @Getter
+    @Setter
+    public static class Heritage {
+        private int minDurationSec = 60;
+        private int maxDurationSec = 1_200;
+        private List<String> allowKeywords = new ArrayList<>(List.of(
+                "소개", "소개영상", "문화유산", "한국의 문화유산",
+                "국가유산", "국보", "보물", "사적",
+                "세계유산", "unesco", "heritage", "유적"
+        ));
+        private List<String> denyKeywords = new ArrayList<>(List.of(
+                "먹방", "맛집", "숙소", "호텔", "브이로그", "vlog",
+                "쇼츠", "shorts", "몰아보기", "full", "asmr"
+        ));
+        private List<String> trustedChannelKeywords = new ArrayList<>(List.of(
+                "국가유산", "k-heritage", "문화재청", "unesco", "korea heritage"
         ));
     }
 

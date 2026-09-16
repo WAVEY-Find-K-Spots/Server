@@ -64,30 +64,49 @@ public class MediaCollectService {
     @Transactional
     public MediaCollectResponse refreshVideos(Long contentId) {
         Content work = workService.getContent(contentId);
-        Set<String> hiddenIds = hiddenYoutubeIds(contentId);
 
-        List<String> videoIds = new ArrayList<>();
+        MediaCollectResponse cached = cachedVideosIfFresh(contentId);
+        if (cached != null) {
+            return cached;
+        }
+
+        Set<String> hiddenIds = hiddenYoutubeIds(contentId);
+        int maxKeep = properties.getYoutube().getMaxKeep();
+
+        List<YoutubeVideoDetails> kept = new ArrayList<>();
+        int dropped = 0;
         Set<String> seen = new LinkedHashSet<>();
         for (String query : youtubeQueries(work)) {
+            List<String> batchIds = new ArrayList<>();
             for (String videoId : youtubeDataClient.searchVideoIds(query, 10)) {
                 if (seen.add(videoId)) {
-                    videoIds.add(videoId);
+                    batchIds.add(videoId);
                 }
             }
-        }
+            if (batchIds.isEmpty()) {
+                continue;
+            }
 
-        List<YoutubeVideoDetails> details = youtubeDataClient.fetchVideos(videoIds);
-        int dropped = 0;
-        List<YoutubeVideoDetails> kept = new ArrayList<>();
-        for (YoutubeVideoDetails video : details) {
-            if (youtubePromoPolicy.shouldKeep(video, work.getTitle(), work.getTitleEn(), hiddenIds)) {
-                kept.add(video);
-            } else {
-                dropped++;
+            for (YoutubeVideoDetails video : youtubeDataClient.fetchVideos(batchIds)) {
+                if (youtubePromoPolicy.shouldKeep(
+                        video,
+                        work.getCategory(),
+                        work.getTitle(),
+                        work.getTitleEn(),
+                        hiddenIds
+                )) {
+                    kept.add(video);
+                } else {
+                    dropped++;
+                }
+            }
+
+            // search.list 병목. maxKeep 채우면 다음 검색어 스킵.
+            if (kept.size() >= maxKeep) {
+                break;
             }
         }
 
-        int maxKeep = properties.getYoutube().getMaxKeep();
         if (kept.size() > maxKeep) {
             dropped += kept.size() - maxKeep;
             kept = kept.subList(0, maxKeep);
@@ -105,6 +124,16 @@ public class MediaCollectService {
     @Transactional
     public MediaCollectResponse refreshTracks(Long contentId) {
         Content work = workService.getContent(contentId);
+        if (work.getCategory() == ContentCategory.HERITAGE) {
+            return MediaCollectResponse.builder()
+                    .contentId(contentId)
+                    .saved(0)
+                    .dropped(0)
+                    .albums(List.of())
+                    .tracks(List.of())
+                    .build();
+        }
+
         Set<String> hiddenIds = hiddenSpotifyIds(contentId);
 
         if (work.getCategory() == ContentCategory.ARTIST) {
@@ -360,12 +389,45 @@ public class MediaCollectService {
         return saved;
     }
 
+    /**
+     * 최근 수집분이 있으면 YouTube API 생략.
+     * 강제 재수집은 refresh-cache-hours=0 또는 TTL 만료 후.
+     */
+    private MediaCollectResponse cachedVideosIfFresh(Long contentId) {
+        int cacheHours = properties.getYoutube().getRefreshCacheHours();
+        if (cacheHours <= 0) {
+            return null;
+        }
+        List<ContentVideo> existing = workVideoRepository.findByContentIdAndHiddenFalseOrderByIdAsc(contentId);
+        if (existing.isEmpty()) {
+            return null;
+        }
+        LocalDateTime newest = existing.stream()
+                .map(ContentVideo::getFetchedAt)
+                .filter(fetchedAt -> fetchedAt != null)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+        if (newest == null || newest.isBefore(LocalDateTime.now().minusHours(cacheHours))) {
+            return null;
+        }
+        return MediaCollectResponse.builder()
+                .contentId(contentId)
+                .saved(existing.size())
+                .dropped(0)
+                .videos(existing.stream().map(ContentVideoResponse::from).toList())
+                .build();
+    }
+
     private List<String> youtubeQueries(Content work) {
         String title = work.getTitle().trim();
         if (work.getCategory() == ContentCategory.ARTIST) {
             return List.of(title + " 뮤직비디오");
         }
-        return List.of(title + " 예고편", title + " 티저", title + " 메이킹");
+        if (work.getCategory() == ContentCategory.HERITAGE) {
+            return List.of(title + " (소개영상 OR 문화유산 OR 국가유산 OR unesco)");
+        }
+        // search 1회로 예고편·티저 후보 확보. (OR 없으면 공백=AND라 둘 다 있는 영상만 뜸)
+        return List.of(title + " (예고편 OR 티저)");
     }
 
     private Set<String> hiddenYoutubeIds(Long contentId) {
