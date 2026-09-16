@@ -11,6 +11,8 @@ import jakarta.validation.constraints.Size;
 public record UserProfileUpdateRequest(
         @Size(max = 50) String nickname,
         CountryCode countryCode,
-        Language language
+        Language language,
+        Boolean locationEnabled,
+        Boolean marketingEnabled
 ) {
 }
