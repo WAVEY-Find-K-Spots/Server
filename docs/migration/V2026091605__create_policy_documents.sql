@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS policy_documents (
     CONSTRAINT uk_policy_documents_category_language UNIQUE (category, language)
 );
 
+-- Hibernate may create the table before this manually applied migration.
+-- Ensure the default also exists when the table was already present.
+ALTER TABLE policy_documents
+    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP;
+
 INSERT INTO policy_documents (category, language, title, content, version, effective_date, is_active)
 VALUES ('TERMS', 'KO', 'WAVEY 이용약관', $$# WAVEY 이용약관
 
@@ -737,4 +742,3 @@ Users may contact the following organizations for consultation or reporting.
 
 This Privacy Policy takes effect on September 16, 2026.$$, 1, DATE '2026-09-16', TRUE)
 ON CONFLICT (category, language) DO UPDATE SET title = EXCLUDED.title, content = EXCLUDED.content, version = EXCLUDED.version, effective_date = EXCLUDED.effective_date, is_active = EXCLUDED.is_active, updated_at = CURRENT_TIMESTAMP;
-
