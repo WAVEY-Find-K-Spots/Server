@@ -117,20 +117,59 @@ public final class SpotSearchSpecification {
                 );
             }
 
-            if (!isCountQuery(query)
-                    && request.sort()
-                    == SortBy.DISTANCE) {
-
-                query.orderBy(
-                        cb.asc(distance),
-                        cb.desc(root.get("id"))
-                );
+            if (!isCountQuery(query)) {
+                applyOrdering(request, root, query, cb, distance);
             }
 
             return cb.and(
                     predicates.toArray(Predicate[]::new)
             );
         };
+    }
+
+    /**
+     * 정렬 조건 전체를 여기서 한 번에 구성한다(Pageable의 Sort는 쓰지 않음 — {@code SpotSearchService}에서
+     * 항상 {@code Sort.unsorted()}를 넘긴다). 이미지 유무를 최우선 기준으로 두고, 그 안에서 기존 정렬을 적용한다.
+     */
+    private static void applyOrdering(
+            SpotSearchRequest request,
+            Root<Spot> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb,
+            Expression<Double> distance
+    ) {
+        Expression<Integer> hasNoImage = cb.<Integer>selectCase()
+                .when(cb.and(
+                        cb.isNotNull(root.get("imageUrl")),
+                        cb.notEqual(root.get("imageUrl"), "")
+                ), 0)
+                .otherwise(1);
+
+        List<jakarta.persistence.criteria.Order> orders = new ArrayList<>();
+        orders.add(cb.asc(hasNoImage));
+
+        switch (request.sort()) {
+            case POPULAR -> {
+                orders.add(cb.desc(root.get("savedCount")));
+                orders.add(cb.desc(root.get("reviewCount")));
+                orders.add(cb.desc(root.get("id")));
+            }
+            case RATING -> {
+                orders.add(cb.desc(root.<Double>get("avgRating")));
+                orders.add(cb.desc(root.get("reviewCount")));
+                orders.add(cb.desc(root.get("id")));
+            }
+            case LATEST -> {
+                orders.add(cb.desc(root.get("createdAt")));
+                orders.add(cb.desc(root.get("id")));
+            }
+            case DISTANCE -> {
+                orders.add(cb.asc(distance));
+                orders.add(cb.desc(root.get("id")));
+            }
+        }
+
+        query.orderBy(orders);
     }
 
     private static void addRegion(
