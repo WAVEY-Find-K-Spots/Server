@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.spot.sync.client;
 
+import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Iterator;
 import java.util.Locale;
@@ -26,7 +27,7 @@ public class SpotWikimediaImageClient {
     private static final String BASE_URL = "https://commons.wikimedia.org/w/api.php";
 
     /** 붙여쓴 복합 장소명(예: "임진각평화누리")이 전체로는 안 잡힐 때, 끝에서부터 줄여가며 재시도할 최소 길이/횟수. */
-    private static final int MIN_QUERY_LENGTH = 2;
+    private static final int MIN_QUERY_LENGTH = 3;
     private static final int MAX_TRIM_ATTEMPTS = 4;
 
     /** 재배포를 허용하는 라이선스만 채택한다. */
@@ -44,20 +45,34 @@ public class SpotWikimediaImageClient {
 
     public record WikimediaImage(String imageUrl, String attribution) {}
 
-    public Optional<WikimediaImage> findImage(String nameKo) {
+    /**
+     * @param category 스팟 카테고리. {@code K_HERITAGE}(고유명사 위주)만 접미어 축소 재시도를 허용한다.
+     *                 나머지 카테고리는 흔한 일반명사(카페, 퀸즈파크 등)가 섞여 있어 잘라서 재검색하면
+     *                 전혀 무관한 이미지가 라이선스만 맞아 채택되는 오탐 위험이 커서, 전체 이름 정확 매칭만 시도한다.
+     */
+    public Optional<WikimediaImage> findImage(String nameKo, SpotCategory category) {
         if (!StringUtils.hasText(nameKo)) {
             return Optional.empty();
         }
 
-        String query = nameKo.trim();
+        String fullName = nameKo.trim();
+        Optional<WikimediaImage> exact = search(fullName);
+        if (exact.isPresent() || category != SpotCategory.K_HERITAGE) {
+            return exact;
+        }
+
+        String query = fullName;
         int attempts = 0;
-        while (query.length() >= MIN_QUERY_LENGTH && attempts <= MAX_TRIM_ATTEMPTS) {
+        while (attempts < MAX_TRIM_ATTEMPTS) {
+            query = query.substring(0, query.length() - 1).trim();
+            attempts++;
+            if (query.length() < MIN_QUERY_LENGTH) {
+                break;
+            }
             Optional<WikimediaImage> result = search(query);
             if (result.isPresent()) {
                 return result;
             }
-            query = query.substring(0, query.length() - 1);
-            attempts++;
         }
         return Optional.empty();
     }
