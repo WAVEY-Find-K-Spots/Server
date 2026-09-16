@@ -39,7 +39,7 @@ public class SpotWikimediaEnrichmentService {
         for (Spot spot : candidates) {
             try {
                 Optional<SpotWikimediaImageClient.WikimediaImage> image =
-                        wikimediaImageClient.findImage(spot.getNameKo());
+                        wikimediaImageClient.findImage(spot.getNameKo(), spot.getCategory());
                 if (image.isEmpty()) {
                     skipped++;
                     continue;
