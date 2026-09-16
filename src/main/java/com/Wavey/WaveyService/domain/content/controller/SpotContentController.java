@@ -32,7 +32,7 @@ public class SpotContentController {
     @GetMapping("/api/v1/spots/{spotId}/contents")
     public ResponseEntity<CommonResponse<List<SpotContentItemResponse>>> list(
             @PathVariable Long spotId,
-            @Parameter(description = "ARTIST | DRAMA | MOVIE") @RequestParam(required = false) ContentCategory category
+            @Parameter(description = "ARTIST | DRAMA | MOVIE | HERITAGE") @RequestParam(required = false) ContentCategory category
     ) {
         return ResponseEntity.ok(CommonResponse.success(
                 "스팟 연결 콘텐츠 조회 성공",

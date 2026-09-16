@@ -15,7 +15,7 @@
 
 - 필드명 `camelCase`
 - 공통 봉투: `{ statusCode, message, data }` / 실패 시 `error: { code, message }`
-- 콘텐츠 `category`: `ARTIST` | `DRAMA` | `MOVIE` (작품 종류). 유튜브·앨범은 자식 테이블이며 별도 미디어 API 사용
+- 콘텐츠 `category`: `ARTIST` | `DRAMA` | `MOVIE` | `HERITAGE` (작품 종류). 유튜브·앨범은 자식 테이블이며 별도 미디어 API 사용
 
 ---
 
@@ -27,14 +27,14 @@
 
 - 인증: **불필요** (공개 GET)
 - path: `spotId` (필수)
-- query: `category` (`ARTIST` | `DRAMA` | `MOVIE`, 선택 — 없으면 **전체**)
+- query: `category` (`ARTIST` | `DRAMA` | `MOVIE` | `HERITAGE`, 선택 — 없으면 **전체**)
 
 응답 `data`: 배열. 각 원소:
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `contentId` | number | 콘텐츠 ID |
-| `category` | string | `DRAMA` / `MOVIE` / `ARTIST` |
+| `category` | string | `DRAMA` / `MOVIE` / `ARTIST` / `HERITAGE` |
 | `title` | string | 한글 제목 (`titleKo`) |
 
 전체 조회 예시:
@@ -102,7 +102,7 @@ GET /api/v1/spots/10/contents?category=DRAMA
   contents: {
     contentId: number
     title: string          // Content.titleKo
-    category: "ARTIST" | "DRAMA" | "MOVIE"
+    category: "ARTIST" | "DRAMA" | "MOVIE" | "HERITAGE"
     videos: ContentVideoResponse[]      // content.md의 3장 참고
     albums: ContentAlbumResponse[]      // 수록 트랙(tracks) 포함
     tracks: ContentTrackResponse[]      // 앨범에 속하지 않는 단독 트랙
