@@ -4,9 +4,7 @@ import static com.Wavey.WaveyService.global.response.CommonResponse.success;
 
 import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotPlaceEnrichRequest;
-import com.Wavey.WaveyService.domain.spot.sync.dto.SpotPlacesEnrichResponse;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotSyncResponse;
-import com.Wavey.WaveyService.domain.spot.sync.service.SpotPlacesEnrichmentService;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotSyncStatusResponse;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotTitleFeasibilityResponse;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotTitleReviewRequest;
@@ -38,7 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class SpotSyncController {
 
     private final SpotSyncService spotSyncService;
-    private final SpotPlacesEnrichmentService spotPlacesEnrichmentService;
 
     @PostMapping("/tour/daily")
     @Operation(
@@ -83,19 +80,6 @@ public class SpotSyncController {
             @RequestParam(defaultValue = "5") int size
     ) {
         return ResponseEntity.ok(success("미디어 촬영지 페이지 동기화 성공", spotSyncService.syncMediaPage(category, page, size)));
-    }
-
-    @PostMapping("/google-places/enrich-images")
-    @Operation(
-            summary = "Google Places로 스팟 이미지 백필",
-            description = "imageUrl이 비어있는 스팟을 대상으로 Google Places(New)에서 대표 사진을 찾아 채웁니다. "
-                    + "월별 무료 제공량(기본 1,000장/월)을 넘지 않도록 자동으로 제한합니다.",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<CommonResponse<SpotPlacesEnrichResponse>> enrichImagesWithGooglePlaces(
-            @Parameter(description = "한 번에 처리할 최대 스팟 수", example = "50")
-            @RequestParam(defaultValue = "50") int limit
-    ) {
-        return ResponseEntity.ok(success("Google Places 이미지 백필 완료", spotPlacesEnrichmentService.enrichImages(limit)));
     }
 
     @GetMapping("/status")
