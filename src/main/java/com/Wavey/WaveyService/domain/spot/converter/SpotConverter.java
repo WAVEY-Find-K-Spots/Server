@@ -151,6 +151,7 @@ public class SpotConverter {
 
                 spot.getCategory(),
                 uploadService.resolveAccessUrl(spot.getImageUrl()),
+                spot.getImageAttribution(),
                 spot.getAvgRating(),
                 spot.getReviewCount(),
                 saved,
@@ -204,6 +205,7 @@ public class SpotConverter {
 
                 spot.getCategory(),
                 uploadService.resolveAccessUrl(spot.getImageUrl()),
+                spot.getImageAttribution(),
                 spot.getAvgRating(),
                 spot.getReviewCount(),
                 saved,
@@ -238,6 +240,7 @@ public class SpotConverter {
                 ),
 
                 uploadService.resolveAccessUrl(spot.getImageUrl()),
+                spot.getImageAttribution(),
                 spot.getAvgRating(),
                 distanceMeters
         );
