@@ -6,6 +6,7 @@ public record SpotNearbyResponse(
         String description,
         String address,
         String imageUrl,
+        String imageAttribution,
         Double avgRating,
         Double distanceMeters
 ) {}
