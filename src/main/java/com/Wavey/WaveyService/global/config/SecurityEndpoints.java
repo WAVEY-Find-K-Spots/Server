@@ -31,7 +31,9 @@ final class SecurityEndpoints {
             "/api/v1/contents/**",
             "/api/v1/albums/**",
             "/api/v1/spots/*/contents",
-            "/api/v1/spots/*/media"
+            "/api/v1/spots/*/media",
+            "/api/v1/policies/terms",
+            "/api/v1/policies/privacy"
     };
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();

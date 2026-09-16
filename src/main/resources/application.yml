@@ -193,10 +193,10 @@ logging:
 # [Swagger / OpenAPI Documentation]
 springdoc:
   api-docs:
-    enabled: ${SWAGGER_ENABLED:false}
+    enabled: ${SWAGGER_ENABLED:true}
     path: /api-docs
   swagger-ui:
-    enabled: ${SWAGGER_ENABLED:false}
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
