@@ -25,9 +25,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificat
 
     Optional<Spot> findByExternalSourceAndExternalId(ExternalSource externalSource, String externalId);
 
-    @Query("select s from Spot s where s.imageUrl is null or s.imageUrl = '' order by s.id asc")
-    List<Spot> findMissingImage(Pageable pageable);
-
     @Query("select s.id from Spot s where s.regionId = :regionId")
     List<Long> findIdsByRegionId(@Param("regionId") Long regionId);
 
