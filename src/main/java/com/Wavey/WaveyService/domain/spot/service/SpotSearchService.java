@@ -50,7 +50,7 @@ public class SpotSearchService {
                         PageRequest.of(
                                 request.page(),
                                 PAGE_SIZE,
-                                resolveSort(request.sort())
+                                Sort.unsorted()
                         )
                 );
 
@@ -90,34 +90,6 @@ public class SpotSearchService {
                 page.getTotalPages(),
                 page.hasNext()
         );
-    }
-
-    private Sort resolveSort(SortBy sort) {
-        return switch (sort) {
-
-            case POPULAR ->
-                    Sort.by(
-                            Sort.Order.desc("savedCount"),
-                            Sort.Order.desc("reviewCount"),
-                            Sort.Order.desc("id")
-                    );
-
-            case RATING ->
-                    Sort.by(
-                            Sort.Order.desc("avgRating"),
-                            Sort.Order.desc("reviewCount"),
-                            Sort.Order.desc("id")
-                    );
-
-            case LATEST ->
-                    Sort.by(
-                            Sort.Order.desc("createdAt"),
-                            Sort.Order.desc("id")
-                    );
-
-            case DISTANCE ->
-                    Sort.unsorted();
-        };
     }
 
     private void validateLocation(
