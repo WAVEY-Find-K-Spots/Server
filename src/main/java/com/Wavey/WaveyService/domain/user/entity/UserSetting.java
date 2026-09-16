@@ -51,4 +51,13 @@ public class UserSetting extends BaseEntity {
 
     @Column(length = 1000)
     private String profileImageUrl;
+
+    public void updateProfilePreferences(Boolean locationEnabled, Boolean marketingEnabled) {
+        if (locationEnabled != null) {
+            this.locationEnabled = locationEnabled;
+        }
+        if (marketingEnabled != null) {
+            this.marketingEnabled = marketingEnabled;
+        }
+    }
 }

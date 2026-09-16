@@ -9,7 +9,9 @@ import com.Wavey.WaveyService.domain.user.dto.UserProfileUpdateRequest;
 import com.Wavey.WaveyService.domain.user.dto.TokenResponse;
 import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.entity.UserSetting;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.domain.user.repository.UserSettingsRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.common.TokenType;
 import com.Wavey.WaveyService.global.exception.CustomException;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ import java.util.*;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final JwtTokenProvider tokenProvider;
     private final RedisAuthTokenService authTokenService;
     private final UploadService uploadService;
@@ -165,7 +169,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     public UserResponse toResponse(User user) {
-        return UserResponse.from(user, uploadService.resolveAccessUrl(user.getProfileImageUrl()));
+        return toResponse(user, findSettingsOrDefault(user.getId()));
     }
 
     public User findEntityById(Long id) {
@@ -204,13 +208,45 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (request.language() != null) {
             user.updateLanguage(request.language());
         }
-        return toResponse(user);
+
+        UserSetting setting = findSettingsOrDefault(userId);
+        if (request.locationEnabled() != null || request.marketingEnabled() != null) {
+            setting.updateProfilePreferences(request.locationEnabled(), request.marketingEnabled());
+            setting = userSettingsRepository.save(setting);
+        }
+        return toResponse(user, setting);
     }
 
     public List<UserResponse> findAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::toResponse)
+        List<User> users = userRepository.findAll();
+        Map<Long, UserSetting> settingsByUserId = userSettingsRepository
+                .findAllByUserIdIn(users.stream().map(User::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(UserSetting::getUserId, setting -> setting));
+
+        return users.stream()
+                .map(user -> toResponse(
+                        user,
+                        settingsByUserId.getOrDefault(user.getId(), defaultSettings(user.getId()))
+                ))
                 .toList();
+    }
+
+    private UserResponse toResponse(User user, UserSetting setting) {
+        return UserResponse.from(
+                user,
+                uploadService.resolveAccessUrl(user.getProfileImageUrl()),
+                setting
+        );
+    }
+
+    private UserSetting findSettingsOrDefault(Long userId) {
+        return userSettingsRepository.findByUserId(userId)
+                .orElseGet(() -> defaultSettings(userId));
+    }
+
+    private UserSetting defaultSettings(Long userId) {
+        return UserSetting.builder().userId(userId).build();
     }
 
     @Transactional

@@ -2,12 +2,19 @@ package com.Wavey.WaveyService.domain.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
+import com.Wavey.WaveyService.domain.user.dto.UserProfileUpdateRequest;
+import com.Wavey.WaveyService.domain.user.dto.UserResponse;
 import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.entity.User;
+import com.Wavey.WaveyService.domain.user.entity.UserSetting;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
+import com.Wavey.WaveyService.domain.user.repository.UserSettingsRepository;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import java.util.Optional;
@@ -24,6 +31,8 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private UserSettingsRepository userSettingsRepository;
+    @Mock
     private JwtTokenProvider tokenProvider;
     @Mock
     private RedisAuthTokenService authTokenService;
@@ -36,7 +45,13 @@ class CustomOAuth2UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new CustomOAuth2UserService(userRepository, tokenProvider, authTokenService, uploadService);
+        userService = new CustomOAuth2UserService(
+                userRepository,
+                userSettingsRepository,
+                tokenProvider,
+                authTokenService,
+                uploadService
+        );
     }
 
     @Test
@@ -73,5 +88,77 @@ class CustomOAuth2UserServiceTest {
 
         assertThat(result.getEmail()).isEqualTo("saved@example.com");
         assertThat(result.getName()).isEqualTo("변경된 이름");
+    }
+
+    @Test
+    void 프로필_수정으로_위치와_마케팅_설정을_부분_변경한다() {
+        User user = createUser();
+        UserSetting setting = UserSetting.builder()
+                .userId(user.getId())
+                .locationEnabled(true)
+                .marketingEnabled(false)
+                .build();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userSettingsRepository.findByUserId(user.getId())).thenReturn(Optional.of(setting));
+        when(userSettingsRepository.save(setting)).thenReturn(setting);
+
+        UserResponse response = userService.updateProfile(
+                user.getId(),
+                new UserProfileUpdateRequest(null, null, null, false, true)
+        );
+
+        assertThat(response.locationEnabled()).isFalse();
+        assertThat(response.marketingEnabled()).isTrue();
+        verify(userSettingsRepository).save(setting);
+    }
+
+    @Test
+    void 설정이_없는_사용자는_기본값으로_생성한_뒤_요청값을_반영한다() {
+        User user = createUser();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userSettingsRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+        when(userSettingsRepository.save(any(UserSetting.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserResponse response = userService.updateProfile(
+                user.getId(),
+                new UserProfileUpdateRequest(null, null, null, null, true)
+        );
+
+        assertThat(response.locationEnabled()).isTrue();
+        assertThat(response.marketingEnabled()).isTrue();
+    }
+
+    @Test
+    void 설정값을_전달하지_않으면_기존값을_유지하고_저장하지_않는다() {
+        User user = createUser();
+        UserSetting setting = UserSetting.builder()
+                .userId(user.getId())
+                .locationEnabled(false)
+                .marketingEnabled(true)
+                .build();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userSettingsRepository.findByUserId(user.getId())).thenReturn(Optional.of(setting));
+
+        UserResponse response = userService.updateProfile(
+                user.getId(),
+                new UserProfileUpdateRequest("새 닉네임", null, null, null, null)
+        );
+
+        assertThat(response.nickname()).isEqualTo("새 닉네임");
+        assertThat(response.locationEnabled()).isFalse();
+        assertThat(response.marketingEnabled()).isTrue();
+        verify(userSettingsRepository, never()).save(setting);
+    }
+
+    private User createUser() {
+        return User.builder()
+                .id(1L)
+                .provider("google")
+                .providerId("provider-id")
+                .email("user@example.com")
+                .name("사용자")
+                .role(Role.USER)
+                .build();
     }
 }

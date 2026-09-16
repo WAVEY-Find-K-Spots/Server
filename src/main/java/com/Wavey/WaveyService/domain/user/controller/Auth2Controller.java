@@ -87,7 +87,11 @@ public class Auth2Controller {
         ));
     }
 
-    @Operation(summary = "프로필 수정", description = "닉네임/국적/언어를 부분 수정합니다. 전달한 필드만 반영되며, email/name은 OAuth 값으로만 동기화되어 여기서 수정할 수 없습니다.")
+    @Operation(
+            summary = "프로필 수정",
+            description = "닉네임/국적/언어/위치 서비스 이용 여부/마케팅 정보 수신 여부를 부분 수정합니다. "
+                    + "전달한 필드만 반영되며, email/name은 OAuth 값으로만 동기화되어 여기서 수정할 수 없습니다."
+    )
     @PatchMapping("/user")
     public ResponseEntity<CommonResponse<UserResponse>> updateProfile(
             @AuthenticationPrincipal User user,
