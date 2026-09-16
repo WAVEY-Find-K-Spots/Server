@@ -31,7 +31,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long>, JpaSpecificat
     @Query(
             value = """
                     SELECT s.*
-                    FROM spot s
+                    FROM spots s
                     WHERE s.spot_id <> :spotId
                       AND s.latitude BETWEEN :minLat AND :maxLat
                       AND s.longitude BETWEEN :minLng AND :maxLng

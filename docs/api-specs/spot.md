@@ -67,7 +67,7 @@
 | `category` | `SpotCategory` | | 카테고리 필터 |
 | `placeType` | `PlaceType` | | 장소 유형 필터 |
 | `minRating` | number | 0.0~5.0 | 최소 평점 |
-| `latitude`, `longitude` | number | 좌표 범위 동일 | 좌표 기반(반경) 검색용 |
+| `latitude`, `longitude` | number | 좌표 범위 동일 | 좌표 기반(반경/거리순) 검색용. `sort=DISTANCE` 또는 `radiusMeters` 사용 시 둘 다 필수 |
 | `radiusMeters` | number | 1.0~100000.0 | 반경(m) |
 | `sort` | `SortBy` | 기본값 `POPULAR` | 정렬 기준. **어떤 값을 골라도 이미지 있는 스팟이 항상 먼저 나오고, 그 안에서 선택한 기준으로 정렬됨**(#116) |
 | `page` | number | `@Min(0)`, 기본값 `0` | 페이지 번호 |
@@ -152,9 +152,9 @@
 
 ## 7. Enum
 
-- `SpotCategory`: `K_DRAMA`, `K_POP`, `K_MOVIE`, `K_HERITAGE`
+- `SpotCategory`: `K_DRAMA`(드라마), `K_MOVIE`(영화), `K_HERITAGE`(문화재), `K_POP`(연예인)
 - `PlaceType`: `RESTAURANT`, `PLAYGROUND`, `CAFE`, `STAY`, `STATION`, `STORE`, `CVS`, `SHOP`, `OTHER`
-- `SortBy`: `POPULAR`, `RATING`, `LATEST`, `DISTANCE`
+- `SortBy`: `POPULAR`, `RATING`, `LATEST`, `DISTANCE` (`DISTANCE`는 `latitude`, `longitude` 필수)
 
 ---
 
