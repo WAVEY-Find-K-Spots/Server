@@ -33,7 +33,8 @@ final class SecurityEndpoints {
             "/api/v1/pages/home/**",
             "/api/v1/regions",
             "/api/v1/spots/*/contents",
-            "/api/v1/spots/*/media"
+            "/api/v1/spots/*/media",
+            "/api/v1/policies"
     };
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();

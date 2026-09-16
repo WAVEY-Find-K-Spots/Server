@@ -23,4 +23,20 @@ class SecurityEndpointsTest {
 
         assertThat(SecurityEndpoints.shouldBypassJwtFilter(request)).isFalse();
     }
+
+    @Test
+    void 정책_조회는_로그인_없이_JWT_필터를_건너뛴다() {
+        MockHttpServletRequest policyRequest = new MockHttpServletRequest("GET", "/api/v1/policies");
+        policyRequest.setRequestURI("/api/v1/policies");
+
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(policyRequest)).isTrue();
+    }
+
+    @Test
+    void 제거된_기존_정책_엔드포인트는_공개_정책으로_처리하지_않는다() {
+        MockHttpServletRequest oldTermsRequest = new MockHttpServletRequest("GET", "/api/v1/policies/terms");
+        oldTermsRequest.setRequestURI("/api/v1/policies/terms");
+
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(oldTermsRequest)).isFalse();
+    }
 }
