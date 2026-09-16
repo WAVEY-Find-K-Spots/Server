@@ -10,7 +10,6 @@ public record SpotResponse(
         String description,
         SpotCategory category,
         String imageUrl,
-        String imageAttribution,
         Double avgRating,
         long reviewCount,
         boolean saved,
