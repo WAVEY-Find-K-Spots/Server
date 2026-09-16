@@ -10,7 +10,9 @@ import com.Wavey.WaveyService.domain.spot.sync.service.SpotPlacesEnrichmentServi
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotSyncStatusResponse;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotTitleFeasibilityResponse;
 import com.Wavey.WaveyService.domain.spot.sync.dto.SpotTitleReviewRequest;
+import com.Wavey.WaveyService.domain.spot.sync.dto.SpotWikimediaEnrichResponse;
 import com.Wavey.WaveyService.domain.spot.sync.service.SpotSyncService;
+import com.Wavey.WaveyService.domain.spot.sync.service.SpotWikimediaEnrichmentService;
 import com.Wavey.WaveyService.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +41,7 @@ public class SpotSyncController {
 
     private final SpotSyncService spotSyncService;
     private final SpotPlacesEnrichmentService spotPlacesEnrichmentService;
+    private final SpotWikimediaEnrichmentService spotWikimediaEnrichmentService;
 
     @PostMapping("/tour/daily")
     @Operation(
@@ -96,6 +99,19 @@ public class SpotSyncController {
             @RequestParam(defaultValue = "50") int limit
     ) {
         return ResponseEntity.ok(success("Google Places 이미지 백필 완료", spotPlacesEnrichmentService.enrichImages(limit)));
+    }
+
+    @PostMapping("/wikimedia/enrich-images")
+    @Operation(
+            summary = "Wikimedia Commons로 스팟 이미지 백필",
+            description = "imageUrl이 비어있는 스팟을 대상으로 Wikimedia Commons에서 재배포 가능한 라이선스(CC0/Public Domain/CC BY류)의 "
+                    + "대표 사진을 찾아 채웁니다. 주로 K_HERITAGE처럼 유명한 장소 위주로 매칭됩니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<CommonResponse<SpotWikimediaEnrichResponse>> enrichImagesWithWikimedia(
+            @Parameter(description = "한 번에 처리할 최대 스팟 수", example = "50")
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        return ResponseEntity.ok(success("Wikimedia 이미지 백필 완료", spotWikimediaEnrichmentService.enrichImages(limit)));
     }
 
     @GetMapping("/status")
