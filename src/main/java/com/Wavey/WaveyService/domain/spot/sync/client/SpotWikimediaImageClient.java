@@ -25,6 +25,10 @@ public class SpotWikimediaImageClient {
 
     private static final String BASE_URL = "https://commons.wikimedia.org/w/api.php";
 
+    /** 붙여쓴 복합 장소명(예: "임진각평화누리")이 전체로는 안 잡힐 때, 끝에서부터 줄여가며 재시도할 최소 길이/횟수. */
+    private static final int MIN_QUERY_LENGTH = 2;
+    private static final int MAX_TRIM_ATTEMPTS = 4;
+
     /** 재배포를 허용하는 라이선스만 채택한다. */
     private static final Set<String> ALLOWED_LICENSE_PREFIXES = Set.of(
             "cc0", "public domain", "cc by", "cc-by"
@@ -44,11 +48,26 @@ public class SpotWikimediaImageClient {
         if (!StringUtils.hasText(nameKo)) {
             return Optional.empty();
         }
+
+        String query = nameKo.trim();
+        int attempts = 0;
+        while (query.length() >= MIN_QUERY_LENGTH && attempts <= MAX_TRIM_ATTEMPTS) {
+            Optional<WikimediaImage> result = search(query);
+            if (result.isPresent()) {
+                return result;
+            }
+            query = query.substring(0, query.length() - 1);
+            attempts++;
+        }
+        return Optional.empty();
+    }
+
+    private Optional<WikimediaImage> search(String query) {
         try {
             String uri = UriComponentsBuilder.fromUriString(BASE_URL)
                     .queryParam("action", "query")
                     .queryParam("generator", "search")
-                    .queryParam("gsrsearch", nameKo)
+                    .queryParam("gsrsearch", query)
                     .queryParam("gsrnamespace", 6)
                     .queryParam("gsrlimit", 5)
                     .queryParam("prop", "imageinfo")
@@ -60,7 +79,7 @@ public class SpotWikimediaImageClient {
             JsonNode response = restClient.get().uri(uri).retrieve().body(JsonNode.class);
             return extractFirstUsableImage(response);
         } catch (RestClientException e) {
-            log.warn("Wikimedia Commons search failed for '{}'.", nameKo, e);
+            log.warn("Wikimedia Commons search failed for '{}'.", query, e);
             return Optional.empty();
         }
     }
