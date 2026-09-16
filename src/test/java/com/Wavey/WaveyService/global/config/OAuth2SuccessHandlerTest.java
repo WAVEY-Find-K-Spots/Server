@@ -103,6 +103,40 @@ class OAuth2SuccessHandlerTest {
     }
 
     @Test
+    void state가_app_힌트를_담고_있으면_세션_없이도_앱_딥링크로_리다이렉트한다() throws Exception {
+        OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
+                authTokenService,
+                userRepository,
+                "http://localhost:3000/oauth/callback",
+                "wavey://oauth/callback"
+        );
+        User user = User.builder()
+                .id(3L)
+                .provider("google")
+                .providerId("app-provider-id")
+                .email("app-user@example.com")
+                .name("앱유저")
+                .role(Role.USER)
+                .build();
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(oAuth2User.getAttribute("providerId")).thenReturn("app-provider-id");
+        when(oAuth2User.getAttribute("provider")).thenReturn("google");
+        when(userRepository.findByProviderAndProviderId("google", "app-provider-id"))
+                .thenReturn(Optional.of(user));
+        when(authTokenService.issueLoginCode(3L, false)).thenReturn("login-code");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("state", "app:random-state-value");
+        // 세션을 아예 생성하지 않아도(STATELESS) state만으로 힌트가 복원되어야 한다.
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        assertThat(response.getRedirectedUrl()).isEqualTo(
+                "wavey://oauth/callback?code=login-code"
+        );
+    }
+
+    @Test
     void 로그인_코드_저장_실패시_오류코드로_프론트에_리다이렉트한다() throws Exception {
         OAuth2SuccessHandler handler = new OAuth2SuccessHandler(
                 authTokenService,
