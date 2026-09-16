@@ -20,6 +20,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -84,7 +85,9 @@ public class SecurityConfig {
                         .failureHandler(oAuth2FailureHandler)
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider, userRepository, authTokenService),
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new OAuth2PlatformHintFilter(),
+                        OAuth2AuthorizationRequestRedirectFilter.class);
 
         return http.build();
     }
