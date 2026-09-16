@@ -16,6 +16,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "서버 내부 오류가 발생했습니다."),
     EXTERNAL_API_DISABLED(HttpStatus.SERVICE_UNAVAILABLE, "EXTERNAL_API_DISABLED", "현재 DB 전용 모드입니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "요청한 데이터를 찾을 수 없습니다."),
+    POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "POLICY_NOT_FOUND", "해당 정책 문서를 찾을 수 없습니다."),
     STAMP_TOO_FAR(HttpStatus.BAD_REQUEST, "STAMP_TOO_FAR", "스탬프 획득 가능 거리 밖입니다."),
 
     // ROUTE

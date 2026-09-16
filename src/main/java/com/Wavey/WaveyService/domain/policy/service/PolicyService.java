@@ -1,31 +1,53 @@
 package com.Wavey.WaveyService.domain.policy.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import org.springframework.core.io.ClassPathResource;
+import com.Wavey.WaveyService.domain.policy.dto.response.PolicyResponse;
+import com.Wavey.WaveyService.domain.policy.entity.PolicyDocument;
+import com.Wavey.WaveyService.domain.policy.enums.PolicyCategory;
+import com.Wavey.WaveyService.domain.policy.repository.PolicyDocumentRepository;
+import com.Wavey.WaveyService.domain.user.enums.Language;
+import com.Wavey.WaveyService.global.exception.CustomException;
+import com.Wavey.WaveyService.global.exception.ErrorCode;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class PolicyService {
 
-    private static final String TERMS_PATH = "policies/terms-of-service.md";
-    private static final String PRIVACY_PATH = "policies/privacy-policy.md";
+    private final PolicyDocumentRepository policyDocumentRepository;
 
-    public String getTermsOfService() {
-        return readPolicy(TERMS_PATH);
+    public PolicyResponse getPolicy(String category, String language) {
+        PolicyCategory policyCategory = parseCategory(category);
+        Language policyLanguage = parseLanguage(language);
+
+        PolicyDocument policyDocument = policyDocumentRepository
+                .findByCategoryAndLanguageAndActiveTrue(policyCategory, policyLanguage)
+                .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
+
+        return PolicyResponse.from(policyDocument);
     }
 
-    public String getPrivacyPolicy() {
-        return readPolicy(PRIVACY_PATH);
-    }
-
-    private String readPolicy(String path) {
-        ClassPathResource resource = new ClassPathResource(path);
-        try (InputStream inputStream = resource.getInputStream()) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("정책 문서를 읽을 수 없습니다: " + path, e);
+    private PolicyCategory parseCategory(String value) {
+        try {
+            return PolicyCategory.valueOf(normalize(value));
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
         }
+    }
+
+    private Language parseLanguage(String value) {
+        try {
+            return Language.valueOf(normalize(value));
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
+        }
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            throw new CustomException(ErrorCode.COMMON_INVALID_PARAMETER);
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
     }
 }

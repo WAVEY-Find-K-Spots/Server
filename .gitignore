@@ -50,8 +50,6 @@ src/main/resources/**/*
 !src/main/resources/application.yml
 !src/main/resources/datasets/
 !src/main/resources/datasets/**
-!src/main/resources/policies/
-!src/main/resources/policies/**
 
 # Tool runtime junction
 /node_modules/
