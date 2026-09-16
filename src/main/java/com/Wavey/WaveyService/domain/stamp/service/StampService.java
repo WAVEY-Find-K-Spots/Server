@@ -1,5 +1,6 @@
 package com.Wavey.WaveyService.domain.stamp.service;
 
+import com.Wavey.WaveyService.domain.notification.event.NotificationEvent;
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.domain.stamp.dto.StampClaimRequest;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +46,7 @@ public class StampService {
     private final UserRepository users;
     private final SpotRepository spots;
     private final UserBadgeService userBadges;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Schema(description = "스탬프 항목 (이름/이미지는 Spot에서 조회)")
     public record StampItem(
@@ -145,6 +148,8 @@ public class StampService {
             throw new CustomException(ErrorCode.STAMP_TOO_FAR);
         }
 
+        Map<Long, Long> previousBadgeProgress = userBadges.progressByBadgeId(userId);
+
         UserStamp entry =
                 collected.saveAndFlush(
                         UserStamp.builder()
@@ -155,8 +160,15 @@ public class StampService {
                                 .acquiredAt(LocalDateTime.now())
                                 .build());
 
+        eventPublisher.publishEvent(
+                new NotificationEvent.StampAcquired(
+                        userId, stamp.getId(), spot.getNameKo(), spot.getNameEn()));
+
+        UserBadgeService.BadgeCollection currentBadges = userBadges.collection(userId, lang);
+        publishBadgeProgressEvents(userId, previousBadgeProgress, currentBadges);
+
         return new Claim(
-                toItem(spot, stamp, entry, lang), true, userBadges.collection(userId, lang));
+                toItem(spot, stamp, entry, lang), true, currentBadges);
     }
 
     public StampItem detail(Long stampId, Long userId, String language) {
@@ -216,6 +228,32 @@ public class StampService {
             return DEFAULT_PAGE_SIZE;
         }
         return Math.min(size, MAX_PAGE_SIZE);
+    }
+
+    private void publishBadgeProgressEvents(
+            Long userId,
+            Map<Long, Long> previousProgress,
+            UserBadgeService.BadgeCollection current) {
+        for (UserBadgeService.BadgeItem item : badgeItemsById(current).values()) {
+            long oldProgress = previousProgress.getOrDefault(item.badgeId(), 0L);
+            if (item.progress() > oldProgress) {
+                eventPublisher.publishEvent(
+                        new NotificationEvent.BadgeProgressed(
+                                userId,
+                                item.badgeId(),
+                                item.progress(),
+                                item.requiredStamps()));
+            }
+        }
+    }
+
+    private Map<Long, UserBadgeService.BadgeItem> badgeItemsById(
+            UserBadgeService.BadgeCollection collection) {
+        Map<Long, UserBadgeService.BadgeItem> result = new HashMap<>();
+        collection.acquired().forEach(item -> result.put(item.badgeId(), item));
+        collection.claimable().forEach(item -> result.put(item.badgeId(), item));
+        collection.inProgress().forEach(item -> result.put(item.badgeId(), item));
+        return result;
     }
 
     private String language(String requested) {
