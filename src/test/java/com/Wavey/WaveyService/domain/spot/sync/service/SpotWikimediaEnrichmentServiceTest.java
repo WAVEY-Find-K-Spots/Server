@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.spot.sync.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,7 +41,7 @@ class SpotWikimediaEnrichmentServiceTest {
         ReflectionTestUtils.setField(service, "restClientBuilder", RestClient.builder());
         Spot spot = spot(1L, "무명카페");
         given(spotRepository.findMissingImage(any(Pageable.class))).willReturn(List.of(spot));
-        given(wikimediaImageClient.findImage("무명카페")).willReturn(Optional.empty());
+        given(wikimediaImageClient.findImage(eq("무명카페"), any())).willReturn(Optional.empty());
 
         SpotWikimediaEnrichResponse result = service.enrichImages(10);
 
