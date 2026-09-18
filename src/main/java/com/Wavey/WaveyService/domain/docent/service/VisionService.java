@@ -2,6 +2,7 @@ package com.Wavey.WaveyService.domain.docent.service;
 
 import com.Wavey.WaveyService.domain.docent.client.GoogleVisionClient;
 import com.Wavey.WaveyService.domain.docent.dto.HeritageResponse;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextData;
 import com.Wavey.WaveyService.domain.docent.dto.TranslationResponse;
 import com.Wavey.WaveyService.domain.docent.dto.VisionAnalysisResponse;
 import com.Wavey.WaveyService.domain.docent.dto.VisionFeature;
@@ -29,12 +30,14 @@ public class VisionService {
         List<HeritageResponse> heritage = null;
         WebDetectionResponse webSearch = null;
 
+        OcrTextData ocrTextData = null;
         String rawText = null;
         if (features.contains(VisionFeature.TRANSLATION) || features.contains(VisionFeature.HERITAGE)) {
-            rawText = googleVisionClient.extractText(imageResource);
+            ocrTextData = googleVisionClient.extractText(imageResource);
+            rawText = ocrTextData.text();
         }
         if (features.contains(VisionFeature.TRANSLATION)) {
-            translation = translationService.process(rawText);
+            translation = translationService.process(ocrTextData);
         }
         if (features.contains(VisionFeature.HERITAGE)) {
             List<String> rawCandidates = googleVisionClient.detectLandmarks(

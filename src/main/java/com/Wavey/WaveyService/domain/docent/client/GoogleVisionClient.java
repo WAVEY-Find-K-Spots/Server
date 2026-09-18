@@ -1,5 +1,8 @@
 package com.Wavey.WaveyService.domain.docent.client;
 
+import com.Wavey.WaveyService.domain.docent.dto.OcrPoint;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextBlock;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextData;
 import com.Wavey.WaveyService.domain.docent.dto.WebDetectionRawData;
 import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
@@ -13,6 +16,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +37,7 @@ public class GoogleVisionClient {
     /**
      * 1. 번역용 텍스트 추출 (TEXT_DETECTION)
      */
-    public String extractText(Resource imageResource) {
+    public OcrTextData extractText(Resource imageResource) {
         try {
             AnnotateImageResponse response = this.cloudVisionTemplate.analyzeImage(
                     imageResource, Feature.Type.TEXT_DETECTION);
@@ -42,16 +46,66 @@ public class GoogleVisionClient {
                 throw new CustomException(ErrorCode.VISION_ANALYSIS_FAILED);
             }
 
-            String text = response.getFullTextAnnotation().getText();
+            TextAnnotation annotation = response.getFullTextAnnotation();
+            String text = annotation.getText();
 
             if (text.isEmpty()) {
                 log.info("Vision AI: 추출된 텍스트가 없습니다.");
-                return "";
+                return OcrTextData.empty();
             }
-            return text;
+            return new OcrTextData(text, extractLayoutBlocks(annotation));
         } catch (Exception e) {
             log.error("Vision AI OCR Error", e);
             throw mapVisionException(e);
+        }
+    }
+
+    private List<OcrTextBlock> extractLayoutBlocks(TextAnnotation annotation) {
+        List<OcrTextBlock> blocks = new ArrayList<>();
+        for (Page page : annotation.getPagesList()) {
+            for (Block block : page.getBlocksList()) {
+                for (Paragraph paragraph : block.getParagraphsList()) {
+                    String paragraphText = paragraphText(paragraph);
+                    if (paragraphText.isBlank()) {
+                        continue;
+                    }
+                    List<OcrPoint> polygon = paragraph.getBoundingBox().getVerticesList().stream()
+                            .map(vertex -> new OcrPoint(vertex.getX(), vertex.getY()))
+                            .toList();
+                    blocks.add(new OcrTextBlock(
+                            paragraphText,
+                            polygon,
+                            paragraph.getConfidence()
+                    ));
+                }
+            }
+        }
+        return List.copyOf(blocks);
+    }
+
+    private String paragraphText(Paragraph paragraph) {
+        StringBuilder text = new StringBuilder();
+        for (Word word : paragraph.getWordsList()) {
+            for (Symbol symbol : word.getSymbolsList()) {
+                text.append(symbol.getText());
+                appendDetectedBreak(text, symbol);
+            }
+        }
+        return text.toString().strip();
+    }
+
+    private void appendDetectedBreak(StringBuilder text, Symbol symbol) {
+        if (!symbol.hasProperty() || !symbol.getProperty().hasDetectedBreak()) {
+            return;
+        }
+        TextAnnotation.DetectedBreak.BreakType type =
+                symbol.getProperty().getDetectedBreak().getType();
+        switch (type) {
+            case SPACE, SURE_SPACE -> text.append(' ');
+            case EOL_SURE_SPACE, LINE_BREAK -> text.append('\n');
+            case HYPHEN -> text.append('-');
+            default -> {
+            }
         }
     }
 

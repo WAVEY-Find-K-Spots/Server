@@ -2,6 +2,9 @@ package com.Wavey.WaveyService.domain.docent.service;
 
 import com.Wavey.WaveyService.domain.docent.client.TranslationClient;
 import com.Wavey.WaveyService.domain.docent.dto.CulturalTermResponse;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextBlock;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextData;
+import com.Wavey.WaveyService.domain.docent.dto.TranslationLayoutBlockResponse;
 import com.Wavey.WaveyService.domain.docent.dto.TranslationResponse;
 import com.Wavey.WaveyService.domain.docent.model.CulturalTerm;
 import com.Wavey.WaveyService.domain.docent.repository.CulturalTermRepository;
@@ -60,6 +63,70 @@ public class TranslationService {
         return new TranslationResponse(normalizedText, translatedText, termResponses);
     }
 
+    public TranslationResponse process(OcrTextData ocrTextData) {
+        if (ocrTextData == null) {
+            return process((String) null);
+        }
+
+        String normalizedText = normalize(ocrTextData.text());
+        if (normalizedText.isBlank()) {
+            return new TranslationResponse("", "", List.of(), List.of());
+        }
+
+        List<OcrTextBlock> normalizedBlocks = ocrTextData.blocks().stream()
+                .map(block -> new OcrTextBlock(
+                        normalize(block.text()),
+                        block.polygon(),
+                        block.confidence()
+                ))
+                .filter(block -> !block.text().isBlank())
+                .toList();
+        if (normalizedBlocks.isEmpty()) {
+            return process(normalizedText);
+        }
+
+        List<CulturalTerm> candidates = culturalTermRepository.findCandidates(normalizedText);
+        boolean menu = isMenu(normalizedText, candidates);
+        List<LayoutTranslationPlan> layoutPlans = normalizedBlocks.stream()
+                .map(block -> new LayoutTranslationPlan(
+                        block,
+                        menu
+                                ? createMenuPlan(block.text(), candidates)
+                                : createProsePlan(block.text(), candidates)
+                ))
+                .toList();
+        List<String> translatedBlocks = translatePlans(
+                layoutPlans.stream().map(LayoutTranslationPlan::plan).toList()
+        );
+
+        Map<String, CulturalTerm> selectedTerms = layoutPlans.stream()
+                .flatMap(layoutPlan -> layoutPlan.plan().terms().stream())
+                .collect(Collectors.toMap(
+                        CulturalTerm::korean,
+                        term -> term,
+                        (first, ignored) -> first,
+                        LinkedHashMap::new
+                ));
+        List<CulturalTermResponse> termResponses = selectedTerms.values().stream()
+                .map(CulturalTermResponse::from)
+                .toList();
+
+        List<TranslationLayoutBlockResponse> layoutResponses = new ArrayList<>();
+        for (int index = 0; index < layoutPlans.size(); index++) {
+            layoutResponses.add(TranslationLayoutBlockResponse.of(
+                    layoutPlans.get(index).block(),
+                    translatedBlocks.get(index)
+            ));
+        }
+
+        return new TranslationResponse(
+                normalizedText,
+                String.join("\n", translatedBlocks),
+                termResponses,
+                layoutResponses
+        );
+    }
+
     private TranslationPlan createMenuPlan(String text, List<CulturalTerm> candidates) {
         Map<String, CulturalTerm> foodTerms = uniqueTerms(candidates).values().stream()
                 .filter(term -> FOOD_DOMAIN.equals(term.domain()))
@@ -109,20 +176,31 @@ public class TranslationService {
     }
 
     private String translate(TranslationPlan plan) {
-        List<String> inputs = plan.googleInputs().stream()
+        return translatePlans(List.of(plan)).getFirst();
+    }
+
+    private List<String> translatePlans(List<TranslationPlan> plans) {
+        List<String> inputs = plans.stream()
+                .flatMap(plan -> plan.googleInputs().stream())
                 .filter(value -> value != null)
                 .toList();
         List<String> translations = translateInBatches(inputs);
 
-        List<String> translatedLines = new ArrayList<>(plan.sourceLines().size());
+        List<String> results = new ArrayList<>(plans.size());
         int translationIndex = 0;
-        for (int index = 0; index < plan.sourceLines().size(); index++) {
-            String fixedTranslation = plan.fixedTranslations().get(index);
-            translatedLines.add(
-                    fixedTranslation == null ? translations.get(translationIndex++) : fixedTranslation
-            );
+        for (TranslationPlan plan : plans) {
+            List<String> translatedLines = new ArrayList<>(plan.sourceLines().size());
+            for (int index = 0; index < plan.sourceLines().size(); index++) {
+                String fixedTranslation = plan.fixedTranslations().get(index);
+                translatedLines.add(
+                        fixedTranslation == null
+                                ? translations.get(translationIndex++)
+                                : fixedTranslation
+                );
+            }
+            results.add(String.join("\n", translatedLines));
         }
-        return String.join("\n", translatedLines);
+        return List.copyOf(results);
     }
 
     private List<String> translateInBatches(List<String> inputs) {
@@ -328,6 +406,11 @@ public class TranslationService {
             List<String> fixedTranslations,
             List<String> googleInputs,
             List<CulturalTerm> terms
+    ) { }
+
+    private record LayoutTranslationPlan(
+            OcrTextBlock block,
+            TranslationPlan plan
     ) { }
 
     private record TermMatch(int start, int end, CulturalTerm term) { }

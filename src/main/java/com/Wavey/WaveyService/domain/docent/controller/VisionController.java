@@ -55,6 +55,8 @@ public class VisionController {
             description = """
                     이미지와 실행할 기능 목록을 전달합니다.
                     features에는 TRANSLATION, HERITAGE, WEB_SEARCH를 지정할 수 있습니다.
+                    TRANSLATION 응답의 layoutBlocks는 선택형 번역 이미지 합성을 위한 베타 데이터입니다.
+                    최종 이미지 생성과 배경 복원은 프론트엔드에서 처리합니다.
                     """
     )
     @ApiResponses({
