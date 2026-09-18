@@ -1,6 +1,9 @@
 package com.Wavey.WaveyService.domain.docent.service;
 
 import com.Wavey.WaveyService.domain.docent.client.TranslationClient;
+import com.Wavey.WaveyService.domain.docent.dto.OcrPoint;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextBlock;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextData;
 import com.Wavey.WaveyService.domain.docent.dto.TranslationResponse;
 import com.Wavey.WaveyService.domain.docent.model.CulturalTerm;
 import com.Wavey.WaveyService.domain.docent.repository.CulturalTermRepository;
@@ -164,6 +167,49 @@ class TranslationServiceTest {
         assertThat(response.translatedText()).isEqualTo("FIRSTSECOND");
         verify(translationClient).translateKoreanToEnglish(List.of(firstChunk), false);
         verify(translationClient).translateKoreanToEnglish(List.of(secondChunk), false);
+        verifyNoMoreInteractions(translationClient);
+    }
+
+    @Test
+    void OCR_레이아웃_블록을_한번의_배치로_번역하고_좌표를_유지한다() {
+        String text = "경복궁\n서울의 대표 궁궐입니다.";
+        List<OcrPoint> firstPolygon = List.of(
+                new OcrPoint(10, 20),
+                new OcrPoint(110, 20),
+                new OcrPoint(110, 50),
+                new OcrPoint(10, 50)
+        );
+        OcrTextData ocrTextData = new OcrTextData(text, List.of(
+                new OcrTextBlock("경복궁", firstPolygon, 0.98f),
+                new OcrTextBlock("서울의 대표 궁궐입니다.", List.of(
+                        new OcrPoint(10, 60),
+                        new OcrPoint(240, 60),
+                        new OcrPoint(240, 90),
+                        new OcrPoint(10, 90)
+                ), 0.94f)
+        ));
+        when(culturalTermRepository.findCandidates(text)).thenReturn(List.of());
+        when(translationClient.translateKoreanToEnglish(
+                List.of("경복궁", "서울의 대표 궁궐입니다."), false
+        )).thenReturn(List.of(
+                "Gyeongbokgung Palace",
+                "It is Seoul's representative palace."
+        ));
+
+        TranslationResponse response = translationService.process(ocrTextData);
+
+        assertThat(response.translatedText()).isEqualTo(
+                "Gyeongbokgung Palace\nIt is Seoul's representative palace."
+        );
+        assertThat(response.layoutBlocks()).hasSize(2);
+        assertThat(response.layoutBlocks().getFirst().originalText()).isEqualTo("경복궁");
+        assertThat(response.layoutBlocks().getFirst().translatedText())
+                .isEqualTo("Gyeongbokgung Palace");
+        assertThat(response.layoutBlocks().getFirst().polygon()).isEqualTo(firstPolygon);
+        assertThat(response.layoutBlocks().getFirst().confidence()).isEqualTo(0.98f);
+        verify(translationClient).translateKoreanToEnglish(
+                List.of("경복궁", "서울의 대표 궁궐입니다."), false
+        );
         verifyNoMoreInteractions(translationClient);
     }
 

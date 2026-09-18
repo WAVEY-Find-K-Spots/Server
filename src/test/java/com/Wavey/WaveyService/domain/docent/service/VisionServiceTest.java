@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.docent.service;
 
 import com.Wavey.WaveyService.domain.docent.client.GoogleVisionClient;
+import com.Wavey.WaveyService.domain.docent.dto.OcrTextData;
 import com.Wavey.WaveyService.domain.docent.dto.TranslationResponse;
 import com.Wavey.WaveyService.domain.docent.dto.VisionAnalysisResponse;
 import com.Wavey.WaveyService.domain.docent.dto.VisionFeature;
@@ -39,9 +40,10 @@ class VisionServiceTest {
 
     @Test
     void 요청한_기능만_실행한다() {
-        when(googleVisionClient.extractText(imageResource)).thenReturn("육회");
+        OcrTextData ocrTextData = new OcrTextData("육회", List.of());
+        when(googleVisionClient.extractText(imageResource)).thenReturn(ocrTextData);
         TranslationResponse translation = new TranslationResponse("육회", "Yukhoe", List.of());
-        when(translationService.process("육회")).thenReturn(translation);
+        when(translationService.process(ocrTextData)).thenReturn(translation);
 
         VisionAnalysisResponse response = visionService.analyze(
                 imageResource,
@@ -59,7 +61,8 @@ class VisionServiceTest {
 
     @Test
     void 번역과_국가유산을_함께_요청해도_OCR은_한번만_실행한다() {
-        when(googleVisionClient.extractText(imageResource)).thenReturn("서울 숭례문");
+        OcrTextData ocrTextData = new OcrTextData("서울 숭례문", List.of());
+        when(googleVisionClient.extractText(imageResource)).thenReturn(ocrTextData);
         when(googleVisionClient.detectLandmarks(imageResource, 37.5599, 126.9753))
                 .thenReturn(List.of("Sungnyemun Gate"));
         when(heritageService.process(
@@ -74,7 +77,7 @@ class VisionServiceTest {
         );
 
         verify(googleVisionClient, times(1)).extractText(imageResource);
-        verify(translationService).process("서울 숭례문");
+        verify(translationService).process(ocrTextData);
         verify(heritageService).process(
                 List.of("Sungnyemun Gate"), "서울 숭례문", 37.5599, 126.9753
         );
