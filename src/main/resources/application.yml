@@ -76,12 +76,12 @@ spring:
 
   # [JPA & Hibernate Settings]
   jpa:
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${JPA_FORMAT_SQL:false}
     open-in-view: false
 
   # [JSON Serialization Setup]
@@ -189,8 +189,8 @@ vision:
 # [Logging Configuration]
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${HIBERNATE_BINDER_LOG_LEVEL:WARN}
 
 # [Swagger / OpenAPI Documentation]
 springdoc:
