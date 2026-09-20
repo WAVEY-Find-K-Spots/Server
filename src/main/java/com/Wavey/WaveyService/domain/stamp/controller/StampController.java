@@ -164,6 +164,7 @@ public class StampController {
             summary = "스탬프북 조회",
             description =
                     "모든 Spot을 스탬프 후보로 페이지 조회합니다. "
+                            + "내가 획득한 스탬프가 최근 획득 순으로 먼저, 이어서 미획득 Spot이 id 순으로 내려옵니다. "
                             + "이름/이미지는 Spot에서 읽고, acquired는 내 획득 여부입니다. "
                             + "regionId로 지역 필터가 가능합니다.",
             security = @SecurityRequirement(name = "bearerAuth"))
