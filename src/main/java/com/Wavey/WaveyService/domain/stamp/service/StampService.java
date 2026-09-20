@@ -22,7 +22,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,11 +82,12 @@ public class StampService {
         int pageNo = page == null || page < 0 ? 0 : page;
         int pageSize = normalizeSize(size);
 
-        PageRequest pageable = PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.ASC, "id"));
+        // 정렬은 쿼리에서 처리한다: 획득한 스팟(최근 획득 순) → 미획득 스팟(id 순)
+        PageRequest pageable = PageRequest.of(pageNo, pageSize);
         Page<Spot> spotPage =
                 regionId == null
-                        ? spots.findAll(pageable)
-                        : spots.findByRegionId(regionId, pageable);
+                        ? collected.findSpotsAcquiredFirst(userId, pageable)
+                        : collected.findSpotsByRegionAcquiredFirst(userId, regionId, pageable);
 
         Map<Long, UserStamp> ownedBySpotId = new HashMap<>();
         collected.findByUserId(userId).forEach(us -> ownedBySpotId.put(us.getSpotId(), us));

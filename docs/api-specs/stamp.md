@@ -94,6 +94,8 @@
 
 모든 Spot을 스탬프 후보로 페이지 조회합니다. 이름/이미지는 Spot에서 읽고, `acquired`는 내 획득 여부입니다.
 
+**정렬**: 내가 획득한 스탬프가 **최근 획득 순**으로 먼저 내려오고, 이어서 미획득 Spot이 `spotId` 순으로 내려옵니다. `regionId` 필터를 써도 동일합니다. 따라서 획득한 스탬프는 항상 첫 페이지(들)에 모여 있고, `page`/`size`/`totalElements`/`hasNext`는 기존과 동일하게 전체 Spot 기준입니다.
+
 - 인증: 필요
 - query: `regionId`(선택), `language`(선택), `page`(기본 0), `size`(기본 20, 최대 100)
 
