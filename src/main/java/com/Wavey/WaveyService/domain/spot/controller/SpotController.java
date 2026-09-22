@@ -47,7 +47,6 @@ import java.util.List;
 @RequestMapping("/api/v1/spots")
 @RequiredArgsConstructor
 @Validated
-@PreAuthorize("isAuthenticated()")
 public class SpotController {
 
     private final SpotService spotService;
@@ -305,6 +304,7 @@ public class SpotController {
             @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
     })
     @PostMapping("/{spotId}/save")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResponse<SpotSaveResponse>> saveSpot(
             @Parameter(description = "장소 ID", example = "1") @PathVariable Long spotId,
             @Parameter(hidden = true) @AuthenticationPrincipal User user
@@ -324,6 +324,7 @@ public class SpotController {
             @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없음")
     })
     @DeleteMapping("/{spotId}/save")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResponse<SpotSaveResponse>> unsaveSpot(
             @Parameter(description = "장소 ID", example = "1") @PathVariable Long spotId,
             @Parameter(hidden = true) @AuthenticationPrincipal User user

@@ -28,6 +28,10 @@ final class SecurityEndpoints {
     static final String VISION_ANALYZE = "/api/v1/vision/analyze";
     static final String PUBLIC_ROUTE = "/api/v1/routes/public";
     static final String[] PUBLIC_GET = {
+            "/api/v1/spots",
+            "/api/v1/spots/*",
+            "/api/v1/spots/*/nearby",
+            "/api/v1/spots/*/reviews",
             "/api/v1/contents/**",
             "/api/v1/albums/**",
             "/api/v1/pages/home/**",
