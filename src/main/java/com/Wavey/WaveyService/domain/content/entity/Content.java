@@ -14,7 +14,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "contents", uniqueConstraints = @UniqueConstraint(name = "uk_contents_title_category", columnNames = {"title_ko", "category"}))
+@Table(
+        name = "contents",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_contents_title_category",
+                columnNames = {"title_ko", "category"}
+        )
+)
 @AttributeOverride(name = "id", column = @Column(name = "content_id"))
 @Getter
 @Builder
