@@ -4,6 +4,7 @@ import com.Wavey.WaveyService.global.common.BaseEntity;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -12,8 +13,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "spot_contents", uniqueConstraints = @UniqueConstraint(
-        name = "uk_spot_contents_spot_content", columnNames = {"spot_id", "content_id"}))
+@Table(
+        name = "spot_contents",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_spot_contents_spot_content",
+                columnNames = {"spot_id", "content_id"}
+        ),
+        indexes = {
+                @Index(name = "idx_spot_contents_spot_id", columnList = "spot_id"),
+                @Index(name = "idx_spot_contents_content_id", columnList = "content_id")
+        }
+)
 @AttributeOverride(name = "id", column = @Column(name = "id"))
 @Getter
 @Builder

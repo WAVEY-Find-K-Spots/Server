@@ -10,6 +10,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -21,7 +22,14 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
-@Table(name = "spots")
+@Table(
+        name = "spots",
+        indexes = {
+                @Index(name = "idx_spots_region_category", columnList = "region_id, category"),
+                @Index(name = "idx_spots_popular", columnList = "saved_count, review_count, spot_id"),
+                @Index(name = "idx_spots_location", columnList = "latitude, longitude")
+        }
+)
 @AttributeOverride(name = "id", column = @Column(name = "spot_id"))
 @Getter
 @Builder

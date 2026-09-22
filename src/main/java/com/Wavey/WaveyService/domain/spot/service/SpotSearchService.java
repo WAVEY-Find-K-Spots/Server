@@ -14,6 +14,7 @@ import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -24,11 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class SpotSearchService {
 
@@ -44,6 +48,9 @@ public class SpotSearchService {
     ) {
         validateLocation(request);
 
+        long startedAt =
+                System.nanoTime();
+
         Page<Spot> page =
                 spotRepository.findAll(
                         SpotSearchSpecification.from(request, userId),
@@ -54,17 +61,23 @@ public class SpotSearchService {
                         )
                 );
 
+        long queryFinishedAt =
+                System.nanoTime();
+
+        List<Spot> pageSpots =
+                deduplicatePlaces(page.getContent());
+
         Set<Long> savedSpotIds =
                 findSavedSpotIds(
                         userId,
-                        page.getContent()
+                        pageSpots
                 );
 
         Locale locale =
                 LocaleContextHolder.getLocale();
 
         List<SpotListResponse> spots =
-                page.getContent()
+                pageSpots
                         .stream()
                         .map(
                                 spot ->
@@ -83,13 +96,90 @@ public class SpotSearchService {
                         )
                         .toList();
 
+        long finishedAt =
+                System.nanoTime();
+
+        log.info(
+                "Spot search completed: keyword={}, category={}, sort={}, page={}, rawCount={}, dedupedCount={}, queryMs={}, totalMs={}",
+                request.keyword(),
+                request.category(),
+                request.sort(),
+                request.page(),
+                page.getNumberOfElements(),
+                spots.size(),
+                elapsedMillis(startedAt, queryFinishedAt),
+                elapsedMillis(startedAt, finishedAt)
+        );
+
         return new SpotPageResponse(
                 spots,
                 page.getNumber(),
-                page.getTotalElements(),
-                page.getTotalPages(),
+                totalElements(page, spots),
+                totalPages(page, spots),
                 page.hasNext()
         );
+    }
+
+    private long totalElements(
+            Page<Spot> page,
+            List<SpotListResponse> spots
+    ) {
+        return page.hasNext()
+                ? page.getTotalElements()
+                : spots.size();
+    }
+
+    private int totalPages(
+            Page<Spot> page,
+            List<SpotListResponse> spots
+    ) {
+        return page.hasNext()
+                ? page.getTotalPages()
+                : spots.isEmpty() ? 0 : page.getNumber() + 1;
+    }
+
+    private long elapsedMillis(
+            long start,
+            long end
+    ) {
+        return (end - start) / 1_000_000L;
+    }
+
+    private List<Spot> deduplicatePlaces(
+            List<Spot> spots
+    ) {
+        Map<String, Spot> unique =
+                new LinkedHashMap<>();
+
+        for (Spot spot : spots) {
+            unique.putIfAbsent(
+                    placeKey(spot),
+                    spot
+            );
+        }
+
+        return List.copyOf(unique.values());
+    }
+
+    private String placeKey(
+            Spot spot
+    ) {
+        return normalize(spot.getNameKo())
+                + "|"
+                + normalize(spot.getAddressKo());
+    }
+
+    private String normalize(
+            String value
+    ) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .trim()
+                .replaceAll("\\s+", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private void validateLocation(
