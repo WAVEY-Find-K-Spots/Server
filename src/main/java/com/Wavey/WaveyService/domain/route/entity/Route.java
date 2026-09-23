@@ -38,11 +38,6 @@ public class Route extends BaseEntity {
     private Visibility visibility;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(name = "travel_mode", length = 20, nullable = false)
-    private TransportMode travelMode = TransportMode.WALK;
-
-    @Builder.Default
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
     private List<RouteSpot> routeSpots = new ArrayList<>();
