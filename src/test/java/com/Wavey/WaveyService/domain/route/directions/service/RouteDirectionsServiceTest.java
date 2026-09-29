@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 
 import com.Wavey.WaveyService.domain.route.directions.client.RouteLeg;
 import com.Wavey.WaveyService.domain.route.directions.client.TmapDirectionsClient;
+import com.Wavey.WaveyService.domain.route.directions.client.TransitItinerary;
+import com.Wavey.WaveyService.domain.route.directions.client.TransitLegDetail;
 import com.Wavey.WaveyService.domain.route.dto.request.RouteDirectionsRequest;
 import com.Wavey.WaveyService.domain.route.dto.response.RouteDirectionsResponse;
 import com.Wavey.WaveyService.domain.route.entity.Route;
@@ -102,6 +104,48 @@ class RouteDirectionsServiceTest {
         assertThat(response.getSegments().get(0).getDurationText()).isEqualTo("대중교통 15분");
         assertThat(response.getSegments().get(0).getFromRouteSpotId()).isEqualTo(10L);
         assertThat(response.getGeometry().coordinates()).hasSize(2);
+    }
+
+    @Test
+    void 대중교통_경로_후보를_구간별로_반환하고_구간_대표값은_첫_후보를_따른다() {
+        Route route = routeWithSpots(Visibility.PRIVATE,
+                routeSpot(10L, 101L, 1),
+                routeSpot(15L, 105L, 2));
+        given(routeRepository.findById(routeId)).willReturn(java.util.Optional.of(route));
+        given(spotRepository.findAllById(List.of(101L, 105L)))
+                .willReturn(List.of(spot(101L, 37.5, 127.0), spot(105L, 37.6, 127.1)));
+
+        TransitLegDetail busLeg = new TransitLegDetail("BUS", "간선:273", "0068B7", "경복궁", "안국역",
+                3900, 720, 2, List.of("경복궁", "국립민속박물관", "안국역"));
+        TransitLegDetail subwayLeg = new TransitLegDetail("SUBWAY", "수도권3호선", "EF7C1C", "경복궁", "안국",
+                3000, 600, 1, List.of("경복궁", "안국"));
+        given(tmapDirectionsClient.route(TransportMode.TRANSIT, 127.0, 37.5, 127.1, 37.6))
+                .willReturn(RouteLeg.ofTransit(List.of(
+                        new TransitItinerary(4300, 1080, 420, 360, 0, 1500,
+                                List.of(new double[] {127.0, 37.5}, new double[] {127.1, 37.6}),
+                                List.of(busLeg)),
+                        new TransitItinerary(5100, 1320, 700, 540, 1, 1500,
+                                List.of(new double[] {127.0, 37.5}, new double[] {127.05, 37.55},
+                                        new double[] {127.1, 37.6}),
+                                List.of(subwayLeg)))));
+
+        RouteDirectionsResponse response = routeDirectionsService.getDirections(
+                routeId, new RouteDirectionsRequest(TransportMode.TRANSIT), ownerId);
+
+        RouteDirectionsResponse.Segment segment = response.getSegments().get(0);
+        assertThat(segment.getDurationSeconds()).isEqualTo(1080);
+        assertThat(segment.getTransitLegs()).hasSize(1);
+        assertThat(segment.getTransitLegs().get(0).getRouteName()).isEqualTo("간선:273");
+        assertThat(segment.getTransitOptions()).hasSize(2);
+
+        RouteDirectionsResponse.TransitOption second = segment.getTransitOptions().get(1);
+        assertThat(second.getDurationSeconds()).isEqualTo(1320);
+        assertThat(second.getTransferCount()).isEqualTo(1);
+        assertThat(second.getWalkSeconds()).isEqualTo(540);
+        assertThat(second.getFare()).isEqualTo(1500);
+        assertThat(second.getGeometry().coordinates()).hasSize(3);
+        assertThat(second.getLegs().get(0).getStationCount()).isEqualTo(1);
+        assertThat(second.getLegs().get(0).getPassStops()).containsExactly("경복궁", "안국");
     }
 
     @Test

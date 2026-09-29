@@ -80,8 +80,41 @@ public class RouteDirectionsResponse {
         @Schema(description = "구간 폴리라인")
         private GeoLineString geometry;
 
-        @Schema(description = "대중교통 세부 구간 목록 (TRANSIT일 때만 값이 있음, WALK/CAR는 빈 배열)")
+        @Schema(description = "대중교통 세부 구간 목록 (TRANSIT일 때만 값이 있음, WALK/CAR는 빈 배열). transitOptions[0].legs와 같음")
         private List<TransitLeg> transitLegs;
+
+        @Schema(description = "대중교통 경로 후보 목록 (추천 순, TRANSIT일 때만 값이 있음, WALK/CAR는 빈 배열). 구간의 거리·시간·폴리라인은 첫 번째 후보 기준")
+        private List<TransitOption> transitOptions;
+    }
+
+    @Schema(description = "대중교통 경로 후보 하나")
+    @Getter
+    @Builder
+    public static class TransitOption {
+
+        @Schema(description = "총 거리(m)", example = "4300")
+        private long distanceMeters;
+
+        @Schema(description = "총 소요시간(초)", example = "1080")
+        private long durationSeconds;
+
+        @Schema(description = "총 도보 거리(m)", example = "420")
+        private long walkDistanceMeters;
+
+        @Schema(description = "총 도보 시간(초)", example = "360")
+        private long walkSeconds;
+
+        @Schema(description = "환승 횟수", example = "1")
+        private int transferCount;
+
+        @Schema(description = "요금(원, 정보가 없으면 0)", example = "1500")
+        private int fare;
+
+        @Schema(description = "후보 경로 폴리라인")
+        private GeoLineString geometry;
+
+        @Schema(description = "세부 구간(도보/버스/지하철) 목록")
+        private List<TransitLeg> legs;
     }
 
     @Schema(description = "대중교통 세부 구간(도보/버스/지하철 등) 하나")
@@ -109,5 +142,11 @@ public class RouteDirectionsResponse {
 
         @Schema(description = "구간 소요시간(초)", example = "300")
         private long durationSeconds;
+
+        @Schema(description = "이동하는 정류장/역 수 (도보 구간은 0)", example = "4")
+        private int stationCount;
+
+        @Schema(description = "출발부터 도착까지 경유하는 정류장/역 이름 (도보 구간은 빈 배열)")
+        private List<String> passStops;
     }
 }
