@@ -114,7 +114,7 @@ public class RouteDirectionsService {
             totalDistance += leg.distanceMeters();
             totalDuration += leg.durationSeconds();
 
-            List<List<Double>> segmentPath = toCoordinateList(leg);
+            List<List<Double>> segmentPath = toCoordinateList(leg.path());
             appendPath(fullPath, segmentPath);
 
             segments.add(RouteDirectionsResponse.Segment.builder()
@@ -127,7 +127,8 @@ public class RouteDirectionsService {
                     .durationSeconds(leg.durationSeconds())
                     .durationText(durationText(mode, leg.durationSeconds()))
                     .geometry(GeoLineString.of(segmentPath))
-                    .transitLegs(toTransitLegs(leg))
+                    .transitLegs(toTransitLegs(leg.transitLegs()))
+                    .transitOptions(toTransitOptions(leg))
                     .build());
         }
 
@@ -162,8 +163,23 @@ public class RouteDirectionsService {
         }
     }
 
-    private List<RouteDirectionsResponse.TransitLeg> toTransitLegs(RouteLeg leg) {
-        return leg.transitLegs().stream()
+    private List<RouteDirectionsResponse.TransitOption> toTransitOptions(RouteLeg leg) {
+        return leg.transitOptions().stream()
+                .map(option -> RouteDirectionsResponse.TransitOption.builder()
+                        .distanceMeters(option.distanceMeters())
+                        .durationSeconds(option.durationSeconds())
+                        .walkDistanceMeters(option.walkDistanceMeters())
+                        .walkSeconds(option.walkSeconds())
+                        .transferCount(option.transferCount())
+                        .fare(option.fare())
+                        .geometry(GeoLineString.of(toCoordinateList(option.path())))
+                        .legs(toTransitLegs(option.legs()))
+                        .build())
+                .toList();
+    }
+
+    private List<RouteDirectionsResponse.TransitLeg> toTransitLegs(List<TransitLegDetail> legs) {
+        return legs.stream()
                 .map(this::toTransitLeg)
                 .toList();
     }
@@ -177,12 +193,14 @@ public class RouteDirectionsService {
                 .endName(detail.endName())
                 .distanceMeters(detail.distanceMeters())
                 .durationSeconds(detail.durationSeconds())
+                .stationCount(detail.stationCount())
+                .passStops(detail.passStops())
                 .build();
     }
 
-    private List<List<Double>> toCoordinateList(RouteLeg leg) {
+    private List<List<Double>> toCoordinateList(List<double[]> path) {
         List<List<Double>> coordinates = new ArrayList<>();
-        for (double[] coord : leg.path()) {
+        for (double[] coord : path) {
             coordinates.add(List.of(coord[0], coord[1]));
         }
         return coordinates;

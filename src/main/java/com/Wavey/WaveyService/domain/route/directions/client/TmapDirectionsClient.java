@@ -33,6 +33,7 @@ import org.springframework.web.client.RestClientResponseException;
 public class TmapDirectionsClient {
 
     private static final String COORD_TYPE = "WGS84GEO";
+    private static final int TRANSIT_OPTION_COUNT = 5;
 
     private final RestClient.Builder restClientBuilder;
 
@@ -124,8 +125,8 @@ public class TmapDirectionsClient {
 
     private RouteLeg requestTransitRoute(double fromLng, double fromLat, double toLng, double toLat) {
         String body = """
-                {"startX":"%s","startY":"%s","endX":"%s","endY":"%s","count":1,"format":"json"}
-                """.formatted(fromLng, fromLat, toLng, toLat);
+                {"startX":"%s","startY":"%s","endX":"%s","endY":"%s","count":%d,"format":"json"}
+                """.formatted(fromLng, fromLat, toLng, toLat, TRANSIT_OPTION_COUNT);
 
         JsonNode response = restClientBuilder.build()
                 .post()
@@ -139,7 +140,7 @@ public class TmapDirectionsClient {
         return parseTransitRoute(response);
     }
 
-    private RouteLeg parseTransitRoute(JsonNode response) {
+    RouteLeg parseTransitRoute(JsonNode response) {
         JsonNode itineraries = response == null
                 ? null
                 : response.path("metaData").path("plan").path("itineraries");
@@ -147,27 +148,56 @@ public class TmapDirectionsClient {
             throw new CustomException(ErrorCode.DIRECTIONS_PROVIDER_ERROR);
         }
 
-        JsonNode best = itineraries.get(0);
-        long distanceMeters = best.path("totalDistance").asLong(0L);
-        long durationSeconds = best.path("totalTime").asLong(0L);
+        List<TransitItinerary> options = new ArrayList<>();
+        for (JsonNode itinerary : itineraries) {
+            if (options.size() >= TRANSIT_OPTION_COUNT) {
+                break;
+            }
+            options.add(toTransitItinerary(itinerary));
+        }
 
+        return RouteLeg.ofTransit(options);
+    }
+
+    private TransitItinerary toTransitItinerary(JsonNode itinerary) {
         List<double[]> pathCoords = new ArrayList<>();
-        List<TransitLegDetail> transitLegs = new ArrayList<>();
-        for (JsonNode leg : best.path("legs")) {
+        List<TransitLegDetail> legs = new ArrayList<>();
+        for (JsonNode leg : itinerary.path("legs")) {
             String linestring = leg.path("passShape").path("linestring").asText("");
             if (StringUtils.hasText(linestring)) {
                 appendLinestring(pathCoords, linestring);
+            } else if (leg.path("steps").isArray() && !leg.path("steps").isEmpty()) {
+                for (JsonNode step : leg.path("steps")) {
+                    appendLinestring(pathCoords, step.path("linestring").asText(""));
+                }
             } else {
                 appendPoint(pathCoords, leg.path("start"));
                 appendPoint(pathCoords, leg.path("end"));
             }
-            transitLegs.add(toTransitLegDetail(leg));
+            legs.add(toTransitLegDetail(leg));
         }
 
-        return new RouteLeg(distanceMeters, durationSeconds, pathCoords, transitLegs);
+        return new TransitItinerary(
+                itinerary.path("totalDistance").asLong(0L),
+                itinerary.path("totalTime").asLong(0L),
+                itinerary.path("totalWalkDistance").asLong(0L),
+                itinerary.path("totalWalkTime").asLong(0L),
+                itinerary.path("transferCount").asInt(0),
+                itinerary.path("fare").path("regular").path("totalFare").asInt(0),
+                pathCoords,
+                legs
+        );
     }
 
     private TransitLegDetail toTransitLegDetail(JsonNode leg) {
+        List<String> passStops = new ArrayList<>();
+        for (JsonNode station : leg.path("passStopList").path("stationList")) {
+            String name = station.path("stationName").asText("");
+            if (StringUtils.hasText(name)) {
+                passStops.add(name);
+            }
+        }
+
         return new TransitLegDetail(
                 leg.path("mode").asText(null),
                 leg.path("route").asText(null),
@@ -175,7 +205,9 @@ public class TmapDirectionsClient {
                 leg.path("start").path("name").asText(null),
                 leg.path("end").path("name").asText(null),
                 leg.path("distance").asLong(0L),
-                leg.path("sectionTime").asLong(0L)
+                leg.path("sectionTime").asLong(0L),
+                Math.max(0, passStops.size() - 1),
+                passStops
         );
     }
 
