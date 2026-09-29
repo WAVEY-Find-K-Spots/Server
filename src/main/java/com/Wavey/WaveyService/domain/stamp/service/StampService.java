@@ -1,6 +1,7 @@
 package com.Wavey.WaveyService.domain.stamp.service;
 
 import com.Wavey.WaveyService.domain.spot.entity.Spot;
+import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 import com.Wavey.WaveyService.domain.spot.repository.SpotRepository;
 import com.Wavey.WaveyService.domain.stamp.dto.StampClaimRequest;
 import com.Wavey.WaveyService.domain.stamp.entity.Stamp;
@@ -51,6 +52,7 @@ public class StampService {
                     Long stampId,
             @Schema(description = "스팟 ID", example = "10") Long spotId,
             @Schema(description = "지역 ID", example = "1") Long regionId,
+            @Schema(description = "스팟 카테고리", nullable = true) SpotCategory category,
             @Schema(description = "이름 (language 적용)", example = "경복궁") String name,
             @Schema(description = "이미지 URL", example = "https://example.com/spots/10.png")
                     String imageUrl,
@@ -205,6 +207,7 @@ public class StampService {
                 stamp == null ? null : stamp.getId(),
                 spot.getId(),
                 spot.getRegionId(),
+                spot.getCategory(),
                 UiSupport.localized(spot.getNameKo(), spot.getNameEn(), lang),
                 spot.getImageUrl(),
                 owned != null,
