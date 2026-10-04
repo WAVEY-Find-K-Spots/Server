@@ -28,7 +28,13 @@ public class RedisAuthTokenService {
     private static final String LOGIN_CODE_PREFIX = "auth:login-code:";
     private static final String REFRESH_TOKEN_PREFIX = "auth:refresh:";
     private static final String ACCESS_BLACKLIST_PREFIX = "auth:blacklist:access:";
-    private static final DefaultRedisScript<Long> ROTATE_REFRESH_TOKEN_SCRIPT =
+    private static final String PASSWORD_RESET_PREFIX = "auth:password-reset:";
+    private static final DefaultRedisScript<String> CONSUME_PASSWORD_RESET_TOKEN_SCRIPT =
+            new DefaultRedisScript<>(
+                    "local value = redis.call('get', KEYS[1]); "
+                            + "if value then redis.call('del', KEYS[1]); end; return value",
+                    String.class
+            );    private static final DefaultRedisScript<Long> ROTATE_REFRESH_TOKEN_SCRIPT =
             new DefaultRedisScript<>(
                     "if redis.call('get', KEYS[1]) == ARGV[1] "
                             + "then redis.call('set', KEYS[1], ARGV[2], 'PX', ARGV[3]); "
@@ -48,6 +54,9 @@ public class RedisAuthTokenService {
 
     @Value("${auth.login-code-ttl:3m}")
     private Duration loginCodeTtl;
+
+    @Value("${auth.local-password-reset.token-ttl:15m}")
+    private Duration passwordResetTokenTtl;
 
     public String issueLoginCode(Long userId, boolean isNewUser) {
         byte[] randomBytes = new byte[32];
@@ -119,6 +128,48 @@ public class RedisAuthTokenService {
         return Long.valueOf(1L).equals(result);
     }
 
+    public String issuePasswordResetToken(Long userId) {
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+        execute("issue password reset token", () -> {
+            redisTemplate.opsForValue().set(
+                    passwordResetTokenKey(rawToken),
+                    userId.toString(),
+                    passwordResetTokenTtl
+            );
+            return null;
+        });
+        return rawToken;
+    }
+
+    public Long consumePasswordResetToken(String rawToken) {
+        if (!StringUtils.hasText(rawToken)) {
+            throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_TOKEN_INVALID);
+        }
+
+        String storedUserId = execute("consume password reset token", () -> redisTemplate.execute(
+                CONSUME_PASSWORD_RESET_TOKEN_SCRIPT,
+                List.of(passwordResetTokenKey(rawToken))
+        ));
+        if (!StringUtils.hasText(storedUserId)) {
+            throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_TOKEN_INVALID);
+        }
+
+        try {
+            return Long.parseLong(storedUserId);
+        } catch (NumberFormatException exception) {
+            throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_TOKEN_INVALID);
+        }
+    }
+
+    public void deletePasswordResetToken(String rawToken) {
+        if (!StringUtils.hasText(rawToken)) {
+            return;
+        }
+        execute("delete password reset token", () -> redisTemplate.delete(passwordResetTokenKey(rawToken)));
+    }
     public void storeRefreshToken(Long userId, String refreshToken, Duration ttl) {
         validateTtl(ttl);
         execute("store refresh token", () -> {
@@ -155,6 +206,9 @@ public class RedisAuthTokenService {
         return LOGIN_CODE_PREFIX + hash(rawCode);
     }
 
+    private String passwordResetTokenKey(String rawToken) {
+        return PASSWORD_RESET_PREFIX + hash(rawToken);
+    }
     private String refreshTokenKey(Long userId) {
         return REFRESH_TOKEN_PREFIX + userId;
     }

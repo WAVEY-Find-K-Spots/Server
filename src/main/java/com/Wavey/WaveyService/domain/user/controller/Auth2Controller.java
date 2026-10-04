@@ -2,6 +2,8 @@ package com.Wavey.WaveyService.domain.user.controller;
 
 import com.Wavey.WaveyService.domain.user.dto.LocalLoginRequest;
 import com.Wavey.WaveyService.domain.user.dto.LocalPasswordChangeRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetConfirmRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetRequest;
 import com.Wavey.WaveyService.domain.user.dto.LocalSignupRequest;
 import com.Wavey.WaveyService.domain.user.dto.LoginCodeExchangeRequest;
 import com.Wavey.WaveyService.domain.user.dto.PhotoConfirmRequest;
@@ -71,6 +73,36 @@ public class Auth2Controller {
         return ResponseEntity.ok(CommonResponse.success(
                 "로컬 로그인 성공",
                 userService.loginLocal(request)
+        ));
+    }
+
+    @Operation(
+            summary = "비밀번호 재설정 메일 요청",
+            description = "가입 여부와 관계없이 동일하게 응답하며, 로컬 계정이면 일회용 재설정 링크를 SMTP로 발송합니다."
+    )
+    @PostMapping("/local/password/reset/request")
+    public ResponseEntity<CommonResponse<Void>> requestLocalPasswordReset(
+            @Valid @RequestBody LocalPasswordResetRequest request
+    ) {
+        userService.requestLocalPasswordReset(request);
+        return ResponseEntity.ok(CommonResponse.success(
+                "가입된 로컬 계정인 경우 비밀번호 재설정 메일을 발송했습니다.",
+                null
+        ));
+    }
+
+    @Operation(
+            summary = "비밀번호 재설정 확정",
+            description = "메일로 전달된 일회용 토큰을 검증하고 새 비밀번호로 변경합니다."
+    )
+    @PostMapping("/local/password/reset/confirm")
+    public ResponseEntity<CommonResponse<Void>> confirmLocalPasswordReset(
+            @Valid @RequestBody LocalPasswordResetConfirmRequest request
+    ) {
+        userService.confirmLocalPasswordReset(request);
+        return ResponseEntity.ok(CommonResponse.success(
+                "비밀번호 재설정 성공. 새 비밀번호로 로그인해 주세요.",
+                null
         ));
     }
 

@@ -42,6 +42,8 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
+    private LocalPasswordResetMailService passwordResetMailService;
+    @Mock
     private OAuth2UserInfo userInfo;
 
     private CustomOAuth2UserService userService;
@@ -54,7 +56,8 @@ class CustomOAuth2UserServiceTest {
                 tokenProvider,
                 authTokenService,
                 uploadService,
-                passwordEncoder
+                passwordEncoder,
+                passwordResetMailService
         );
     }
 

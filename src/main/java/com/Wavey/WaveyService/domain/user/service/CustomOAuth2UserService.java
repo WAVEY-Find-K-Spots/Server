@@ -4,6 +4,8 @@ import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
 import com.Wavey.WaveyService.domain.upload.service.UploadService;
 import com.Wavey.WaveyService.domain.user.dto.LocalLoginRequest;
 import com.Wavey.WaveyService.domain.user.dto.LocalPasswordChangeRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetConfirmRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetRequest;
 import com.Wavey.WaveyService.domain.user.dto.LocalSignupRequest;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
@@ -50,6 +52,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final RedisAuthTokenService authTokenService;
     private final UploadService uploadService;
     private final PasswordEncoder passwordEncoder;
+    private final LocalPasswordResetMailService passwordResetMailService;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -108,6 +111,29 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         return issueAndStoreTokenPair(user, false);
+    }
+
+    public void requestLocalPasswordReset(LocalPasswordResetRequest request) {
+        passwordResetMailService.ensureConfigured();
+        String email = normalizeEmail(request.email());
+        userRepository.findByProviderAndProviderId(LOCAL_PROVIDER, email).ifPresent(user -> {
+            String rawToken = authTokenService.issuePasswordResetToken(user.getId());
+            if (!passwordResetMailService.sendResetLink(user.getEmail(), user.getName(), rawToken)) {
+                authTokenService.deletePasswordResetToken(rawToken);
+            }
+        });
+    }
+
+    @Transactional
+    public void confirmLocalPasswordReset(LocalPasswordResetConfirmRequest request) {
+        Long userId = authTokenService.consumePasswordResetToken(request.token());
+        User user = findEntityById(userId);
+        if (!LOCAL_PROVIDER.equals(user.getProvider())) {
+            throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_TOKEN_INVALID);
+        }
+
+        user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
+        authTokenService.deleteRefreshToken(user.getId());
     }
 
     @Transactional

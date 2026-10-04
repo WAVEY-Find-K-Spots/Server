@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -16,6 +17,7 @@ import com.Wavey.WaveyService.domain.user.entity.User;
 import com.Wavey.WaveyService.domain.user.enums.Role;
 import com.Wavey.WaveyService.domain.user.repository.UserRepository;
 import com.Wavey.WaveyService.domain.user.service.RedisAuthTokenService;
+import com.Wavey.WaveyService.domain.user.service.LocalPasswordResetMailService;
 import com.Wavey.WaveyService.global.common.JwtTokenProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,6 +71,9 @@ class AdminLocalAuthenticationIntegrationTest {
 
     @MockitoBean
     private RedisAuthTokenService authTokenService;
+
+    @MockitoBean
+    private LocalPasswordResetMailService passwordResetMailService;
 
     @MockitoBean
     private CloudVisionTemplate cloudVisionTemplate;
@@ -178,6 +183,59 @@ class AdminLocalAuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("AUTH_409_LOCAL_ACCOUNT"));
     }
 
+    @Test
+    @DisplayName("SMTP 재설정은 동일 응답을 반환하고 일회용 토큰으로 비밀번호를 변경한다")
+    void smtpPasswordReset_sendsGenericResponse_andConsumesOneTimeToken() throws Exception {
+        when(authTokenService.issuePasswordResetToken(member.getId())).thenReturn("reset-token");
+        when(passwordResetMailService.sendResetLink(
+                member.getEmail(), member.getName(), "reset-token"
+        )).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/auth/local/password/reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"local-user@example.com"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "가입된 로컬 계정인 경우 비밀번호 재설정 메일을 발송했습니다."
+                ));
+
+        mockMvc.perform(post("/api/v1/auth/local/password/reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"unknown@example.com"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "가입된 로컬 계정인 경우 비밀번호 재설정 메일을 발송했습니다."
+                ));
+
+        verify(passwordResetMailService, times(2)).ensureConfigured();
+        verify(passwordResetMailService).sendResetLink(
+                member.getEmail(), member.getName(), "reset-token"
+        );
+
+        when(authTokenService.consumePasswordResetToken("reset-token"))
+                .thenReturn(member.getId());
+
+        mockMvc.perform(post("/api/v1/auth/local/password/reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "token": "reset-token",
+                                  "newPassword": "ResetPassword123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(
+                        "비밀번호 재설정 성공. 새 비밀번호로 로그인해 주세요."
+                ));
+
+        User changed = userRepository.findById(member.getId()).orElseThrow();
+        assertThat(passwordEncoder.matches("ResetPassword123!", changed.getPasswordHash())).isTrue();
+        verify(authTokenService).deleteRefreshToken(member.getId());
+    }
     @Test
     @DisplayName("JWT 이메일과 현재 비밀번호 검증 후 비밀번호를 변경하고 기존 토큰을 폐기한다")
     void localPasswordChange_verifiesJwtEmailAndRevokesTokens() throws Exception {

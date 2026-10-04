@@ -30,6 +30,20 @@ class SecurityEndpointsTest {
     }
 
     @Test
+    void 비밀번호_재설정_요청과_확정은_JWT_필터를_건너뛴다() {
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST", "/api/v1/auth/local/password/reset/request"
+        );
+        request.setRequestURI("/api/v1/auth/local/password/reset/request");
+        MockHttpServletRequest confirm = new MockHttpServletRequest(
+                "POST", "/api/v1/auth/local/password/reset/confirm"
+        );
+        confirm.setRequestURI("/api/v1/auth/local/password/reset/confirm");
+
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(request)).isTrue();
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(confirm)).isTrue();
+    }
+    @Test
     void 보호된_요청은_JWT_필터를_통과한다() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/routes");
         request.setRequestURI("/api/v1/routes");
