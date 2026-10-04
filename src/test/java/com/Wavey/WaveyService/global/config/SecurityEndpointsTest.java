@@ -17,6 +17,19 @@ class SecurityEndpointsTest {
     }
 
     @Test
+    void 로컬_회원가입과_로그인은_JWT_필터를_건너뛴다() {
+        MockHttpServletRequest signup =
+                new MockHttpServletRequest("POST", "/api/v1/auth/local/signup");
+        signup.setRequestURI("/api/v1/auth/local/signup");
+        MockHttpServletRequest login =
+                new MockHttpServletRequest("POST", "/api/v1/auth/local/login");
+        login.setRequestURI("/api/v1/auth/local/login");
+
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(signup)).isTrue();
+        assertThat(SecurityEndpoints.shouldBypassJwtFilter(login)).isTrue();
+    }
+
+    @Test
     void 보호된_요청은_JWT_필터를_통과한다() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/routes");
         request.setRequestURI("/api/v1/routes");

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +40,8 @@ class CustomOAuth2UserServiceTest {
     @Mock
     private com.Wavey.WaveyService.domain.upload.service.UploadService uploadService;
     @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
     private OAuth2UserInfo userInfo;
 
     private CustomOAuth2UserService userService;
@@ -50,7 +53,8 @@ class CustomOAuth2UserServiceTest {
                 userSettingsRepository,
                 tokenProvider,
                 authTokenService,
-                uploadService
+                uploadService,
+                passwordEncoder
         );
     }
 

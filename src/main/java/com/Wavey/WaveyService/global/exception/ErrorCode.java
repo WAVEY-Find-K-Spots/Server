@@ -79,6 +79,8 @@ public enum ErrorCode {
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "해당 유저를 찾을 수 없습니다."),
     USER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "USER_403", "해당 유저 관련 권한이 없습니다."),
+    LOCAL_ACCOUNT_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_409_LOCAL_ACCOUNT", "이미 가입된 로컬 계정입니다."),
+    LOCAL_INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_401_LOCAL_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다."),
 
     // UPLOAD
     UPLOAD_INVALID_FILE_URL(HttpStatus.BAD_REQUEST, "UPLOAD_400_FILE_URL", "\uC5C5\uB85C\uB4DC\uB41C \uD30C\uC77C URL\uC774 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."),

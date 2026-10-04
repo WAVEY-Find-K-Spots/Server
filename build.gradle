@@ -95,3 +95,13 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('adminTest', Test) {
+	group = 'verification'
+	description = 'Runs only tests tagged as admin.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'admin'
+	}
+}

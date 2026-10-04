@@ -119,6 +119,14 @@ public class RedisAuthTokenService {
         return Long.valueOf(1L).equals(result);
     }
 
+    public void storeRefreshToken(Long userId, String refreshToken, Duration ttl) {
+        validateTtl(ttl);
+        execute("store refresh token", () -> {
+            redisTemplate.opsForValue().set(refreshTokenKey(userId), hash(refreshToken), ttl);
+            return null;
+        });
+    }
+
     public void deleteRefreshToken(Long userId) {
         execute("delete refresh token", () -> redisTemplate.delete(refreshTokenKey(userId)));
     }
