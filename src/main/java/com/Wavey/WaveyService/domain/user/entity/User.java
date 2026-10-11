@@ -34,7 +34,10 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private String provider; // "google", "kakao"
+    private String provider; // "google", "kakao", "local"
+
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -88,6 +91,10 @@ public class User {
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
 }

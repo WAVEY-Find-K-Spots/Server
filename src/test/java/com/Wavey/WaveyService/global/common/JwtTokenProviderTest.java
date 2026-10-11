@@ -33,7 +33,7 @@ class JwtTokenProviderTest {
 
     @Test
     void access와_refresh_토큰의_용도를_구분한다() {
-        String accessToken = tokenProvider.createAccessToken("google", "provider-id");
+        String accessToken = tokenProvider.createAccessToken("google", "provider-id", "user@example.com");
         String refreshToken = tokenProvider.createRefreshToken("google", "provider-id");
 
         Claims accessClaims = tokenProvider.getValidatedClaims(accessToken, TokenType.ACCESS);
@@ -42,6 +42,7 @@ class JwtTokenProviderTest {
         assertThat(accessClaims.getId()).isNotBlank();
         assertThat(refreshClaims.getId()).isNotBlank();
         assertThat(accessClaims.get("tokenType", String.class)).isEqualTo("ACCESS");
+        assertThat(accessClaims.get("email", String.class)).isEqualTo("user@example.com");
         assertThat(refreshClaims.get("tokenType", String.class)).isEqualTo("REFRESH");
         assertThatThrownBy(() -> tokenProvider.getValidatedClaims(refreshToken, TokenType.ACCESS))
                 .isInstanceOf(CustomException.class)

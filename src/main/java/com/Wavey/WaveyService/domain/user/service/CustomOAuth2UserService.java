@@ -2,6 +2,11 @@ package com.Wavey.WaveyService.domain.user.service;
 
 import com.Wavey.WaveyService.domain.upload.enums.UploadCategory;
 import com.Wavey.WaveyService.domain.upload.service.UploadService;
+import com.Wavey.WaveyService.domain.user.dto.LocalLoginRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordChangeRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetConfirmRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalSignupRequest;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfo;
 import com.Wavey.WaveyService.domain.user.dto.OAuth2UserInfoFactory;
 import com.Wavey.WaveyService.domain.user.dto.UserResponse;
@@ -19,7 +24,9 @@ import com.Wavey.WaveyService.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -37,11 +44,15 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+    private static final String LOCAL_PROVIDER = "local";
+
     private final UserRepository userRepository;
     private final UserSettingsRepository userSettingsRepository;
     private final JwtTokenProvider tokenProvider;
     private final RedisAuthTokenService authTokenService;
     private final UploadService uploadService;
+    private final PasswordEncoder passwordEncoder;
+    private final LocalPasswordResetMailService passwordResetMailService;
 
     @Value("${auth.admin-white-list}")
     private List<String> adminWhiteList;
@@ -63,6 +74,94 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         loginUrls.put("apple", serverUrl + baseUrl + applePath);
         loginUrls.put("kakao", serverUrl + baseUrl + kakaoPath);
         return loginUrls;
+    }
+
+    @Transactional
+    public TokenResponse signupLocal(LocalSignupRequest request) {
+        String email = normalizeEmail(request.email());
+        if (userRepository.findByProviderAndProviderId(LOCAL_PROVIDER, email).isPresent()) {
+            throw new CustomException(ErrorCode.LOCAL_ACCOUNT_ALREADY_EXISTS);
+        }
+
+        User user;
+        try {
+            user = userRepository.saveAndFlush(User.builder()
+                    .provider(LOCAL_PROVIDER)
+                    .providerId(email)
+                    .email(email)
+                    .name(request.name().trim())
+                    .passwordHash(passwordEncoder.encode(request.password()))
+                    .role(Role.USER)
+                    .build());
+        } catch (DataIntegrityViolationException exception) {
+            throw new CustomException(ErrorCode.LOCAL_ACCOUNT_ALREADY_EXISTS);
+        }
+
+        return issueAndStoreTokenPair(user, true);
+    }
+
+    public TokenResponse loginLocal(LocalLoginRequest request) {
+        String email = normalizeEmail(request.email());
+        User user = userRepository.findByProviderAndProviderId(LOCAL_PROVIDER, email)
+                .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_INVALID_CREDENTIALS));
+
+        if (!hasText(user.getPasswordHash())
+                || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new CustomException(ErrorCode.LOCAL_INVALID_CREDENTIALS);
+        }
+
+        return issueAndStoreTokenPair(user, false);
+    }
+
+    public void requestLocalPasswordReset(LocalPasswordResetRequest request) {
+        passwordResetMailService.ensureConfigured();
+        String email = normalizeEmail(request.email());
+        userRepository.findByProviderAndProviderId(LOCAL_PROVIDER, email).ifPresent(user -> {
+            String rawToken = authTokenService.issuePasswordResetToken(user.getId());
+            if (!passwordResetMailService.sendResetLink(user.getEmail(), user.getName(), rawToken)) {
+                authTokenService.deletePasswordResetToken(rawToken);
+                throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_MAIL_DELIVERY_FAILED);
+            }
+        });
+    }
+
+    @Transactional
+    public void confirmLocalPasswordReset(LocalPasswordResetConfirmRequest request) {
+        Long userId = authTokenService.consumePasswordResetToken(request.token());
+        User user = findEntityById(userId);
+        if (!LOCAL_PROVIDER.equals(user.getProvider())) {
+            throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_TOKEN_INVALID);
+        }
+
+        user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
+        authTokenService.deleteRefreshToken(user.getId());
+    }
+
+    @Transactional
+    public void changeLocalPassword(Long authenticatedUserId, String accessToken, LocalPasswordChangeRequest request) {
+        Claims claims = tokenProvider.getValidatedClaims(accessToken, TokenType.ACCESS);
+        String tokenEmail = claims.get("email", String.class);
+        String tokenProviderName = claims.get("provider", String.class);
+
+        User user = findEntityById(authenticatedUserId);
+        if (!LOCAL_PROVIDER.equals(tokenProviderName)
+                || !LOCAL_PROVIDER.equals(user.getProvider())
+                || !hasText(tokenEmail)
+                || !normalizeEmail(user.getEmail()).equals(normalizeEmail(tokenEmail))
+                || !user.getProviderId().equals(claims.getSubject())) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+        if (!hasText(user.getPasswordHash())
+                || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new CustomException(ErrorCode.LOCAL_INVALID_CREDENTIALS);
+        }
+
+        user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
+        revokeTokens(user, accessToken);
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -266,9 +365,19 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         );
     }
 
+    private TokenResponse issueAndStoreTokenPair(User user, boolean isNewUser) {
+        IssuedTokenPair issuedTokenPair = createTokenPair(user);
+        authTokenService.storeRefreshToken(
+                user.getId(),
+                issuedTokenPair.response().refreshToken(),
+                issuedTokenPair.refreshTokenTtl()
+        );
+        return issuedTokenPair.response().withNewUser(isNewUser);
+    }
+
     private IssuedTokenPair createTokenPair(User user) {
-        String accessToken = tokenProvider.createAccessToken(user.getProvider(), user.getProviderId());
-        String refreshToken = tokenProvider.createRefreshToken(user.getProvider(), user.getProviderId());
+        String accessToken = tokenProvider.createAccessToken(user.getProvider(), user.getProviderId(), user.getEmail());
+        String refreshToken = tokenProvider.createRefreshToken(user.getProvider(), user.getProviderId(), user.getEmail());
         Claims refreshClaims = tokenProvider.getValidatedClaims(refreshToken, TokenType.REFRESH);
         return new IssuedTokenPair(
                 TokenResponse.bearer(accessToken, refreshToken),

@@ -21,6 +21,10 @@ final class SecurityEndpoints {
             "/oauth2/**",
             "/login/oauth2/**",
             "/api/v1/auth/login-urls",
+            "/api/v1/auth/local/signup",
+            "/api/v1/auth/local/login",
+            "/api/v1/auth/local/password/reset/request",
+            "/api/v1/auth/local/password/reset/confirm",
             "/api/v1/auth/exchange",
             "/api/v1/auth/refresh"
     };

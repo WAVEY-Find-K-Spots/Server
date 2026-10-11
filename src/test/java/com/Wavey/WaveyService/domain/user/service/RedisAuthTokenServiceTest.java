@@ -37,6 +37,7 @@ class RedisAuthTokenServiceTest {
     void setUp() {
         authTokenService = new RedisAuthTokenService(redisTemplate);
         ReflectionTestUtils.setField(authTokenService, "loginCodeTtl", Duration.ofMinutes(3));
+        ReflectionTestUtils.setField(authTokenService, "passwordResetTokenTtl", Duration.ofMinutes(15));
     }
 
     @Test
@@ -98,6 +99,45 @@ class RedisAuthTokenServiceTest {
         assertThat(rotated).isTrue();
     }
 
+    @Test
+    void 로컬_로그인_refresh_토큰을_해시와_TTL로_저장한다() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        authTokenService.storeRefreshToken(7L, "refresh-token", Duration.ofMinutes(10));
+
+        verify(valueOperations).set(
+                eq("auth:refresh:7"),
+                org.mockito.ArgumentMatchers.argThat(value -> !value.equals("refresh-token")),
+                eq(Duration.ofMinutes(10))
+        );
+    }
+
+    @Test
+    void 비밀번호_재설정_토큰은_해시된_키와_TTL로_저장한다() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        String token = authTokenService.issuePasswordResetToken(7L);
+
+        assertThat(token).isNotBlank();
+        verify(valueOperations).set(
+                org.mockito.ArgumentMatchers.argThat(
+                        key -> key.startsWith("auth:password-reset:") && !key.contains(token)
+                ),
+                eq("7"),
+                eq(Duration.ofMinutes(15))
+        );
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void 비밀번호_재설정_토큰은_한번만_소비하고_사용자_ID를_반환한다() {
+        when(redisTemplate.execute(any(DefaultRedisScript.class), anyList())).thenReturn("7");
+
+        Long userId = authTokenService.consumePasswordResetToken("one-time-reset-token");
+
+        assertThat(userId).isEqualTo(7L);
+        verify(redisTemplate).execute(any(DefaultRedisScript.class), anyList());
+    }
     @Test
     void Redis_연결_실패는_인증_저장소_오류로_변환한다() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);

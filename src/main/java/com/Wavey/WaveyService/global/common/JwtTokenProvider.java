@@ -37,17 +37,28 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(String provider, String providerId) {
-        return createToken(provider, providerId, TokenType.ACCESS, accessTokenExpiration);
+        return createAccessToken(provider, providerId, null);
+    }
+
+    public String createAccessToken(String provider, String providerId, String email) {
+        return createToken(provider, providerId, email, TokenType.ACCESS, accessTokenExpiration);
     }
 
     public String createRefreshToken(String provider, String providerId) {
-        return createToken(provider, providerId, TokenType.REFRESH, refreshTokenExpiration);
+        return createRefreshToken(provider, providerId, null);
     }
 
-    private String createToken(String provider, String providerId, TokenType tokenType, long expiration) {
+    public String createRefreshToken(String provider, String providerId, String email) {
+        return createToken(provider, providerId, email, TokenType.REFRESH, refreshTokenExpiration);
+    }
+
+    private String createToken(String provider, String providerId, String email, TokenType tokenType, long expiration) {
         Claims claims = Jwts.claims().setSubject(providerId);
         claims.put("provider", provider);
         claims.put("tokenType", tokenType.name());
+        if (StringUtils.hasText(email)) {
+            claims.put("email", email);
+        }
 
         Date now = new Date();
         return Jwts.builder()

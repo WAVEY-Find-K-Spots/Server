@@ -37,6 +37,9 @@ dependencies {
 	// 이메일 형식이나 필수 입력값 등 데이터의 유효성을 검증하는 기능을 제공합니다.
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+	// 로컬 계정 비밀번호 재설정 링크를 SMTP로 발송합니다.
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 	// Getter, Setter 등 반복되는 코드를 어노테이션으로 자동 생성해주는 라이브러리입니다.
 	compileOnly 'org.projectlombok:lombok'
 
@@ -94,4 +97,14 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('adminTest', Test) {
+	group = 'verification'
+	description = 'Runs only tests tagged as admin.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'admin'
+	}
 }

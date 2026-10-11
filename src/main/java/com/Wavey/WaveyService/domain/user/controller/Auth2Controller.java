@@ -1,5 +1,10 @@
 package com.Wavey.WaveyService.domain.user.controller;
 
+import com.Wavey.WaveyService.domain.user.dto.LocalLoginRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordChangeRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetConfirmRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalPasswordResetRequest;
+import com.Wavey.WaveyService.domain.user.dto.LocalSignupRequest;
 import com.Wavey.WaveyService.domain.user.dto.LoginCodeExchangeRequest;
 import com.Wavey.WaveyService.domain.user.dto.PhotoConfirmRequest;
 import com.Wavey.WaveyService.domain.user.dto.UserProfileUpdateRequest;
@@ -21,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,6 +51,76 @@ public class Auth2Controller {
     @GetMapping("/login-urls")
     public ResponseEntity<CommonResponse<Map<String, String>>> getLoginUrls() {
         return ResponseEntity.ok(CommonResponse.success("소셜 로그인 URL 조회 성공", userService.getLoginUrls()));
+    }
+
+    @Operation(summary = "로컬 회원가입", description = "이메일과 비밀번호로 USER 권한 계정을 만들고 기존 JWT 토큰 쌍을 발급합니다.")
+    @PostMapping("/local/signup")
+    public ResponseEntity<CommonResponse<TokenResponse>> signupLocal(
+            @Valid @RequestBody LocalSignupRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.success(
+                HttpStatus.CREATED.value(),
+                "로컬 회원가입 성공",
+                userService.signupLocal(request)
+        ));
+    }
+
+    @Operation(summary = "로컬 로그인", description = "로컬 계정 인증 후 소셜 로그인과 동일한 Access/Refresh Token을 발급합니다.")
+    @PostMapping("/local/login")
+    public ResponseEntity<CommonResponse<TokenResponse>> loginLocal(
+            @Valid @RequestBody LocalLoginRequest request
+    ) {
+        return ResponseEntity.ok(CommonResponse.success(
+                "로컬 로그인 성공",
+                userService.loginLocal(request)
+        ));
+    }
+
+    @Operation(
+            summary = "비밀번호 재설정 메일 요청",
+            description = "가입 여부와 관계없이 동일하게 응답하며, 로컬 계정이면 일회용 재설정 링크를 SMTP로 발송합니다."
+    )
+    @PostMapping("/local/password/reset/request")
+    public ResponseEntity<CommonResponse<Void>> requestLocalPasswordReset(
+            @Valid @RequestBody LocalPasswordResetRequest request
+    ) {
+        userService.requestLocalPasswordReset(request);
+        return ResponseEntity.ok(CommonResponse.success(
+                "가입된 로컬 계정인 경우 비밀번호 재설정 메일을 발송했습니다.",
+                null
+        ));
+    }
+
+    @Operation(
+            summary = "비밀번호 재설정 확정",
+            description = "메일로 전달된 일회용 토큰을 검증하고 새 비밀번호로 변경합니다."
+    )
+    @PostMapping("/local/password/reset/confirm")
+    public ResponseEntity<CommonResponse<Void>> confirmLocalPasswordReset(
+            @Valid @RequestBody LocalPasswordResetConfirmRequest request
+    ) {
+        userService.confirmLocalPasswordReset(request);
+        return ResponseEntity.ok(CommonResponse.success(
+                "비밀번호 재설정 성공. 새 비밀번호로 로그인해 주세요.",
+                null
+        ));
+    }
+
+    @Operation(
+            summary = "로컬 계정 비밀번호 변경",
+            description = "Access Token의 이메일과 로그인 계정을 검증하고 현재 비밀번호 확인 후 변경합니다. 변경 즉시 기존 토큰은 모두 무효화됩니다."
+    )
+    @PatchMapping("/local/password")
+    public ResponseEntity<CommonResponse<Void>> changeLocalPassword(
+            @AuthenticationPrincipal User user,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @Valid @RequestBody LocalPasswordChangeRequest request
+    ) {
+        userService.changeLocalPassword(user.getId(), resolveBearerToken(authorization), request);
+        return ResponseEntity.ok(CommonResponse.success(
+                "비밀번호 변경 성공. 새 비밀번호로 다시 로그인해 주세요.",
+                null
+        ));
     }
 
     @Operation(summary = "일회성 로그인 코드 교환")
