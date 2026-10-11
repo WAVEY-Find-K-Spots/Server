@@ -236,6 +236,29 @@ class AdminLocalAuthenticationIntegrationTest {
         assertThat(passwordEncoder.matches("ResetPassword123!", changed.getPasswordHash())).isTrue();
         verify(authTokenService).deleteRefreshToken(member.getId());
     }
+
+    @Test
+    @DisplayName("SMTP 발송 실패 시 토큰을 폐기하고 실제 실패 응답을 반환한다")
+    void smtpPasswordReset_deliveryFailure_returnsBadGateway() throws Exception {
+        when(authTokenService.issuePasswordResetToken(member.getId())).thenReturn("failed-reset-token");
+        when(passwordResetMailService.sendResetLink(
+                member.getEmail(), member.getName(), "failed-reset-token"
+        )).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/auth/local/password/reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"local-user@example.com"}
+                                """))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.error.code")
+                        .value("AUTH_502_PASSWORD_RESET_MAIL_DELIVERY"))
+                .andExpect(jsonPath("$.error.message")
+                        .value("비밀번호 재설정 메일 발송에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+
+        verify(authTokenService).deletePasswordResetToken("failed-reset-token");
+    }
+
     @Test
     @DisplayName("JWT 이메일과 현재 비밀번호 검증 후 비밀번호를 변경하고 기존 토큰을 폐기한다")
     void localPasswordChange_verifiesJwtEmailAndRevokesTokens() throws Exception {

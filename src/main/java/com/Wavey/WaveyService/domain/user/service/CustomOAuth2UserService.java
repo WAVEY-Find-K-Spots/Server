@@ -120,6 +120,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             String rawToken = authTokenService.issuePasswordResetToken(user.getId());
             if (!passwordResetMailService.sendResetLink(user.getEmail(), user.getName(), rawToken)) {
                 authTokenService.deletePasswordResetToken(rawToken);
+                throw new CustomException(ErrorCode.LOCAL_PASSWORD_RESET_MAIL_DELIVERY_FAILED);
             }
         });
     }
