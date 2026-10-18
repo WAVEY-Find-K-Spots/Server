@@ -53,6 +53,7 @@ public class UserBadgeService {
     @Schema(description = "배지 항목")
     public record BadgeItem(
             @Schema(description = "배지 ID", example = "1") Long badgeId,
+            @Schema(description = "배지 카테고리", nullable = true) SpotCategory category,
             @Schema(description = "배지 이름", example = "서울 탐험가") String name,
             @Schema(description = "배지 설명", example = "서울 스팟 5곳 방문") String description,
             @Schema(description = "이미지 URL", example = "https://example.com/badges/1.png")
@@ -194,6 +195,7 @@ public class UserBadgeService {
     private BadgeItem toItem(Badge b, long progress, UserBadge award, String lang) {
         return new BadgeItem(
                 b.getId(),
+                b.getCategory(),
                 UiSupport.localized(b.getName(), b.getNameEn(), lang),
                 UiSupport.localized(b.getDescription(), b.getDescriptionEn(), lang),
                 uploadService.resolveAccessUrl(b.getImageUrl()),
