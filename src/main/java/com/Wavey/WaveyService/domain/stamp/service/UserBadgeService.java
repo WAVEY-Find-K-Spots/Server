@@ -79,7 +79,7 @@ public class UserBadgeService {
 
     public BadgeCollection collection(Long userId, String language) {
         String lang = language(language);
-        List<UserStamp> owned = collected.findByUserId(userId);
+        List<UserStamp> owned = collected.findWithExistingSpot(userId);
         Map<Long, SpotCategory> categoryBySpotId = categoryBySpotId(owned);
         List<Badge> allBadges = badges.findAll();
         Map<Long, List<Long>> setSpotsByBadgeId = loadSetSpotsByBadgeId(allBadges);
@@ -129,7 +129,7 @@ public class UserBadgeService {
     }
 
     public Map<Long, Long> progressByBadgeId(Long userId) {
-        List<UserStamp> owned = collected.findByUserId(userId);
+        List<UserStamp> owned = collected.findWithExistingSpot(userId);
         Map<Long, SpotCategory> categoryBySpotId = categoryBySpotId(owned);
         List<Badge> allBadges = badges.findAll();
         Map<Long, List<Long>> setSpotsByBadgeId = loadSetSpotsByBadgeId(allBadges);
@@ -159,7 +159,7 @@ public class UserBadgeService {
                     toItem(badge, badge.getRequiredStamps(), existing.get(), lang), false);
         }
 
-        List<UserStamp> owned = collected.findByUserId(userId);
+        List<UserStamp> owned = collected.findWithExistingSpot(userId);
         long raw =
                 progress(
                         badge,

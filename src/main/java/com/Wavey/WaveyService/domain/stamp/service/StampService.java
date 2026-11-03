@@ -110,7 +110,7 @@ public class StampService {
                         .toList();
 
         return new Book(
-                collected.countByUserId(userId),
+                collected.countWithExistingSpot(userId),
                 items,
                 spotPage.getNumber(),
                 spotPage.getTotalElements(),

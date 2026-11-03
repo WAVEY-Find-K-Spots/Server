@@ -20,7 +20,23 @@ public interface UserStampRepository extends JpaRepository<UserStamp, Long> {
 
     List<UserStamp> findByUserId(Long userId);
 
-    long countByUserId(Long userId);
+    /** 스팟이 실제로 존재하는 획득 기록만 센다. 스팟이 사라진 기록은 제외한다. */
+    @Query(
+            """
+            select count(us) from UserStamp us
+            where us.userId = :userId
+              and exists (select 1 from Spot s where s.id = us.spotId)
+            """)
+    long countWithExistingSpot(@Param("userId") Long userId);
+
+    /** 스팟이 실제로 존재하는 획득 기록만 조회한다. 스팟이 사라진 기록은 제외한다. */
+    @Query(
+            """
+            select us from UserStamp us
+            where us.userId = :userId
+              and exists (select 1 from Spot s where s.id = us.spotId)
+            """)
+    List<UserStamp> findWithExistingSpot(@Param("userId") Long userId);
 
     void deleteBySpotId(Long spotId);
 
