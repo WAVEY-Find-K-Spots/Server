@@ -11,5 +11,7 @@ public record SpotListResponse(
         Double avgRating,
         long reviewCount,
         boolean saved,
-        Double distanceMeters
+        Double distanceMeters,
+        Double latitude,
+        Double longitude
 ) {}

@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SpotSearchService {
 
-    private static final int PAGE_SIZE = 6;
-
     private final SpotRepository spotRepository;
     private final SavedSpotRepository savedSpotRepository;
     private final SpotConverter spotConverter;
@@ -56,7 +54,7 @@ public class SpotSearchService {
                         SpotSearchSpecification.from(request, userId),
                         PageRequest.of(
                                 request.page(),
-                                PAGE_SIZE,
+                                request.size(),
                                 Sort.unsorted()
                         )
                 );

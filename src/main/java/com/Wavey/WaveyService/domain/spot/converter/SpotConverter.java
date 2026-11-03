@@ -207,7 +207,9 @@ public class SpotConverter {
                 spot.getAvgRating(),
                 spot.getReviewCount(),
                 saved,
-                distanceMeters
+                distanceMeters,
+                spot.getLatitude() == null ? null : spot.getLatitude().doubleValue(),
+                spot.getLongitude() == null ? null : spot.getLongitude().doubleValue()
         );
     }
 

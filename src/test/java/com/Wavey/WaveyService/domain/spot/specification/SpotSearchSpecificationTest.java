@@ -60,7 +60,7 @@ class SpotSearchSpecificationTest {
                         .build());
 
         SpotSearchRequest request = new SpotSearchRequest(
-                null, null, null, null, null, null, null, null, null, null, route.getId(), null);
+                null, null, null, null, null, null, null, null, null, null, route.getId(), null, null);
 
         var spec = SpotSearchSpecification.from(request, null);
         CriteriaBuilder cb = testEntityManager.getEntityManager().getCriteriaBuilder();
@@ -93,7 +93,7 @@ class SpotSearchSpecificationTest {
         Spot withoutImage = testEntityManager.persistAndFlush(spot("이미지 없음"));
 
         SpotSearchRequest request = new SpotSearchRequest(
-                null, null, null, null, null, null, null, null, SortBy.POPULAR, 0, null, null);
+                null, null, null, null, null, null, null, null, SortBy.POPULAR, 0, null, null, null);
 
         var spec = SpotSearchSpecification.from(request, null);
         CriteriaBuilder cb = testEntityManager.getEntityManager().getCriteriaBuilder();
