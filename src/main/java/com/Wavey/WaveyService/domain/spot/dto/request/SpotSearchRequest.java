@@ -6,6 +6,7 @@ import com.Wavey.WaveyService.domain.spot.enums.SpotCategory;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -48,11 +49,18 @@ public record SpotSearchRequest(
         @Positive
         Long excludeRouteId,
 
-        Boolean savedOnly
+        Boolean savedOnly,
+
+        @Min(1)
+        @Max(100)
+        Integer size
 ) {
+
+    private static final int DEFAULT_SIZE = 6;
 
     public SpotSearchRequest {
         sort = sort == null ? SortBy.POPULAR : sort;
         page = page == null ? 0 : page;
+        size = size == null ? DEFAULT_SIZE : size;
     }
 }

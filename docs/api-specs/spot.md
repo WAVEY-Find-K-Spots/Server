@@ -71,6 +71,7 @@
 | `radiusMeters` | number | 1.0~100000.0 | 반경(m) |
 | `sort` | `SortBy` | 기본값 `POPULAR` | 정렬 기준. **어떤 값을 골라도 이미지 있는 스팟이 항상 먼저 나오고, 그 안에서 선택한 기준으로 정렬됨**(#116) |
 | `page` | number | `@Min(0)`, 기본값 `0` | 페이지 번호 |
+| `size` | number | 1~100, 기본값 `6` | 페이지 크기 (지도 보기처럼 한 번에 많이 받을 때 사용) |
 | `excludeRouteId` | number | `@Positive` | 특정 루트에 이미 포함된 스팟 제외 (루트 편집 시 "스팟 추가" 피커에서 사용) |
 | `savedOnly` | boolean | | `true`면 로그인 유저가 찜한 스팟만 반환 (마이페이지 "저장한 스팟" 목록용). 비로그인 상태로 `true` 주면 빈 목록. |
 
@@ -112,6 +113,8 @@
   reviewCount: number
   saved: boolean
   distanceMeters: number | null   // 좌표 검색 시에만 값 존재
+  latitude: number
+  longitude: number
 }
 ```
 
