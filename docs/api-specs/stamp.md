@@ -46,6 +46,7 @@
       "stampId": 1,
       "spotId": 10,
       "regionId": 1,
+      "category": "K_HERITAGE",
       "name": "경복궁",
       "imageUrl": "https://example.com/spots/10.png",
       "acquired": true,
@@ -60,6 +61,7 @@
       "claimable": [
         {
           "badgeId": 1,
+          "category": null,
           "name": "서울 탐험가",
           "description": "서울 스팟 5곳 방문",
           "imageUrl": "https://example.com/badges/1.png",
@@ -71,6 +73,7 @@
       "inProgress": [
         {
           "badgeId": 2,
+          "category": null,
           "name": "한강 러버",
           "description": "한강 스팟 3곳 방문",
           "imageUrl": "https://example.com/badges/2.png",
@@ -112,6 +115,7 @@
         "stampId": null,
         "spotId": 10,
         "regionId": 1,
+        "category": "K_HERITAGE",
         "name": "경복궁",
         "imageUrl": "https://example.com/spots/10.png",
         "acquired": false,
@@ -144,6 +148,7 @@
     "stampId": 1,
     "spotId": 10,
     "regionId": 1,
+    "category": "K_HERITAGE",
     "name": "경복궁",
     "imageUrl": "https://example.com/spots/10.png",
     "acquired": true,
@@ -174,13 +179,13 @@
     "claimableCount": 1,
     "inProgressCount": 1,
     "acquired": [
-      { "badgeId": 1, "name": "서울 탐험가", "description": "서울 스팟 5곳 방문", "imageUrl": "https://example.com/badges/1.png", "requiredStamps": 5, "progress": 5, "acquiredAt": "2026-09-14T12:00:00" }
+      { "badgeId": 1, "category": null, "name": "서울 탐험가", "description": "서울 스팟 5곳 방문", "imageUrl": "https://example.com/badges/1.png", "requiredStamps": 5, "progress": 5, "acquiredAt": "2026-09-14T12:00:00" }
     ],
     "claimable": [
-      { "badgeId": 3, "name": "카페 마스터", "description": "카페 3곳 방문", "imageUrl": "https://example.com/badges/3.png", "requiredStamps": 3, "progress": 3, "acquiredAt": null }
+      { "badgeId": 3, "category": null, "name": "카페 마스터", "description": "카페 3곳 방문", "imageUrl": "https://example.com/badges/3.png", "requiredStamps": 3, "progress": 3, "acquiredAt": null }
     ],
     "inProgress": [
-      { "badgeId": 2, "name": "한강 러버", "description": "한강 스팟 3곳 방문", "imageUrl": "https://example.com/badges/2.png", "requiredStamps": 3, "progress": 1, "acquiredAt": null }
+      { "badgeId": 2, "category": null, "name": "한강 러버", "description": "한강 스팟 3곳 방문", "imageUrl": "https://example.com/badges/2.png", "requiredStamps": 3, "progress": 1, "acquiredAt": null }
     ]
   }
 }
@@ -199,6 +204,7 @@
   "data": {
     "badge": {
       "badgeId": 3,
+      "category": null,
       "name": "카페 마스터",
       "description": "카페 3곳 방문",
       "imageUrl": "https://example.com/badges/3.png",

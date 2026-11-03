@@ -64,6 +64,7 @@ public class StampController {
                                                               "stampId": 1,
                                                               "spotId": 10,
                                                               "regionId": 1,
+                                                              "category": "K_HERITAGE",
                                                               "name": "경복궁",
                                                               "imageUrl": "https://example.com/spots/10.png",
                                                               "acquired": true,
@@ -78,6 +79,7 @@ public class StampController {
                                                               "claimable": [
                                                                 {
                                                                   "badgeId": 1,
+                                                                  "category": null,
                                                                   "name": "서울 탐험가",
                                                                   "description": "서울 스팟 5곳 방문",
                                                                   "imageUrl": "https://example.com/badges/1.png",
@@ -89,6 +91,7 @@ public class StampController {
                                                               "inProgress": [
                                                                 {
                                                                   "badgeId": 2,
+                                                                  "category": null,
                                                                   "name": "한강 러버",
                                                                   "description": "한강 스팟 3곳 방문",
                                                                   "imageUrl": "https://example.com/badges/2.png",
@@ -189,6 +192,7 @@ public class StampController {
                                                                 "stampId": null,
                                                                 "spotId": 10,
                                                                 "regionId": 1,
+                                                                "category": "K_HERITAGE",
                                                                 "name": "경복궁",
                                                                 "imageUrl": "https://example.com/spots/10.png",
                                                                 "acquired": false,
@@ -260,6 +264,7 @@ public class StampController {
                                                             "stampId": 1,
                                                             "spotId": 10,
                                                             "regionId": 1,
+                                                            "category": "K_HERITAGE",
                                                             "name": "경복궁",
                                                             "imageUrl": "https://example.com/spots/10.png",
                                                             "acquired": true,
@@ -317,6 +322,7 @@ public class StampController {
                                                             "acquired": [
                                                               {
                                                                 "badgeId": 1,
+                                                                "category": null,
                                                                 "name": "서울 탐험가",
                                                                 "description": "서울 스팟 5곳 방문",
                                                                 "imageUrl": "https://example.com/badges/1.png",
@@ -328,6 +334,7 @@ public class StampController {
                                                             "claimable": [
                                                               {
                                                                 "badgeId": 3,
+                                                                "category": null,
                                                                 "name": "카페 마스터",
                                                                 "description": "카페 3곳 방문",
                                                                 "imageUrl": "https://example.com/badges/3.png",
@@ -339,6 +346,7 @@ public class StampController {
                                                             "inProgress": [
                                                               {
                                                                 "badgeId": 2,
+                                                                "category": null,
                                                                 "name": "한강 러버",
                                                                 "description": "한강 스팟 3곳 방문",
                                                                 "imageUrl": "https://example.com/badges/2.png",
@@ -392,6 +400,7 @@ public class StampController {
                                                           "data": {
                                                             "badge": {
                                                               "badgeId": 3,
+                                                              "category": null,
                                                               "name": "카페 마스터",
                                                               "description": "카페 3곳 방문",
                                                               "imageUrl": "https://example.com/badges/3.png",
