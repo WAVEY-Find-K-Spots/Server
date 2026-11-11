@@ -23,6 +23,12 @@ public record RouteLeg(
         this(distanceMeters, durationSeconds, path, List.of(), List.of());
     }
 
+    /** 대중교통 대신 도보로 대체된 구간인지. 세부 구간이 모두 도보일 때 true. */
+    public boolean walkOnly() {
+        return !transitLegs.isEmpty()
+                && transitLegs.stream().allMatch(leg -> "WALK".equals(leg.mode()));
+    }
+
     public static RouteLeg ofTransit(List<TransitItinerary> options) {
         TransitItinerary best = options.get(0);
         return new RouteLeg(best.distanceMeters(), best.durationSeconds(), best.path(), best.legs(), options);

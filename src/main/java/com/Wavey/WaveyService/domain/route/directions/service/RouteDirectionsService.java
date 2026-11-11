@@ -125,7 +125,9 @@ public class RouteDirectionsService {
                     .sequenceOrder(i + 1)
                     .distanceMeters(leg.distanceMeters())
                     .durationSeconds(leg.durationSeconds())
-                    .durationText(durationText(mode, leg.durationSeconds()))
+                    .durationText(durationText(
+                            mode == TransportMode.TRANSIT && leg.walkOnly() ? TransportMode.WALK : mode,
+                            leg.durationSeconds()))
                     .geometry(GeoLineString.of(segmentPath))
                     .transitLegs(toTransitLegs(leg.transitLegs()))
                     .transitOptions(toTransitOptions(leg))

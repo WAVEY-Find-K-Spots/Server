@@ -137,7 +137,38 @@ public class TmapDirectionsClient {
                 .retrieve()
                 .body(JsonNode.class);
 
+        // 가깝거나 주변에 정류장이 없으면 Tmap이 후보 없이 응답한다. 이 구간은 도보로 대체한다.
+        if (!hasTransitItineraries(response)) {
+            log.info("Tmap transit route not found. Falling back to walking. result={}",
+                    response == null ? null : response.path("result"));
+            RouteLeg walk = requestRoadRoute("/tmap/routes/pedestrian", fromLng, fromLat, toLng, toLat);
+            return walkAsTransit(walk);
+        }
+
         return parseTransitRoute(response);
+    }
+
+    static boolean hasTransitItineraries(JsonNode response) {
+        if (response == null) {
+            return false;
+        }
+        JsonNode itineraries = response.path("metaData").path("plan").path("itineraries");
+        return itineraries.isArray() && !itineraries.isEmpty();
+    }
+
+    /**
+     * 도보 경로를 도보 세부 구간 1개짜리 대중교통 후보로 감싼다.
+     * 클라이언트는 대중교통 응답 형태 그대로 "도보 N분" 구간으로 보여줄 수 있다.
+     */
+    static RouteLeg walkAsTransit(RouteLeg walk) {
+        TransitLegDetail walkLeg = new TransitLegDetail(
+                "WALK", null, null, "출발지", "도착지",
+                walk.distanceMeters(), walk.durationSeconds(), 0, List.of());
+        TransitItinerary itinerary = new TransitItinerary(
+                walk.distanceMeters(), walk.durationSeconds(),
+                walk.distanceMeters(), walk.durationSeconds(),
+                0, 0, walk.path(), List.of(walkLeg));
+        return RouteLeg.ofTransit(List.of(itinerary));
     }
 
     RouteLeg parseTransitRoute(JsonNode response) {

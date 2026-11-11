@@ -7,6 +7,7 @@ import com.Wavey.WaveyService.global.exception.CustomException;
 import com.Wavey.WaveyService.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
 
@@ -94,5 +95,48 @@ class TmapDirectionsClientTest {
         assertThatThrownBy(() -> client.parseTransitRoute(transitResponse()))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DIRECTIONS_PROVIDER_ERROR);
+    }
+
+    @Test
+    void 대중교통_후보가_없는_응답을_구분한다() throws Exception {
+        assertThat(TmapDirectionsClient.hasTransitItineraries(transitResponse(BUS_ITINERARY))).isTrue();
+        assertThat(TmapDirectionsClient.hasTransitItineraries(transitResponse())).isFalse();
+        assertThat(TmapDirectionsClient.hasTransitItineraries(objectMapper.readTree("""
+                {"result": {"status": 11, "message": "출발지/도착지 간 거리가 가까워서 탐색된 경로 없음"}}
+                """))).isFalse();
+        assertThat(TmapDirectionsClient.hasTransitItineraries(null)).isFalse();
+    }
+
+    @Test
+    void 도보_경로를_도보_구간_하나짜리_대중교통_후보로_감싼다() {
+        List<double[]> path = List.of(new double[] {127.0, 37.5}, new double[] {127.001, 37.501});
+        RouteLeg walk = new RouteLeg(350, 300, path);
+
+        RouteLeg leg = TmapDirectionsClient.walkAsTransit(walk);
+
+        assertThat(leg.distanceMeters()).isEqualTo(350);
+        assertThat(leg.durationSeconds()).isEqualTo(300);
+        assertThat(leg.path()).isEqualTo(path);
+        assertThat(leg.walkOnly()).isTrue();
+        assertThat(leg.transitOptions()).hasSize(1);
+
+        TransitItinerary option = leg.transitOptions().get(0);
+        assertThat(option.walkDistanceMeters()).isEqualTo(350);
+        assertThat(option.walkSeconds()).isEqualTo(300);
+        assertThat(option.transferCount()).isZero();
+        assertThat(option.fare()).isZero();
+        assertThat(option.legs()).singleElement()
+                .satisfies(detail -> {
+                    assertThat(detail.mode()).isEqualTo("WALK");
+                    assertThat(detail.durationSeconds()).isEqualTo(300);
+                    assertThat(detail.passStops()).isEmpty();
+                });
+    }
+
+    @Test
+    void 실제_대중교통_후보는_도보_대체로_보지_않는다() throws Exception {
+        RouteLeg leg = client.parseTransitRoute(transitResponse(BUS_ITINERARY));
+
+        assertThat(leg.walkOnly()).isFalse();
     }
 }
